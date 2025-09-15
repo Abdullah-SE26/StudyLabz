@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SignOutButton from "../../components/SignOutButton";
 import { toast } from "react-hot-toast";
+import {Spinner} from "@heroui/spinner";
 
 // Read from .env, split by comma in case of multiple domains
 const allowedDomains = (import.meta.env.VITE_ALLOWED_DOMAINS || "").split(",");
@@ -49,15 +50,15 @@ export default function Login() {
   const authToken = localStorage.getItem("authToken");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 shadow-lg rounded-xl p-8">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-amber-50 px-4">
+      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           Login
         </h1>
 
         {authToken ? (
           <div className="text-center">
-            <p className="text-gray-700 dark:text-gray-200 mb-4">You are logged in.</p>
+            <p className="text-gray-700  mb-4">You are logged in.</p>
             <SignOutButton />
           </div>
         ) : (
@@ -70,14 +71,14 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
-              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 "
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="w-full py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center"
             >
-              {loading ? "Sending..." : "Send Magic Link"}
+              {loading ? <Spinner classNames={{ label: "text-white ml-2" }} label="Sending..." variant="wave" /> : "Send Magic Link"}
             </button>
           </form>
         )}
