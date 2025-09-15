@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@heroui/spinner": "^2.2.23"
+  }
+}

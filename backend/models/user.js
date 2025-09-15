@@ -23,10 +23,11 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String, // for instructors or students with names
     },
+    magicToken: String, // hashed token
+    magicTokenExpiry: Date,
   },
   { timestamps: true }
 );
-
 
 userSchema.pre("save", function (next) {
   // Extract studentId for students
