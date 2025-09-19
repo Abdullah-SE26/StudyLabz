@@ -97,21 +97,28 @@ router.post("/verify-magic-link", async (req, res) => {
     const isValid = await bcrypt.compare(token, user.magicToken);
     if (!isValid) return res.status(400).json({ error: "Invalid link" });
 
+    // Clear magic token
     user.magicToken = undefined;
     user.magicTokenExpiry = undefined;
     await user.save();
 
+    // Sign JWT including studentId and name
     const authToken = jwt.sign(
-      { id: user._id, email: user.email },
+      {
+        id: user._id,
+        email: user.email,
+        studentId: user.studentId || null,
+        name: user.name || null,
+        role: user.role
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+
     res.json({ authToken });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
-// ✅ ESM default export
 export default router;

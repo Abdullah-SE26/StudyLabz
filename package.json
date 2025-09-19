@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@heroui/navbar": "^2.2.24",
-    "@heroui/spinner": "^2.2.23"
-  }
-}

@@ -4,7 +4,7 @@ import MagicLinkVerify from "./pages/AuthPages/MagicLinkVerify";
 import Login from "./pages/AuthPages/Login";
 import VerifyRequest from "./pages/AuthPages/VerifyRequest";
 import Home from "./pages/Home";
-import PageWrapper from "./components/PageWrapper";
+import PageWrapper from "./components/page-wrapper";
 
 function App() {
   return (
