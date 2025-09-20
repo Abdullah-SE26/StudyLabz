@@ -56,6 +56,11 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
+            <NavLink to="/contact" className={navLinkClasses}>
+              Contact
+            </NavLink>
+          </li>
+          <li>
             <a
               href="https://www.aau.ac.ae/en"
               target="_blank"
@@ -64,11 +69,6 @@ export default function Navbar() {
             >
               AAU
             </a>
-          </li>
-          <li>
-            <NavLink to="/contact" className={navLinkClasses}>
-              Contact
-            </NavLink>
           </li>
         </ul>
 
@@ -112,6 +112,15 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
+            <NavLink
+              to="/contact"
+              onClick={toggleMenu}
+              className={navLinkClasses}
+            >
+              Contact
+            </NavLink>
+          </li>
+          <li>
             <a
               href="https://www.aau.ac.ae/en"
               target="_blank"
@@ -120,15 +129,6 @@ export default function Navbar() {
             >
               AAU
             </a>
-          </li>
-          <li>
-            <NavLink
-              to="/contact"
-              onClick={toggleMenu}
-              className={navLinkClasses}
-            >
-              Contact
-            </NavLink>
           </li>
 
           {user ? (

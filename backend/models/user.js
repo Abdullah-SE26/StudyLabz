@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema(
   {
@@ -17,36 +18,57 @@ const userSchema = new mongoose.Schema(
     studentId: {
       type: String,
       unique: true,
-      sparse: true, // allows null for instructors or users without numeric ID
-      match: /^[0-9]{9}$/, // only numeric IDs
+      sparse: true,
+      match: /^[0-9]{9}$/,
     },
     name: {
-      type: String, // for instructors or students with names
+      type: String,
     },
-    magicToken: String, // hashed token
+    magicToken: String,
     magicTokenExpiry: Date,
+    lastMagicLinkSent: Date, // ⬅️ added for rate-limiting
+
+    avatar: { type: String, default: "" },
+    bio: { type: String, maxlength: 160 },
+    bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Question" }],
   },
   { timestamps: true }
 );
 
+// Pre-save hook: extract studentId or instructor name
 userSchema.pre("save", function (next) {
-  // Extract studentId for students
-  const studentMatch = this.email.match(/^([0-9]{9})@aau\.ac\.ae$/);
-  if (studentMatch) {
-    this.studentId = studentMatch[1];
-  }
+  if (this.email) {
+    // Students: numeric emails
+    const studentMatch = this.email.match(/^([0-9]{9})@aau\.ac\.ae$/);
+    if (studentMatch) {
+      this.studentId = studentMatch[1];
+    }
 
-  // Extract name for instructors
-  const instructorMatch = this.email.match(/^([a-z]+)\.([a-z]+)@aau\.ac\.ae$/i);
-  if (instructorMatch) {
-    const firstName = instructorMatch[1];
-    const lastName = instructorMatch[2];
-    this.name = `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${
-      lastName.charAt(0).toUpperCase() + lastName.slice(1)
-    }`;
+    // Instructors: firstname.lastname@aau.ac.ae
+    const instructorMatch = this.email.match(
+      /^([a-z]+)\.([a-z]+)@aau\.ac\.ae$/i
+    );
+    if (instructorMatch) {
+      const [, firstName, lastName] = instructorMatch;
+      this.name = `${firstName.charAt(0).toUpperCase() + firstName.slice(1)} ${
+        lastName.charAt(0).toUpperCase() + lastName.slice(1)
+      }`;
+    }
   }
-
   next();
 });
+
+// Magic link helpers
+userSchema.methods.setMagicToken = async function (token, expiryMinutes = 15) {
+  const salt = await bcrypt.genSalt(10);
+  this.magicToken = await bcrypt.hash(token, salt);
+  this.magicTokenExpiry = Date.now() + expiryMinutes * 60 * 1000;
+  this.lastMagicLinkSent = Date.now(); // ⬅️ update timestamp when sending a magic link
+};
+
+userSchema.methods.verifyMagicToken = async function (token) {
+  if (!this.magicTokenExpiry || this.magicTokenExpiry < Date.now()) return false;
+  return bcrypt.compare(token, this.magicToken);
+};
 
 export default mongoose.model("User", userSchema);
