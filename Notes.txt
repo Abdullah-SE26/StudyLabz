@@ -6,4 +6,4 @@ spinner for magic link sending (login form) "" "" ""
 Contact Form with Info Sidebar - for constact page "" "" ""
 
 BACKEND:
-need to implement into app, routes and controllers any requests (get,put,post,delete)
+fix the image url in authController.js after deploying to vercel
