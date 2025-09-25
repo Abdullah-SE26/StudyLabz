@@ -1,9 +1,9 @@
 // server.js
 import dotenv from "dotenv";
+dotenv.config(); // ✅ load env first
+
 import mongoose from "mongoose";
 import app from "./app.js";
-
-dotenv.config();
 
 // Config
 const PORT = process.env.PORT || 5000;

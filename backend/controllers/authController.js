@@ -19,7 +19,7 @@ const sendEmail = async (to, magicLink) => {
       </div>
       <h2 style="text-align: center; color: #333;">Hello!</h2>
       <p style="font-size: 16px; color: #555; line-height: 1.5;">
-        You requested a magic login link for <strong>StudyLabz</strong>. Click the button below to sign in. 
+        You requested a login link for <strong>StudyLabz</strong>. Click the button below to sign in. 
         This link will expire in 15 minutes.
       </p>
       <div style="text-align: center; margin: 30px 0;">
@@ -43,14 +43,13 @@ const sendEmail = async (to, magicLink) => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
-    subject: "Your Magic Login Link for StudyLabz",
+    subject: "Your Login Link for StudyLabz",
     html: emailHTML,
   });
 };
 
-// -----------------------------
+
 // Send Magic Link (with rate limit)
-// -----------------------------
 export const sendMagicLink = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
@@ -62,24 +61,24 @@ export const sendMagicLink = async (req, res) => {
       await user.save();
     }
 
-    // -------------------------
     // Rate limiting: 2 minutes
-    // -------------------------
     const now = Date.now();
-    const cooldown = 2 * 60 * 1000; // 2 minutes
+    const cooldown = 2 * 60 * 1000;
     if (user.lastMagicLinkSent && now - user.lastMagicLinkSent < cooldown) {
       const wait = Math.ceil((cooldown - (now - user.lastMagicLinkSent)) / 1000);
-      return res.status(429).json({ error: `Please wait ${wait}s before requesting a new magic link.` });
+      return res.status(429).json({
+        error: `Please wait ${wait}s before requesting a new magic link.`,
+      });
     }
 
-    // Generate random token
-    const token = Math.random().toString(36).slice(2, 12); // 10-char
+    // Generate token
+    const token = Math.random().toString(36).slice(2, 12);
     user.magicToken = await bcrypt.hash(token, 10);
     user.magicTokenExpiry = now + 15 * 60 * 1000; // 15 mins
-    user.lastMagicLinkSent = now; // update last request
+    user.lastMagicLinkSent = now;
     await user.save();
 
-    const magicLink = `${process.env.FRONTEND_URL}/magic-verify?token=${token}&email=${email}`;
+    const magicLink = `${process.env.BACKEND_URL}/api/auth/verify-magic-link?token=${token}&email=${email}`;
 
     await sendEmail(email, magicLink);
 
@@ -90,31 +89,46 @@ export const sendMagicLink = async (req, res) => {
   }
 };
 
-// -----------------------------
-// Verify Magic Link (no change)
-// -----------------------------
+
+// GET Verify Magic Link → Redirect
+export const handleMagicLink = async (req, res) => {
+  const { token, email } = req.query;
+  if (!token || !email) {
+    return res.status(400).send("Invalid request");
+  }
+
+  // Always redirect to frontend for final verification
+  const redirectUrl = `${process.env.FRONTEND_URL}/magic-verify?token=${token}&email=${email}`;
+  res.redirect(redirectUrl);
+};
+
+
+// POST Verify Magic Link → Issue JWT
 export const verifyMagicLink = async (req, res) => {
   const { token, email } = req.body;
-  if (!token || !email) return res.status(400).json({ error: "Missing token or email" });
+
+  if (!token || !email) {
+    return res.status(400).json({ error: "Missing token or email" });
+  }
 
   try {
     const user = await User.findOne({ email });
-    if (!user || !user.magicToken || !user.magicTokenExpiry) {
+    if (!user) {
       return res.status(401).json({ error: "Invalid or expired link" });
     }
 
-    if (Date.now() > user.magicTokenExpiry) {
-      return res.status(401).json({ error: "Link expired" });
+    // Use model helper to check token & expiry
+    const isValid = await user.verifyMagicToken(token);
+    if (!isValid) {
+      return res.status(401).json({ error: "Invalid or expired link" });
     }
 
-    const isValid = await bcrypt.compare(token, user.magicToken);
-    if (!isValid) return res.status(401).json({ error: "Invalid link" });
-
-    // Clear token
+    // Clear token and expiry after successful verification
     user.magicToken = undefined;
     user.magicTokenExpiry = undefined;
     await user.save();
 
+    // Generate JWT
     const authToken = jwt.sign(
       {
         id: user._id,
