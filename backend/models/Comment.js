@@ -11,7 +11,10 @@ const commentSchema = new mongoose.Schema(
     likesCount: { type: Number, default: 0 },
     likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
-    repliesCount: { type: Number, default: 0 }, 
+    repliesCount: { type: Number, default: 0 },
+
+    // ✅ Track which users reported the comment (admin visibility)
+    reportedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
