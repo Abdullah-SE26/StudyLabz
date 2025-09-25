@@ -15,7 +15,7 @@ const sendEmail = async (to, magicLink) => {
   const emailHTML = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <img src="LOGO_URL_HERE" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
+        <img src="/frontend/public/scientist_owl_512.png" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
       </div>
       <h2 style="text-align: center; color: #333;">Hello!</h2>
       <p style="font-size: 16px; color: #555; line-height: 1.5;">

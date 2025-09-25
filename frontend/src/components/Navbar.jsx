@@ -27,14 +27,14 @@ export default function Navbar() {
     ].join(" ");
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 py-4 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 bg-white shadow-sm mt-5">
+      <div className="px-6 sm:px-8 py-4 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img
-            src="/logo_placeholder.jpg"
+            src="/studylabz-logo.png"
             alt="logo"
-            className="hidden sm:block w-16"
+            className="hidden sm:block w-40"
           />
           <img
             src="/logo_placeholder.jpg"
@@ -61,14 +61,9 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
-            <a
-              href="https://www.aau.ac.ae/en"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold px-4 py-2 rounded-md text-gray-700 hover:text-blue-500 hover:bg-blue-50 transition-all duration-200"
-            >
-              AAU
-            </a>
+            <NavLink to="/about" className={navLinkClasses}>
+              About
+            </NavLink>
           </li>
         </ul>
 
@@ -121,14 +116,13 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
-            <a
-              href="https://www.aau.ac.ae/en"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2 rounded-md hover:text-blue-500 hover:bg-blue-50 transition-all duration-200 block"
+            <NavLink
+              to="/about"
+              onClick={toggleMenu}
+              className={navLinkClasses}
             >
-              AAU
-            </a>
+              About
+            </NavLink>
           </li>
 
           {user ? (

@@ -1,4 +1,6 @@
 import React from "react";
+import HeroSection from "../components/hero-section";
+import Accordion from "../components/accordion";
  
 
 const Home = () => {
@@ -6,7 +8,8 @@ const Home = () => {
     <>
       
       <div className="p-6">
-        Welcome to Studylabz
+        <HeroSection/>
+        <Accordion/>
       </div>
     </>
   );

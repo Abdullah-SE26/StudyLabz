@@ -1,11 +1,13 @@
 import Navbar from "../components/Navbar";
+import Footer from "./footer";
 
 export default function PageWrapper({ children }) {
   return (
-    <div className="min-h-screen px-6 py-6 bg-base-100 text-base-content">
-      <div className="w-full max-w-full sm:max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto">
+    <div className="min-h-screen bg-white text-purple-950 flex flex-col">
+      <div className="w-full max-w-7xl mx-auto px-6 sm:px-8">
         <Navbar />
         {children}
+        {/* <Footer/> */}
       </div>
     </div>
   );
