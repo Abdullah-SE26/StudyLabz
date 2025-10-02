@@ -5,6 +5,7 @@ import Login from "./pages/AuthPages/Login";
 import VerifyRequest from "./pages/AuthPages/VerifyRequest";
 import Home from "./pages/Home";
 import PageWrapper from "./components/page-wrapper";
+import Contact from "./pages/Contact";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/magic-verify" element={<MagicLinkVerify />} />
             <Route path="/verify-email" element={<VerifyRequest />} />
+            <Route path="/Contact" element={<Contact/>} />
           </Routes>
         </PageWrapper>
       </Router>

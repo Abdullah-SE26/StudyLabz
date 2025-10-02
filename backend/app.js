@@ -1,8 +1,9 @@
 import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
-import questionRoutes from "./routes/questions.js"; // <-- add this
-import commentRoutes from "./routes/comments.js";   // <-- add this if you have comments
+import questionRoutes from "./routes/questions.js";
+import commentRoutes from "./routes/comments.js"; 
+import contactRoutes from "./routes/contactRoutes.js";  
 
 const app = express();
 
@@ -22,7 +23,9 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/questions", questionRoutes); // <-- add this
-app.use("/api/comments", commentRoutes);   // <-- optional for comments
+app.use("/api/questions", questionRoutes); 
+app.use("/api/comments", commentRoutes);  
+app.use("/api/contact", contactRoutes);
+
 
 export default app;

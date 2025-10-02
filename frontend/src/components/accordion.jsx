@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Upload, BookOpen, Heart, MessageCircle } from "lucide-react";
+import { Upload, BookOpen, Heart, MessageCircle, ShieldQuestionMark } from "lucide-react";
 
 const accordionData = [
   {
@@ -40,7 +40,7 @@ export default function Accordion() {
   };
 
   return (
-    <div className="p-4 bg-white">
+    <div className="p-4 bg-white"><h1 className="font-bold text-4xl px-5 mb-7 flex justify-center">FAQs&nbsp;<ShieldQuestionMark size={50} color="#1babf3" /></h1>
       <div className="space-y-4 max-w-7xl mx-auto mt-4 px-6 sm:px-8">
         {accordionData.map((item, index) => {
           const isOpen = openIndex === index;
