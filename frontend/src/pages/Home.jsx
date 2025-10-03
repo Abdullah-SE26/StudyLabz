@@ -1,15 +1,16 @@
-import React from "react";
 import HeroSection from "../components/hero-section";
-import Accordion from "../components/accordion";
+import Footer from "../components/footer";
+import FeaturesSection from "../components/features-section";
  
 
 const Home = () => {
   return (
     <>
       
-      <div className="p-4">
+      <div className="py-0.5">
         <HeroSection/>
-        <Accordion/>
+        <FeaturesSection/>
+        <Footer/>
       </div>
     </>
   );

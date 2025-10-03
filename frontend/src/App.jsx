@@ -6,6 +6,7 @@ import VerifyRequest from "./pages/AuthPages/VerifyRequest";
 import Home from "./pages/Home";
 import PageWrapper from "./components/page-wrapper";
 import Contact from "./pages/Contact";
+import AboutPage from "./pages/About";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/magic-verify" element={<MagicLinkVerify />} />
             <Route path="/verify-email" element={<VerifyRequest />} />
             <Route path="/Contact" element={<Contact/>} />
+            <Route path="/About" element={<AboutPage/>} />
           </Routes>
         </PageWrapper>
       </Router>

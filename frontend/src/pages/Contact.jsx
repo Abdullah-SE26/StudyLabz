@@ -47,7 +47,7 @@ export default function Contact() {
         toast.dismiss();
         toast.error("Failed to send message.");
       }
-    } catch (err) {
+    } catch {
       toast.dismiss();
       toast.error("Error sending message.");
     }

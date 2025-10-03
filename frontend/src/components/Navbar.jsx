@@ -56,13 +56,13 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
-            <NavLink to="/Contact" className={navLinkClasses}>
-              Contact
+            <NavLink to="/about" className={navLinkClasses}>
+              About
             </NavLink>
           </li>
           <li>
-            <NavLink to="/about" className={navLinkClasses}>
-              About
+            <NavLink to="/Contact" className={navLinkClasses}>
+              Contact
             </NavLink>
           </li>
         </ul>
@@ -108,20 +108,20 @@ export default function Navbar() {
           </li>
           <li>
             <NavLink
-              to="/Contact"
-              onClick={toggleMenu}
-              className={navLinkClasses}
-            >
-              Contact
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
               to="/about"
               onClick={toggleMenu}
               className={navLinkClasses}
             >
               About
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/Contact"
+              onClick={toggleMenu}
+              className={navLinkClasses}
+            >
+              Contact
             </NavLink>
           </li>
 

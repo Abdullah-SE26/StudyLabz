@@ -16,13 +16,13 @@ export default function HeroSection() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
             <Link
-              to="/get-started"
+              to="/Dashboard"
               className="px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
             >
               Get Started
             </Link>
             <Link
-              to="/learn-more"
+              to="/About"
               className="px-6 py-3 border border-blue-500 text-blue-500 rounded-lg font-semibold hover:bg-blue-50 transition"
             >
               Learn More
