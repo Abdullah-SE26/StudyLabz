@@ -23,10 +23,10 @@ export default function Footer() {
       <div className="absolute inset-0 bg-black/50"></div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-6 py-16 flex flex-col items-center text-center">
+      <div className="relative z-10 container mx-auto px-6 py-8 flex flex-col items-center text-center">
         {/* Heading */}
         <h2 className="text-3xl md:text-4xl font-bold mb-8">
-          You can help shape the future
+          𝚈𝙾𝚄 𝙲𝙰𝙽 𝙷𝙴𝙻𝙿 𝚂𝙷𝙰𝙿𝙴 𝚃𝙷𝙴 𝙵𝚄𝚃𝚄𝚁𝙴
         </h2>
 
         {/* Navigation Links */}
@@ -39,9 +39,6 @@ export default function Footer() {
           </a>
           <a href="/faqs" className="hover:text-orange-300 transition">
             FAQs
-          </a>
-          <a href="/Contact" className="hover:text-orange-300 transition">
-            Contact
           </a>
         </div>
 

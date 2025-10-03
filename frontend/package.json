@@ -12,11 +12,16 @@
   "dependencies": {
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/vite": "^4.1.13",
+    "@tippyjs/react": "^4.2.6",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
+    "motion": "^12.23.22",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.1",
+    "tailwind-merge": "^3.3.1",
+    "tippy.js": "^6.3.7",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

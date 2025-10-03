@@ -7,7 +7,7 @@ export default function PageWrapper({ children }) {
       <div className="w-full max-w-7xl mx-auto px-6 sm:px-8">
         <Navbar />
         {children}
-        {/* <Footer/> */}
+        <Footer/>
       </div>
     </div>
   );
