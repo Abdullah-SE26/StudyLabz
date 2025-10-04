@@ -25,7 +25,7 @@ export default function Footer() {
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 py-8 flex flex-col items-center text-center">
         {/* Heading */}
-        <h2 className="text-3xl md:text-4xl font-bold mb-8">
+        <h2 className="text-2xl md:text-4xl font-bold mb-8">
           𝚈𝙾𝚄 𝙲𝙰𝙽 𝙷𝙴𝙻𝙿 𝚂𝙷𝙰𝙿𝙴 𝚃𝙷𝙴 𝙵𝚄𝚃𝚄𝚁𝙴
         </h2>
 

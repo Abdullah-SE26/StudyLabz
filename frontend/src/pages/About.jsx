@@ -67,7 +67,7 @@ const teamMembers = [
   {
     id: 3,
     name: "SAIF ALKAABI",
-    image: "image3.jpg",
+    image: "Saif.jpg",
     email: "202211659@aau.ac.ae",
     github: "https://github.com/saifAlkaabi1",
   },
@@ -98,18 +98,24 @@ export default function AboutPage() {
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8">Key Features</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">Key Features</h2>
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {featuresData.map((feature, index) => (
             <div
               key={index}
-              className="group flex flex-col items-center text-center p-6 rounded-xl cursor-pointer transition-transform transform hover:-translate-y-2 hover:shadow-lg hover:bg-blue-50"
+              className="group flex flex-col items-center text-center p-8 rounded-2xl cursor-pointer
+        bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-2 
+        hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100"
             >
-              {feature.icon}
-              <h3 className="text-xl font-semibold text-blue-500 mb-2">
+              <div className="p-4 rounded-xl  text-white shadow-md mb-4 group-hover:scale-110 transition-transform">
+                {feature.icon}
+              </div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
                 {feature.title}
               </h3>
-              <p className="text-slate-600 text-sm">{feature.description}</p>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
@@ -117,55 +123,57 @@ export default function AboutPage() {
 
       {/* Team Section */}
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8">Meet the Team</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">Meet the Team</h2>
 
-        <div className="flex flex-wrap justify-center gap-8 mb-5">
+        <div className="flex flex-wrap justify-center gap-10">
           {teamMembers.map((member) => (
             <div
               key={member.id}
-              className="flex flex-col items-center bg-blue-50 p-15 w-40 sm:w-48 md:w-52 lg:w-56 rounded-xl cursor-pointer hover:shadow-lg transition"
+              className="flex flex-col items-center p-6 w-44 sm:w-52 rounded-2xl bg-white/70 backdrop-blur-sm 
+        shadow-md hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer"
             >
               {/* Tooltip wraps image */}
               <AnimatedTooltip
-                items={[{ id: member.id, name: member.name, image: member.image }]}
+                items={[
+                  { id: member.id, name: member.name, image: member.image },
+                ]}
               >
                 <img
                   src={member.image}
                   alt={member.name}
-                  className="w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full mb-2 object-contain mx-auto transition-transform transform hover:scale-105"
+                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full mb-3 object-cover border-4 border-white shadow-md transition-transform hover:scale-105"
                 />
               </AnimatedTooltip>
 
-              <div className="flex mt-2 space-x-4">
+              <div className="flex mt-3 space-x-5">
                 <Tippy
                   content="Send Email"
                   placement="bottom"
-                  arrow={true}
+                  arrow
                   animation="scale-extreme"
                 >
                   <a
                     href={`https://mail.google.com/mail/?view=cm&to=${member.email}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-slate-700 hover:text-blue-500 transition"
+                    className="text-slate-600 hover:text-blue-600 transition"
                   >
-                    <IconMail size={25} />
+                    <IconMail size={22} />
                   </a>
                 </Tippy>
-
                 <Tippy
                   content="GitHub Profile"
                   placement="bottom"
-                  arrow={true}
+                  arrow
                   animation="scale-extreme"
                 >
                   <a
                     href={member.github}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-slate-700 hover:text-blue-500 transition"
+                    className="text-slate-600 hover:text-blue-600 transition"
                   >
-                    <IconBrandGithub size={25} />
+                    <IconBrandGithub size={22} />
                   </a>
                 </Tippy>
               </div>

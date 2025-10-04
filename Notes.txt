@@ -1,9 +1,39 @@
 TODOs:
 FRONTEND:
-email card - card for newsletter subscription from readymade ui 
 course display cards - Card Layout for Product "" "" ""
-spinner for magic link sending (login form) "" "" ""
-Contact Form with Info Sidebar - for constact page "" "" ""
+Stagger Testimonials from hover.dev for courses featured section
+
+
+
+
 
 BACKEND:
 fix the image url in authController.js after deploying to vercel
+
+
+
+
+
+
+
+
+Tippy:
+import Tippy from "@tippyjs/react";
+import "tippy.js/dist/tippy.css";
+import "tippy.js/animations/scale-extreme.css";
+
+ <Tippy
+content="GitHub Profile"
+placement="bottom"
+arrow={true}
+animation="scale-extrem
+ >
+<a
+href={member.github}
+target="_blank"
+rel="noopener noreferrer"
+className="text-slate-700 hover:text-blue-500 transition"
+>
+<IconBrandGithub size={25} />
+ </a>
+ </Tippy>
