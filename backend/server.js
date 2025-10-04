@@ -1,23 +1,23 @@
 // server.js
 import dotenv from "dotenv";
-dotenv.config(); // ✅ load env first
+dotenv.config();
 
-import mongoose from "mongoose";
 import app from "./app.js";
+import prisma from "./prismaClient.js"; 
 
-// Config
 const PORT = process.env.PORT || 5000;
-const DB = process.env.MONGODB_URI;
 
-// DB + Server
-mongoose
-  .connect(DB)
-  .then(() => {
-    console.log("✅ Connected to database 🔒");
+async function startServer() {
+  try {
+    await prisma.$connect();
+    console.log("✅ Connected to Postgres database 🔒");
+
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
     });
-  })
-  .catch((error) => {
+  } catch (error) {
     console.error("❌ DB connection error:", error);
-  });
+  }
+}
+
+startServer();

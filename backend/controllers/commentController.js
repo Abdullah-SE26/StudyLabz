@@ -1,143 +1,75 @@
-// controllers/commentController.js
-import Comment from "../models/Comment.js";
-import Question from "../models/Question.js";
-import mongoose from "mongoose";
+import {
+  createCommentService,
+  getCommentsByQuestionService,
+  toggleLikeCommentService,
+  reportCommentService,
+  deleteCommentService,
+} from "../services/commentService.js";
 
-// -----------------------------
-// Create a comment or reply
-// -----------------------------
-export const createComment = async (req, res) => {
-  const { questionId, parentCommentId = null, text } = req.body;
-  const userId = req.user.id; // assuming auth middleware sets req.user
-
-  if (!questionId || !text) {
-    return res.status(400).json({ error: "Question and text are required" });
-  }
-
+// Create comment/reply
+export const createComment = async (req, res, next) => {
   try {
-    const question = await Question.findById(questionId);
-    if (!question) return res.status(404).json({ error: "Question not found" });
+    const { questionId, parentCommentId = null, text } = req.body;
+    const userId = req.user.id;
 
-    const comment = new Comment({
-      question: questionId,
-      user: userId,
-      text,
-      parentComment: parentCommentId,
-    });
-
-    await comment.save();
-
-    // Update replies count if it's a reply
-    if (parentCommentId) {
-      await Comment.findByIdAndUpdate(parentCommentId, { $inc: { repliesCount: 1 } });
+    if (!questionId || !text) {
+      return res.status(400).json({ error: "Question and text are required" });
     }
 
+    const comment = await createCommentService(userId, questionId, text, parentCommentId);
     res.status(201).json(comment);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
-// -----------------------------
-// Get all comments for a question
-// -----------------------------
-export const getCommentsByQuestion = async (req, res) => {
-  const { questionId } = req.params;
-
-  if (!mongoose.Types.ObjectId.isValid(questionId))
-    return res.status(400).json({ error: "Invalid question ID" });
-
+// Get comments for a question
+export const getCommentsByQuestion = async (req, res, next) => {
   try {
-    const comments = await Comment.find({ question: questionId })
-      .sort({ createdAt: -1 })
-      .populate("user", "name studentId avatar") // user info
-      .lean();
-
+    const { questionId } = req.params;
+    const comments = await getCommentsByQuestionService(questionId);
     res.json(comments);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
-// -----------------------------
-// Toggle like on a comment
-// -----------------------------
-export const toggleLikeComment = async (req, res) => {
-  const { commentId } = req.params;
-  const userId = req.user.id;
-
-  if (!mongoose.Types.ObjectId.isValid(commentId))
-    return res.status(400).json({ error: "Invalid comment ID" });
-
+// Toggle like on comment
+export const toggleLikeComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    const { commentId } = req.params;
+    const userId = req.user.id;
 
-    const updatedComment = await comment.toggleLike(userId);
-    res.json({ likesCount: updatedComment.likesCount });
+    const result = await toggleLikeCommentService(userId, commentId);
+    res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
-// -----------------------------
-// Report a comment
-// -----------------------------
-export const reportComment = async (req, res) => {
-  const { commentId } = req.params;
-  const userId = req.user.id;
-
-  if (!mongoose.Types.ObjectId.isValid(commentId))
-    return res.status(400).json({ error: "Invalid comment ID" });
-
+// Report comment
+export const reportComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    const { commentId } = req.params;
+    const userId = req.user.id;
 
-    if (!comment.reportedBy.includes(userId)) {
-      comment.reportedBy.push(userId);
-      await comment.save();
-    }
-
-    res.json({ message: "Comment reported successfully" });
+    const result = await reportCommentService(userId, commentId);
+    res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };
 
-// -----------------------------
-// Delete a comment
-// -----------------------------
-export const deleteComment = async (req, res) => {
-  const { commentId } = req.params;
-  const userId = req.user.id;
-
-  if (!mongoose.Types.ObjectId.isValid(commentId))
-    return res.status(400).json({ error: "Invalid comment ID" });
-
+// Delete comment
+export const deleteComment = async (req, res, next) => {
   try {
-    const comment = await Comment.findById(commentId);
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    const { commentId } = req.params;
+    const userId = req.user.id;
+    const role = req.user.role;
 
-    // Only allow owner or admin to delete
-    if (comment.user.toString() !== userId && req.user.role !== "admin") {
-      return res.status(403).json({ error: "Unauthorized" });
-    }
-
-    // If it's a reply, decrement parent repliesCount
-    if (comment.parentComment) {
-      await Comment.findByIdAndUpdate(comment.parentComment, { $inc: { repliesCount: -1 } });
-    }
-
-    await comment.deleteOne();
-
-    res.json({ message: "Comment deleted" });
+    const result = await deleteCommentService(userId, role, commentId);
+    res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    next(err);
   }
 };

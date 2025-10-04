@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int        @id @default(autoincrement())
+  email              String     @unique
+  role               String     @default("user")
+  studentId          String?    @unique
+  name               String?
+  magicToken         String?
+  magicTokenExpiry   DateTime?
+  lastMagicLinkSent  DateTime?
+  avatar             String?    @default("")
+  bio                String?    @db.VarChar(160)
+
+  // Relations
+  bookmarks          Question[] @relation("UserBookmarks")
+  createdQuestions   Question[] @relation("CreatedBy")
+  likedQuestions     Question[] @relation("QuestionLikes")
+  reportedQuestions  Question[] @relation("QuestionReports")
+
+  comments           Comment[]           // user’s own comments
+  likedComments      Comment[] @relation("CommentLikes")
+  reportedComments   Comment[] @relation("CommentReports")
+
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model Question {
+  id          Int       @id @default(autoincrement())
+  course      String
+  type        String
+  text        String
+  options     Json      // store MCQ options as JSON array
+
+  // Relations
+  createdBy   User      @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById Int
+
+  likedBy     User[]    @relation("QuestionLikes")
+  reportedBy  User[]    @relation("QuestionReports")
+  bookmarkedBy User[]   @relation("UserBookmarks")
+
+  comments    Comment[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Comment {
+  id             Int       @id @default(autoincrement())
+  text           String
+
+  // Relations
+  question       Question  @relation(fields: [questionId], references: [id])
+  questionId     Int
+
+  user           User      @relation(fields: [userId], references: [id])
+  userId         Int
+
+  parentComment  Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  parentCommentId Int?
+
+  replies        Comment[] @relation("CommentReplies")
+
+  likedBy        User[]    @relation("CommentLikes")
+  reportedBy     User[]    @relation("CommentReports")
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}

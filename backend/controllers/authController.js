@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import prisma from "../prismaClient.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
@@ -48,90 +48,100 @@ const sendEmail = async (to, magicLink) => {
   });
 };
 
-
-// Send Magic Link (with rate limit)
+// -----------------------------
+// Send Magic Link
+// -----------------------------
 export const sendMagicLink = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
 
   try {
-    let user = await User.findOne({ email });
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    // Create new user if it doesn't exist
     if (!user) {
-      user = new User({ email });
-      await user.save();
+      const studentId = email.includes("@") ? email.split("@")[0] : null;
+      user = await prisma.user.create({
+        data: { email, role: "user", studentId },
+      });
+      console.log("Created new user:", user);
     }
 
     // Rate limiting: 2 minutes
-    const now = Date.now();
+    const now = new Date();
     const cooldown = 2 * 60 * 1000;
-    if (user.lastMagicLinkSent && now - user.lastMagicLinkSent < cooldown) {
-      const wait = Math.ceil((cooldown - (now - user.lastMagicLinkSent)) / 1000);
-      return res.status(429).json({
-        error: `Please wait ${wait}s before requesting a new magic link.`,
-      });
+    if (user.lastMagicLinkSent && now - new Date(user.lastMagicLinkSent) < cooldown) {
+      const wait = Math.ceil((cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000);
+      return res.status(429).json({ error: `Please wait ${wait}s before requesting a new magic link.` });
     }
 
     // Generate token
     const token = Math.random().toString(36).slice(2, 12);
-    user.magicToken = await bcrypt.hash(token, 10);
-    user.magicTokenExpiry = now + 15 * 60 * 1000; // 15 mins
-    user.lastMagicLinkSent = now;
-    await user.save();
+    const hashedToken = await bcrypt.hash(token, 10);
+
+    // Update user with token
+    await prisma.user.update({
+      where: { email: user.email },
+      data: {
+        magicToken: hashedToken,
+        magicTokenExpiry: new Date(now.getTime() + 15 * 60 * 1000),
+        lastMagicLinkSent: now,
+      },
+    });
+
+    // Verify update
+    const updatedUser = await prisma.user.findUnique({ where: { email: user.email } });
+    console.log("Updated user with token:", updatedUser);
 
     const magicLink = `${process.env.BACKEND_URL}/api/auth/verify-magic-link?token=${token}&email=${email}`;
-
     await sendEmail(email, magicLink);
 
-    res.json({ message: "Magic link sent!" });
+    return res.json({ message: "Magic link sent!" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    console.error("sendMagicLink error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
 
-
-// GET Verify Magic Link → Redirect
+// -----------------------------
+// Handle Magic Link Redirect
+// -----------------------------
 export const handleMagicLink = async (req, res) => {
   const { token, email } = req.query;
-  if (!token || !email) {
-    return res.status(400).send("Invalid request");
-  }
+  if (!token || !email) return res.status(400).send("Invalid request");
 
-  // Always redirect to frontend for final verification
   const redirectUrl = `${process.env.FRONTEND_URL}/magic-verify?token=${token}&email=${email}`;
   res.redirect(redirectUrl);
 };
 
-
-// POST Verify Magic Link → Issue JWT
+// -----------------------------
+// Verify Magic Link and Issue JWT
+// -----------------------------
 export const verifyMagicLink = async (req, res) => {
   const { token, email } = req.body;
-
-  if (!token || !email) {
-    return res.status(400).json({ error: "Missing token or email" });
-  }
+  if (!token || !email) return res.status(400).json({ error: "Missing token or email" });
 
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !user.magicToken || !user.magicTokenExpiry) {
       return res.status(401).json({ error: "Invalid or expired link" });
     }
 
-    // Use model helper to check token & expiry
-    const isValid = await user.verifyMagicToken(token);
-    if (!isValid) {
-      return res.status(401).json({ error: "Invalid or expired link" });
-    }
+    const expiry = new Date(user.magicTokenExpiry);
+    if (expiry < new Date()) return res.status(401).json({ error: "Link expired" });
 
-    // Clear token and expiry after successful verification
-    user.magicToken = undefined;
-    user.magicTokenExpiry = undefined;
-    await user.save();
+    const isValid = await bcrypt.compare(token, user.magicToken);
+    if (!isValid) return res.status(401).json({ error: "Invalid or expired link" });
 
-    // Generate JWT
+    // Clear token after successful verification
+    await prisma.user.update({
+      where: { email },
+      data: { magicToken: null, magicTokenExpiry: null },
+    });
+
     const authToken = jwt.sign(
       {
-        id: user._id,
+        id: user.id,
         email: user.email,
         studentId: user.studentId || null,
         name: user.name || null,
@@ -141,9 +151,9 @@ export const verifyMagicLink = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ authToken });
+    return res.json({ authToken });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
+    console.error("verifyMagicLink error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
