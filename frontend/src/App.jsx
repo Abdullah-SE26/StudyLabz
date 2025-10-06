@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import PageWrapper from "./components/page-wrapper";
 import Contact from "./pages/Contact";
 import AboutPage from "./pages/About";
+import Courses from "./pages/Courses";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/verify-email" element={<VerifyRequest />} />
             <Route path="/Contact" element={<Contact/>} />
             <Route path="/About" element={<AboutPage/>} />
+            <Route path="/Courses" element={<Courses/>} />
           </Routes>
         </PageWrapper>
       </Router>

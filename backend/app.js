@@ -4,7 +4,7 @@ import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/questions.js";
 import commentRoutes from "./routes/comments.js"; 
 import contactRoutes from "./routes/contact.js";  
-import courseRoutes from "./routes/course.js";
+import courseRoutes from "./routes/courses.js";
 
 const app = express();
 
