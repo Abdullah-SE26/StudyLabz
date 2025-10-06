@@ -1,6 +1,6 @@
 TODOs:
+
 FRONTEND:
-course display cards - Card Layout for Product "" "" ""
 Stagger Testimonials from hover.dev for courses featured section
 
 
@@ -12,7 +12,8 @@ fix the image url in authController.js after deploying to vercel
 
 
 
-
+FIX:
+search in courses doesnt work with tags!
 
 
 
