@@ -35,24 +35,25 @@ model User {
 }
 
 model Question {
-  id          Int       @id @default(autoincrement())
-  course      String
-  type        String
-  text        String
-  options     Json      // store MCQ options as JSON array
+  id           Int       @id @default(autoincrement())
+  type         String
+  text         String
+  options      Json
 
-  // Relations
-  createdBy   User      @relation("CreatedBy", fields: [createdById], references: [id])
-  createdById Int
+  course       Course     @relation(fields: [courseId], references: [id])
+  courseId     Int
 
-  likedBy     User[]    @relation("QuestionLikes")
-  reportedBy  User[]    @relation("QuestionReports")
-  bookmarkedBy User[]   @relation("UserBookmarks")
+  createdBy    User       @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById  Int
 
-  comments    Comment[]
+  likedBy      User[]     @relation("QuestionLikes")
+  reportedBy   User[]     @relation("QuestionReports")
+  bookmarkedBy User[]     @relation("UserBookmarks")
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  comments     Comment[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model Comment {
@@ -76,4 +77,18 @@ model Comment {
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+}
+
+model Course {
+  id          Int         @id @default(autoincrement())
+  name        String       @unique
+  code        String       @unique
+  description String?
+  createdBy   User         @relation(fields: [createdById], references: [id])
+  createdById Int
+
+  questions   Question[]   // all questions under this course
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

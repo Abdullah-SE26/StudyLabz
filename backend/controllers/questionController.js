@@ -1,15 +1,16 @@
-import {
-  getQuestionsService,
-  createQuestionService,
-  toggleLikeQuestionService,
-  reportQuestionService,
-  deleteQuestionService,
-} from "../services/questionService.js";
+import prisma from "../prismaClient.js";
 
 // GET /questions
 export const getQuestions = async (req, res, next) => {
   try {
-    const questions = await getQuestionsService();
+    const questions = await prisma.question.findMany({
+      include: {
+        user: { select: { id: true, name: true } },
+        likes: true,
+        reports: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
     res.json(questions);
   } catch (err) {
     next(err);
@@ -21,7 +22,18 @@ export const createQuestion = async (req, res, next) => {
   try {
     const { text } = req.body;
     const userId = req.user.id;
-    const question = await createQuestionService(userId, text);
+
+    if (!text) {
+      return res.status(400).json({ error: "Text is required" });
+    }
+
+    const question = await prisma.question.create({
+      data: {
+        text,
+        userId,
+      },
+    });
+
     res.status(201).json(question);
   } catch (err) {
     next(err);
@@ -33,8 +45,18 @@ export const toggleLikeQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const questionId = req.params.id;
-    const result = await toggleLikeQuestionService(userId, questionId);
-    res.json(result);
+
+    const existingLike = await prisma.like.findFirst({
+      where: { userId, questionId },
+    });
+
+    if (existingLike) {
+      await prisma.like.delete({ where: { id: existingLike.id } });
+      res.json({ liked: false });
+    } else {
+      await prisma.like.create({ data: { userId, questionId } });
+      res.json({ liked: true });
+    }
   } catch (err) {
     next(err);
   }
@@ -47,7 +69,18 @@ export const reportQuestion = async (req, res, next) => {
     const questionId = req.params.id;
     const { reason } = req.body;
 
-    const report = await reportQuestionService(userId, questionId, reason);
+    if (!reason) {
+      return res.status(400).json({ error: "Reason is required" });
+    }
+
+    const report = await prisma.report.create({
+      data: {
+        userId,
+        questionId,
+        reason,
+      },
+    });
+
     res.status(201).json(report);
   } catch (err) {
     next(err);
@@ -60,8 +93,21 @@ export const deleteQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = req.params.id;
 
-    const deleted = await deleteQuestionService(userId, questionId);
-    res.json(deleted);
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+    });
+
+    if (!question) {
+      return res.status(404).json({ error: "Question not found" });
+    }
+
+    if (question.userId !== userId) {
+      return res.status(403).json({ error: "Unauthorized to delete this question" });
+    }
+
+    await prisma.question.delete({ where: { id: questionId } });
+
+    res.json({ message: "Question deleted successfully" });
   } catch (err) {
     next(err);
   }

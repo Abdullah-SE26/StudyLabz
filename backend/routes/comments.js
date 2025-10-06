@@ -7,7 +7,7 @@ import {
   reportComment,
   deleteComment,
 } from "../controllers/commentController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js"; // make sure you have this
+import { authMiddleware } from "../middleware/authMiddleware.js"; 
 
 const router = express.Router();
 
