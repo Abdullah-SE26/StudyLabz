@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import CourseCard from "../components/CourseCard";
-import PageFilters from "../components/page-filters";
+import CourseCard from "../../components/CourseCard";
+import PageFilters from "../../components/page-filters";
 
-// Debounce hook
+// Simple debounce hook
 function useDebounce(callback, delay) {
   const timeoutRef = useRef(null);
   return useCallback(
@@ -31,7 +31,7 @@ const Courses = () => {
   const itemsPerPage = 12;
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch courses
+  // Fetch courses (fixed version)
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
@@ -43,27 +43,34 @@ const Courses = () => {
       params.append("page", currentPage);
       params.append("limit", itemsPerPage);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses?${params.toString()}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses?${params.toString()}`
+      );
+
       if (!res.ok) throw new Error("Failed to fetch courses");
 
       const data = await res.json();
-      const fetchedCourses = Array.isArray(data) ? data : data.courses;
-      const totalCount = Array.isArray(data) ? data.length : data.totalCount;
 
-      setCourses(fetchedCourses || []);
+      // ✅ Expect backend response shape: { courses, totalCount }
+      const fetchedCourses = data.courses || [];
+      const totalCount = data.totalCount || 0;
+
+      setCourses(fetchedCourses);
       setTotalPages(Math.ceil(totalCount / itemsPerPage));
 
-      // Collect all unique tags for filter dropdown
+      // ✅ Collect all unique tags for filter dropdown
       const tagsSet = new Set();
-      (fetchedCourses || []).forEach(course => {
+      fetchedCourses.forEach((course) => {
         if (Array.isArray(course.tags)) {
-          course.tags.forEach(tag => tagsSet.add(tag));
+          course.tags.forEach((tag) => tagsSet.add(tag));
         }
       });
       setAllTags([...tagsSet]);
 
       setHasFetched(true);
+      setError(null);
     } catch (err) {
+      console.error("Error fetching courses:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -72,23 +79,29 @@ const Courses = () => {
 
   const debouncedFetch = useDebounce(fetchCourses, 400);
 
+  // Run fetch on filter/sort/pagination change
   useEffect(() => {
     debouncedFetch();
   }, [debouncedFetch, search, sortOrder, selectedTags, currentPage]);
 
-  const handlePageChange = (page) => setCurrentPage(page);
+  const handlePageChange = (page) => {
+    if (page !== currentPage) setCurrentPage(page);
+  };
 
-  // Handler for tag click on course card
   const handleTagClickFromCard = (tag) => {
-    setSelectedTags(prev => (prev.includes(tag) ? prev : [...prev, tag]));
+    setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     setSearch(""); // optional: clear search when clicking tag
   };
 
-  if (loading && !hasFetched)
+  // 🟡 Loading state
+  if (loading && !hasFetched) {
     return <p className="text-center text-gray-500 mt-10">Loading courses...</p>;
+  }
 
-  if (error)
+  // 🔴 Error state
+  if (error) {
     return <p className="text-center text-red-500 mt-10">{error}</p>;
+  }
 
   return (
     <div className="p-6">
@@ -111,7 +124,7 @@ const Courses = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-            {courses.map(course => (
+            {courses.map((course) => (
               <CourseCard
                 key={course.id}
                 course={course}
@@ -143,7 +156,9 @@ const Courses = () => {
                 ))}
                 <button
                   className="btn"
-                  onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                  onClick={() =>
+                    handlePageChange(Math.min(currentPage + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   »

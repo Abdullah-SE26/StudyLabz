@@ -1,43 +1,64 @@
 import prisma from "../prismaClient.js";
 
 //GET /courses
+// Assumes `prisma` is available in this module (same as you used before)
 export const getCourses = async (req, res, next) => {
   try {
-    const search = req.query.search?.trim() || "";
-    const tags = req.query.tags?.trim() || "";
+    const search = (req.query.search || "").trim();
+    const tags = (req.query.tags || "").trim(); // comma-separated selected tags
     const sort = req.query.sort || "latest";
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 12;
+    const offset = (page - 1) * limit;
 
-    const where = {};
-
-    // Search by name OR tags if search exists
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { tags: { has: search } }, // check if tags array contains the search term
-      ];
-    }
-
-    // Filter by selected tags (if any)
+    // Build base filter for selected tags (exact match on array elements)
+    const baseWhere = {};
     if (tags) {
-      const tagsArray = tags.split(",").filter(Boolean);
-      if (tagsArray.length > 0) {
-        where.AND = tagsArray.map(tag => ({ tags: { has: tag } }));
+      const tagsArray = tags.split(",").map(t => t.trim()).filter(Boolean);
+      if (tagsArray.length) {
+        // require each selected tag to be present
+        baseWhere.AND = tagsArray.map(tag => ({ tags: { has: tag } }));
       }
     }
 
+    // Sorting
     let orderBy;
     if (sort === "latest") orderBy = { createdAt: "desc" };
     else if (sort === "oldest") orderBy = { createdAt: "asc" };
     else if (sort === "name_asc") orderBy = { name: "asc" };
     else if (sort === "name_desc") orderBy = { name: "desc" };
 
-    const courses = await prisma.course.findMany({
-      where,
+    // 1) Fetch candidate courses from DB (filtered by selectedTags only).
+    //    We don't try partial tag matching here (Prisma can't do that for String[]),
+    //    we do that in JS below.
+    const candidates = await prisma.course.findMany({
+      where: baseWhere,
       orderBy,
-      include: { createdBy: { select: { id: true, name: true, email: true } } },
+      include: {
+        createdBy: { select: { id: true, name: true, email: true } },
+      },
     });
 
-    res.json(courses);
+    // 2) Apply partial search matching in JS (name OR any tag contains the search string)
+    const filtered = (() => {
+      if (!search) return candidates;
+
+      const lower = search.toLowerCase();
+      return candidates.filter((course) => {
+        const nameMatch = course.name && course.name.toLowerCase().includes(lower);
+        const tagsMatch =
+          Array.isArray(course.tags) &&
+          course.tags.some((t) => t && t.toLowerCase().includes(lower));
+        return nameMatch || tagsMatch;
+      });
+    })();
+
+    // 3) Pagination applied after filtering
+    const totalCount = filtered.length;
+    const paginated = filtered.slice(offset, offset + limit);
+
+    // return consistent shape for frontend
+    res.json({ courses: paginated, totalCount });
   } catch (err) {
     next(err);
   }

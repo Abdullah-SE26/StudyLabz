@@ -7,7 +7,7 @@ import Home from "./pages/Home";
 import PageWrapper from "./components/page-wrapper";
 import Contact from "./pages/Contact";
 import AboutPage from "./pages/About";
-import Courses from "./pages/Courses";
+import Courses from "./pages/CoursePages/Courses";
 
 function App() {
   return (

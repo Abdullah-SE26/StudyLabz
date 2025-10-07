@@ -13,7 +13,43 @@ fix the image url in authController.js after deploying to vercel
 
 
 FIX:
-search in courses doesnt work with tags!
+model Exam {
+  id        Int       @id @default(autoincrement())
+  title     String    // "Quiz 1", "Quiz 2", "Additional Quiz", "Midterm", "Final"
+  type      String    // "quiz", "midterm", "final"
+  course    Course    @relation(fields: [courseId], references: [id])
+  courseId  Int
+  questions Question[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id        Int      @id @default(autoincrement())
+  type      String
+  text      String
+  options   Json
+  marks     Int      // marks for the question
+
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  Int
+
+  exam      Exam?    @relation(fields: [examId], references: [id])
+  examId    Int?     // link question to a specific exam (quiz/midterm/final)
+
+  createdBy   User @relation("CreatedBy", fields: [createdById], references: [id])
+  createdById Int
+
+  comments    Comment[]
+  likedBy     User[] @relation("QuestionLikes")
+  reportedBy  User[] @relation("QuestionReports")
+  bookmarkedBy User[] @relation("UserBookmarks")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 
 
 

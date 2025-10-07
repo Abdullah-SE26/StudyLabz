@@ -1,0 +1,1 @@
+//quizzes mid and final cards for the particular course go here
