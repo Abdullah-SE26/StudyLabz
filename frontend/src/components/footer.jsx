@@ -1,67 +1,79 @@
 import {
-  IconBrandTwitter,
-  IconBrandInstagram,
   IconBrandFacebook,
   IconBrandLinkedin,
+  IconBrandTwitter,
 } from "@tabler/icons-react";
-import {useNavigate} from 'react-router-dom'
-
+import { useNavigate } from "react-router-dom";
 
 export default function Footer() {
-
   const navigate = useNavigate();
+
   return (
-    <footer className="relative text-white overflow-hidden">
-      {/* Full Background Image */}
-      <img
-        src="/footer-image-full.png"
-        alt="Footer Background"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+    <footer className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-gray-100 py-12 mt-20 overflow-hidden">
+      {/* Subtle top wave / divider */}
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600" />
 
-      {/* Dark Overlay for readability */}
-      <div className="absolute inset-0 bg-black/50"></div>
-
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-6 py-8 flex flex-col items-center text-center">
+      <div className="container mx-auto px-6 flex flex-col items-center text-center space-y-8 relative z-10">
         {/* Heading */}
-        <h2 className="text-2xl md:text-4xl font-bold mb-8">
-          𝚈𝙾𝚄 𝙲𝙰𝙽 𝙷𝙴𝙻𝙿 𝚂𝙷𝙰𝙿𝙴 𝚃𝙷𝙴 𝙵𝚄𝚃𝚄𝚁𝙴
+        <h2 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg tracking-tight">
+          You Can Help Shape The Future
         </h2>
 
         {/* Navigation Links */}
-        <div className="flex flex-wrap justify-center gap-6 text-sm md:text-base mb-10">
-          <a href="/" className="hover:text-orange-300 transition">
-            Home
-          </a>
-          <a href="/About" className="hover:text-orange-300 transition">
-            About Us
-          </a>
-          <a href="/faqs" className="hover:text-orange-300 transition">
-            FAQs
-          </a>
-        </div>
+        <nav className="flex flex-wrap justify-center gap-6 text-sm md:text-base">
+          {[
+            { name: "Home", href: "/" },
+            { name: "About Us", href: "/About" },
+            { name: "FAQs", href: "/faqs" },
+          ].map((link) => (
+            <a
+              key={link.name}
+              href={link.href}
+              className="relative group font-medium"
+            >
+              {link.name}
+              <span className="absolute left-0 -bottom-1 w-0 h-0.5 bg-cyan-400 group-hover:w-full transition-all duration-300"></span>
+            </a>
+          ))}
+        </nav>
 
         {/* CTA Button */}
-        <button  onClick={() => navigate('/Contact')} className="bg-transparent border border-blue-100 text-white hover:bg-blue-500 hover:text-white cursor-pointer px-6 py-3 rounded-md font-semibold mb-15 transition">
-          CONTACT US
+        <button
+          onClick={() => navigate("/Contact")}
+          className="btn border-0 bg-cyan-500 hover:bg-cyan-400 cursor-pointer text-white font-semibold px-8 py-2 rounded-full shadow-lg hover:shadow-cyan-500/30 transition-all duration-300"
+        >
+          Contact Us
         </button>
 
+        {/* Divider */}
+        <div className="w-24 h-[2px] bg-gradient-to-r from-cyan-400 to-indigo-500 rounded-full"></div>
+
         {/* Social Icons */}
-        <div className="flex space-x-6 mb-6">
-          <a href="#" className="hover:text-pink-400 transition">
-            <IconBrandInstagram size={24} />
-          </a>
-          <a href="#" className="hover:text-blue-400 transition">
-            <IconBrandLinkedin size={24} />
-          </a>
+        <div className="flex space-x-6">
+          {[
+            { Icon: IconBrandLinkedin, href: "#" },
+            { Icon: IconBrandTwitter, href: "#" },
+            { Icon: IconBrandFacebook, href: "#" },
+          ].map(({ Icon, href }, i) => (
+            <a
+              key={i}
+              href={href}
+              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300 hover:scale-110"
+            >
+              <Icon size={22} className="text-cyan-300" />
+            </a>
+          ))}
         </div>
 
         {/* Footer Bottom */}
-        <p className="text-xs text-gray-300">
-          © {new Date().getFullYear()} StudyLabz — All Rights Reserved
+        <p className="text-xs text-gray-300 tracking-wide">
+          © {new Date().getFullYear()}{" "}
+          <span className="font-semibold text-cyan-400">StudyLabz</span> — All Rights Reserved
         </p>
       </div>
+
+      {/* Soft gradient glow at the bottom */}
+      <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-blue-950/60 to-transparent pointer-events-none"></div>
     </footer>
   );
 }

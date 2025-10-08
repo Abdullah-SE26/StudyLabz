@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import CourseCard from "../../components/CourseCard";
 import PageFilters from "../../components/page-filters";
+import Pagination from "../../components/pagination";
 
 // Simple debounce hook
 function useDebounce(callback, delay) {
@@ -31,14 +32,15 @@ const Courses = () => {
   const itemsPerPage = 12;
   const [totalPages, setTotalPages] = useState(1);
 
-  // Fetch courses (fixed version)
+  // Fetch courses
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
 
       const params = new URLSearchParams();
       if (search) params.append("search", search);
-      if (selectedTags.length > 0) params.append("tags", selectedTags.join(","));
+      if (selectedTags.length > 0)
+        params.append("tags", selectedTags.join(","));
       if (sortOrder) params.append("sort", sortOrder);
       params.append("page", currentPage);
       params.append("limit", itemsPerPage);
@@ -51,14 +53,14 @@ const Courses = () => {
 
       const data = await res.json();
 
-      // ✅ Expect backend response shape: { courses, totalCount }
+      // ✅ Expect backend response: { courses, totalCount }
       const fetchedCourses = data.courses || [];
       const totalCount = data.totalCount || 0;
 
       setCourses(fetchedCourses);
       setTotalPages(Math.ceil(totalCount / itemsPerPage));
 
-      // ✅ Collect all unique tags for filter dropdown
+      // ✅ Collect all unique tags
       const tagsSet = new Set();
       fetchedCourses.forEach((course) => {
         if (Array.isArray(course.tags)) {
@@ -79,33 +81,40 @@ const Courses = () => {
 
   const debouncedFetch = useDebounce(fetchCourses, 400);
 
-  // Run fetch on filter/sort/pagination change
   useEffect(() => {
     debouncedFetch();
   }, [debouncedFetch, search, sortOrder, selectedTags, currentPage]);
 
   const handlePageChange = (page) => {
-    if (page !== currentPage) setCurrentPage(page);
+    if (page !== currentPage) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleTagClickFromCard = (tag) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
-    setSearch(""); // optional: clear search when clicking tag
+    setSearch("");
   };
+// 🟡 Loading state
+if (loading && !hasFetched) {
+  return (
+    <div className="flex flex-col items-center justify-center mt-10 gap-4">
+      <span className="loading loading-bars loading-xl text-info"></span>
+    </div>
+  );
+}
 
-  // 🟡 Loading state
-  if (loading && !hasFetched) {
-    return <p className="text-center text-gray-500 mt-10">Loading courses...</p>;
-  }
 
   // 🔴 Error state
-  if (error) {
+  if (error)
     return <p className="text-center text-red-500 mt-10">{error}</p>;
-  }
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Available Courses</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        Available Courses
+      </h1>
 
       {/* Filters */}
       <PageFilters
@@ -135,37 +144,11 @@ const Courses = () => {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-8">
-              <div className="btn-group">
-                <button
-                  className="btn"
-                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                >
-                  «
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button
-                    key={i + 1}
-                    className={`btn ${currentPage === i + 1 ? "btn-active" : ""}`}
-                    onClick={() => handlePageChange(i + 1)}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-                <button
-                  className="btn"
-                  onClick={() =>
-                    handlePageChange(Math.min(currentPage + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  »
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            totalPages={totalPages}
+            currentPage={currentPage}
+            handlePageChange={handlePageChange}
+          />
         </>
       )}
     </div>

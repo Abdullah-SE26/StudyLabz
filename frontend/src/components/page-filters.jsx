@@ -24,14 +24,12 @@ const PageFilters = ({
   const sortRef = useRef(null);
   const tagRef = useRef(null);
 
-  // Close dropdowns when clicking outside
+  // ✅ Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
-        sortRef.current &&
-        !sortRef.current.contains(e.target) &&
-        tagRef.current &&
-        !tagRef.current.contains(e.target)
+        (sortRef.current && !sortRef.current.contains(e.target)) &&
+        (tagRef.current && !tagRef.current.contains(e.target))
       ) {
         setSortDropdownOpen(false);
         setTagDropdownOpen(false);
@@ -41,7 +39,7 @@ const PageFilters = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close dropdowns on scroll
+  // ✅ Close dropdowns on scroll
   useEffect(() => {
     const closeOnScroll = () => {
       setSortDropdownOpen(false);
@@ -51,6 +49,7 @@ const PageFilters = ({
     return () => window.removeEventListener("scroll", closeOnScroll);
   }, []);
 
+  // ✅ Filter tags for search
   const filteredTags = useMemo(() => {
     return allTags.filter((tag) =>
       tag.toLowerCase().includes(tagSearch.toLowerCase())
@@ -65,7 +64,7 @@ const PageFilters = ({
 
   const clearFilters = () => {
     setSearch("");
-    setSortOrder("");
+    setSortOrder("latest");
     setSelectedTags([]);
   };
 
@@ -79,23 +78,26 @@ const PageFilters = ({
   const selectedSortLabel =
     sortOptions.find((opt) => opt.value === sortOrder)?.label || "Sort";
 
+  const showClearButton =
+    (sortOrder && sortOrder !== "latest") || selectedTags.length > 0 || search;
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 mb-6 relative">
       {/* LEFT — Search Bar */}
       <div className="flex items-center gap-2 flex-1 min-w-[220px]">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-60" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
           <input
             type="text"
             placeholder="Search courses..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-full border border-gray-200 bg-base-100 pl-10 pr-10 py-3 shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition"
+            className="w-full rounded-full border border-gray-200 bg-white pl-10 pr-10 py-3 shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
           />
           {search && (
             <X
               onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 opacity-70 hover:opacity-100 cursor-pointer transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 hover:text-blue-600 cursor-pointer transition"
             />
           )}
         </div>
@@ -106,9 +108,11 @@ const PageFilters = ({
         {/* Sort Dropdown */}
         <div className="relative" ref={sortRef}>
           <button
-            className={`btn btn-outline flex items-center gap-2 cursor-pointer transition hover:bg-base-200 ${
-              sortOrder ? "border-primary text-primary" : ""
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition font-medium ${
+              sortOrder && sortOrder !== "latest"
+                ? "border-blue-500 text-blue-600"
+                : "border-gray-300 text-gray-700"
+            } hover:bg-blue-500 hover:text-white`}
             onClick={() => {
               setSortDropdownOpen(!sortDropdownOpen);
               setTagDropdownOpen(false);
@@ -124,14 +128,14 @@ const PageFilters = ({
           </button>
 
           {sortDropdownOpen && (
-            <ul className="absolute right-0 mt-2 z-50 bg-base-100 border border-gray-200 shadow-lg rounded-box w-48 p-2 animate-fadeIn">
+            <ul className="absolute right-0 mt-2 z-50 backdrop-blur-md bg-white/90 border border-gray-200 shadow-lg rounded-xl w-48 p-2 animate-fadeIn">
               {sortOptions.map((option) => (
                 <li key={option.value}>
-                  <a
-                    className={`flex justify-between items-center rounded-md px-3 py-2 cursor-pointer transition select-none ${
+                  <button
+                    className={`flex justify-between w-full items-center rounded-md px-3 py-2 text-sm transition ${
                       sortOrder === option.value
-                        ? "bg-primary text-blue-500 font-medium"
-                        : "hover:bg-base-200"
+                        ? "bg-blue-500 text-white"
+                        : "hover:bg-blue-100"
                     }`}
                     onClick={() => {
                       setSortOrder(option.value);
@@ -142,7 +146,7 @@ const PageFilters = ({
                     {sortOrder === option.value && (
                       <Check className="w-4 h-4 shrink-0" />
                     )}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -152,9 +156,11 @@ const PageFilters = ({
         {/* Tags Dropdown */}
         <div className="relative" ref={tagRef}>
           <button
-            className={`btn btn-outline flex items-center gap-2 cursor-pointer transition hover:bg-base-200 ${
-              selectedTags.length > 0 ? "border-primary text-primary" : ""
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition font-medium ${
+              selectedTags.length > 0
+                ? "border-blue-500 text-blue-600"
+                : "border-gray-300 text-gray-700"
+            } hover:bg-blue-500 hover:text-white`}
             onClick={() => {
               setTagDropdownOpen(!tagDropdownOpen);
               setSortDropdownOpen(false);
@@ -166,30 +172,30 @@ const PageFilters = ({
           </button>
 
           {tagDropdownOpen && (
-            <div className="absolute right-0 mt-2 z-50 bg-base-100 border border-gray-200 shadow-lg rounded-box w-64 p-3 animate-fadeIn">
+            <div className="absolute right-0 mt-2 z-50 backdrop-blur-md bg-white/90 border border-gray-200 shadow-lg rounded-xl w-64 p-3 animate-fadeIn">
               {/* Search inside Tags */}
               <div className="relative mb-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search tags..."
                   value={tagSearch}
                   onChange={(e) => setTagSearch(e.target.value)}
-                  className="input input-bordered w-full pl-9 input-sm rounded-md"
+                  className="w-full border border-gray-300 rounded-md pl-9 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
 
-              {/* Scrollable list — only show 6 visible, rest scrollable */}
-              <ul className="menu space-y-1 max-h-[192px] overflow-y-auto">
+              {/* Scrollable list */}
+              <ul className="space-y-1 max-h-[192px] overflow-y-auto">
                 {filteredTags.length ? (
                   filteredTags.map((tag, idx) => (
                     <li key={idx}>
                       <div
                         onClick={() => toggleTag(tag)}
-                        className={`flex items-center justify-between rounded-md px-3 py-2 cursor-pointer transition select-none ${
+                        className={`flex items-center justify-between rounded-md px-3 py-2 text-sm cursor-pointer transition ${
                           selectedTags.includes(tag)
-                            ? "bg-primary text-blue-500"
-                            : "hover:bg-base-200"
+                            ? "bg-blue-500 text-white"
+                            : "hover:bg-blue-100"
                         }`}
                       >
                         <span>{tag}</span>
@@ -212,11 +218,11 @@ const PageFilters = ({
           )}
         </div>
 
-        {/* Clear Filters */}
-        {(sortOrder || selectedTags.length > 0) && (
+        {/* ✅ Show Clear only when filters/search active */}
+        {showClearButton && (
           <button
             onClick={clearFilters}
-            className="btn btn-ghost text-sm flex items-center gap-2 hover:bg-base-200 transition"
+            className="text-sm flex items-center gap-2 px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-blue-500 hover:text-white transition cursor-pointer"
           >
             <X className="w-4 h-4" />
             Clear
@@ -230,7 +236,7 @@ const PageFilters = ({
           {selectedTags.map((tag) => (
             <div
               key={tag}
-              className="badge badge-outline flex items-center gap-1 cursor-pointer hover:bg-base-200 transition"
+              className="badge badge-outline flex items-center gap-1 cursor-pointer hover:bg-blue-100 transition"
               onClick={() => toggleTag(tag)}
             >
               {tag}
