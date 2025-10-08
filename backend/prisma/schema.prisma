@@ -41,18 +41,21 @@ model Question {
   type    String
   text    String
   options Json
+  marks   Int // marks for the question
 
   course   Course @relation(fields: [courseId], references: [id])
   courseId Int
 
+  exam   Exam? @relation(fields: [examId], references: [id])
+  examId Int? // link question to a specific exam (quiz/midterm/final)
+
   createdBy   User @relation("CreatedBy", fields: [createdById], references: [id])
   createdById Int
 
-  likedBy      User[] @relation("QuestionLikes")
-  reportedBy   User[] @relation("QuestionReports")
-  bookmarkedBy User[] @relation("UserBookmarks")
-
-  comments Comment[]
+  comments     Comment[]
+  likedBy      User[]    @relation("QuestionLikes")
+  reportedBy   User[]    @relation("QuestionReports")
+  bookmarkedBy User[]    @relation("UserBookmarks")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -81,20 +84,35 @@ model Comment {
 }
 
 model Course {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique               // required
-  code        String?   @unique               // optional
-  description String?                        // optional
-  image       String?                        // optional image URL/path
+  id          Int     @id @default(autoincrement())
+  name        String  @unique // required
+  code        String? @unique // optional
+  description String? // optional
+  image       String? // optional image URL/path
 
-  tags        String[]                        // required array of tags
+  tags String[] // required array of tags
 
-  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdBy   User @relation(fields: [createdById], references: [id])
   createdById Int
 
-  questions   Question[]                     // relation to questions
+  questions Question[] // relation to questions
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  exams Exam[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+model Exam {
+  id        Int        @id @default(autoincrement())
+  title     String
+  type      String
+  course    Course     @relation(fields: [courseId], references: [id])
+  courseId  Int
+  questions Question[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, title]) // ✅ ensures no two exams with same title per course
+}

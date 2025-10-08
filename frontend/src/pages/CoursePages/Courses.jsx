@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import CourseCard from "../../components/CourseCard";
+import CourseCard from "../../components/course-card";
 import PageFilters from "../../components/page-filters";
 import Pagination from "../../components/pagination";
 

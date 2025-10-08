@@ -11,46 +11,30 @@ BACKEND:
 fix the image url in authController.js after deploying to vercel
 
 
+Unable to delete row as it is currently referenced by a foreign key constraint from the table Exam.
+Option 1: Cascade delete
 
-FIX:
-model Exam {
-  id        Int       @id @default(autoincrement())
-  title     String    // "Quiz 1", "Quiz 2", "Additional Quiz", "Midterm", "Final"
-  type      String    // "quiz", "midterm", "final"
-  course    Course    @relation(fields: [courseId], references: [id])
-  courseId  Int
-  questions Question[]
+Delete all related Exam rows automatically when deleting the Course.
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+Step 1: Update your Prisma schema:
 
-model Question {
-  id        Int      @id @default(autoincrement())
-  type      String
-  text      String
-  options   Json
-  marks     Int      // marks for the question
-
-  course    Course   @relation(fields: [courseId], references: [id])
-  courseId  Int
-
-  exam      Exam?    @relation(fields: [examId], references: [id])
-  examId    Int?     // link question to a specific exam (quiz/midterm/final)
-
-  createdBy   User @relation("CreatedBy", fields: [createdById], references: [id])
+model Course {
+  id         Int     @id @default(autoincrement())
+  name       String  @unique
+  code       String  @unique
+  description String?
+  tags       String[]
   createdById Int
-
-  comments    Comment[]
-  likedBy     User[] @relation("QuestionLikes")
-  reportedBy  User[] @relation("QuestionReports")
-  bookmarkedBy User[] @relation("UserBookmarks")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  exams      Exam[]  @relation(onDelete: Cascade) // <-- add cascade delete
 }
 
 
+Step 2: Run:
+
+npx prisma migrate dev --name cascade_course_exam
+
+
+Now when you delete a course, all related exams are deleted automatically.
 
 
 

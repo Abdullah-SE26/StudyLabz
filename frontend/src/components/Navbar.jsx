@@ -3,7 +3,7 @@ import { NavLink, Link } from "react-router-dom";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import UserMenu from "../components/user-menu.jsx";
 import { useStore } from "../store/authStore.js";
-import SignOutButton from "./sign-out-button.jsx";
+
 
 export default function Navbar() {
   const menuOpen = useStore((state) => state.menuOpen);

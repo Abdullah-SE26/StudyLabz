@@ -6,12 +6,14 @@ import {
   IconChevronDown,
 } from "@tabler/icons-react";
 import { useStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom"; // React Router
 
 export default function UserMenu({ closeMenu }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const user = useStore((state) => state.user);
   const clearAuth = useStore((state) => state.clearAuth);
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -32,6 +34,12 @@ export default function UserMenu({ closeMenu }) {
     if (closeMenu) closeMenu();
   };
 
+  const goToDashboard = () => {
+    setOpen(false);
+    navigate("/Dashboard"); // Navigate to Dashboard
+    if (closeMenu) closeMenu();
+  };
+
   const displayName = user.studentId || user.name || "User";
 
   return (
@@ -41,7 +49,6 @@ export default function UserMenu({ closeMenu }) {
         onClick={() => setOpen((prev) => !prev)}
         className="px-4 py-2 flex items-center rounded-lg text-slate-900 text-sm font-medium border border-slate-300 outline-none hover:bg-slate-100"
       >
-        {/* Default avatar: use Tabler Icon if user.avatar is not set */}
         {user.avatar ? (
           <img
             src={user.avatar}
@@ -57,7 +64,10 @@ export default function UserMenu({ closeMenu }) {
 
       {open && (
         <ul className="absolute right-0 mt-2 shadow-lg bg-white py-2 z-50 min-w-full w-max rounded-lg border border-gray-100">
-          <li className="dropdown-item py-2.5 px-5 flex items-center hover:bg-slate-100 text-slate-600 font-medium text-sm cursor-pointer">
+          <li
+            onClick={goToDashboard}
+            className="dropdown-item py-2.5 px-5 flex items-center hover:bg-slate-100 text-slate-600 font-medium text-sm cursor-pointer"
+          >
             <IconLayoutDashboard size={18} className="mr-3 text-slate-500" />
             Dashboard
           </li>

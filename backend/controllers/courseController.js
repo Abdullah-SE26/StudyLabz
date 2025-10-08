@@ -1,36 +1,29 @@
 import prisma from "../prismaClient.js";
 
 //GET /courses
-// Assumes `prisma` is available in this module (same as you used before)
 export const getCourses = async (req, res, next) => {
   try {
     const search = (req.query.search || "").trim();
-    const tags = (req.query.tags || "").trim(); // comma-separated selected tags
+    const tags = (req.query.tags || "").trim();
     const sort = req.query.sort || "latest";
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 12;
     const offset = (page - 1) * limit;
 
-    // Build base filter for selected tags (exact match on array elements)
     const baseWhere = {};
     if (tags) {
-      const tagsArray = tags.split(",").map(t => t.trim()).filter(Boolean);
+      const tagsArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
       if (tagsArray.length) {
-        // require each selected tag to be present
-        baseWhere.AND = tagsArray.map(tag => ({ tags: { has: tag } }));
+        baseWhere.AND = tagsArray.map((tag) => ({ tags: { has: tag } }));
       }
     }
 
-    // Sorting
     let orderBy;
     if (sort === "latest") orderBy = { createdAt: "desc" };
     else if (sort === "oldest") orderBy = { createdAt: "asc" };
     else if (sort === "name_asc") orderBy = { name: "asc" };
     else if (sort === "name_desc") orderBy = { name: "desc" };
 
-    // 1) Fetch candidate courses from DB (filtered by selectedTags only).
-    //    We don't try partial tag matching here (Prisma can't do that for String[]),
-    //    we do that in JS below.
     const candidates = await prisma.course.findMany({
       where: baseWhere,
       orderBy,
@@ -39,10 +32,8 @@ export const getCourses = async (req, res, next) => {
       },
     });
 
-    // 2) Apply partial search matching in JS (name OR any tag contains the search string)
     const filtered = (() => {
       if (!search) return candidates;
-
       const lower = search.toLowerCase();
       return candidates.filter((course) => {
         const nameMatch = course.name && course.name.toLowerCase().includes(lower);
@@ -53,22 +44,19 @@ export const getCourses = async (req, res, next) => {
       });
     })();
 
-    // 3) Pagination applied after filtering
     const totalCount = filtered.length;
     const paginated = filtered.slice(offset, offset + limit);
 
-    // return consistent shape for frontend
     res.json({ courses: paginated, totalCount });
   } catch (err) {
     next(err);
   }
 };
 
-
 // POST /courses - create a course (admin only)
 export const createCourse = async (req, res, next) => {
   try {
-    const { name, code, description, tags } = req.body;
+    const { name, code: frontendCode, description, tags } = req.body;
     const userId = req.user.id;
     const role = req.user.role;
 
@@ -80,37 +68,67 @@ export const createCourse = async (req, res, next) => {
       return res.status(400).json({ error: "Name is required" });
     }
 
-    // Check if course with same name or code exists
-    const existing = await prisma.course.findFirst({
-      where: { OR: [{ name }, { code }] },
-    });
-    if (existing) {
-      return res
-        .status(400)
-        .json({ error: "Course name or code already exists" });
+    // ------------------------
+    // Generate code from title
+    // ------------------------
+    let code = frontendCode;
+    if (!code) {
+      code = name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")          // spaces -> dashes
+        .replace(/[^a-z0-9-]/g, "");  // remove non-alphanumeric
     }
 
-    // Convert tags to array if it's a string
+    // Ensure uniqueness
+    let uniqueCode = code;
+    let suffix = 1;
+    while (await prisma.course.findUnique({ where: { code: uniqueCode } })) {
+      uniqueCode = `${code}-${suffix}`;
+      suffix++;
+    }
+    code = uniqueCode;
+
+    // Check if name already exists
+    const existingName = await prisma.course.findUnique({ where: { name } });
+    if (existingName) {
+      return res.status(400).json({ error: "Course name already exists" });
+    }
+
+    // Parse tags
     let tagsArray = [];
-    if (Array.isArray(tags)) {
-      tagsArray = tags;
-    } else if (typeof tags === "string") {
-      // Split comma-separated string, trim spaces
-      tagsArray = tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean);
+    if (Array.isArray(tags)) tagsArray = tags;
+    else if (typeof tags === "string") {
+      tagsArray = tags.split(",").map((tag) => tag.trim()).filter(Boolean);
     }
 
+    // Create course
     const course = await prisma.course.create({
       data: {
         name,
         code,
         description,
-        tags: tagsArray, // save as array
+        tags: tagsArray,
         createdById: userId,
       },
+      include: { exams: true },
     });
+
+    // Default exams
+    const defaultExams = [
+      { title: "Quiz 1", type: "quiz" },
+      { title: "Quiz 2", type: "quiz" },
+      { title: "Additional Quiz", type: "quiz" },
+      { title: "Midterm", type: "midterm" },
+      { title: "Final", type: "final" },
+    ];
+
+    for (const exam of defaultExams) {
+      const exists = course.exams.some((e) => e.title === exam.title);
+      if (!exists) {
+        await prisma.exam.create({ data: { ...exam, courseId: course.id } });
+      }
+    }
 
     res.status(201).json(course);
   } catch (err) {
@@ -128,12 +146,8 @@ export const deleteCourse = async (req, res, next) => {
       return res.status(403).json({ error: "Only admins can delete courses" });
     }
 
-    const existing = await prisma.course.findUnique({
-      where: { id: Number(id) },
-    });
-    if (!existing) {
-      return res.status(404).json({ error: "Course not found" });
-    }
+    const existing = await prisma.course.findUnique({ where: { id: Number(id) } });
+    if (!existing) return res.status(404).json({ error: "Course not found" });
 
     await prisma.course.delete({ where: { id: Number(id) } });
 

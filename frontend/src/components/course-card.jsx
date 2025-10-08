@@ -1,12 +1,14 @@
 import React from "react";
 import { CalendarDays, Tag as TagIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CourseCard = ({ course, onTagClick, selectedTags = [] }) => {
   const formattedDate = new Date(course.createdAt).toLocaleDateString();
 
   return (
-    <div
-      className=" cursor-pointer relative rounded-2xl bg-gradient-to-br from-white/80 to-blue-50/60 backdrop-blur-md 
+    <Link
+      to={`/courses/${course.id}/exams`}
+      className="cursor-pointer relative rounded-2xl bg-gradient-to-br from-white/80 to-blue-50/60 backdrop-blur-md 
       border border-blue-100 shadow-sm hover:shadow-lg hover:-translate-y-1 
       transition-all duration-300 ease-out p-6 flex flex-col justify-between"
     >
@@ -47,8 +49,12 @@ const CourseCard = ({ course, onTagClick, selectedTags = [] }) => {
             return (
               <button
                 key={index}
-                onClick={() => onTagClick && onTagClick(tag)}
-                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all cursor-pointer 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent link navigation when clicking tag
+                  onTagClick && onTagClick(tag);
+                }}
+                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all 
                   ${
                     isSelected
                       ? "bg-blue-600 text-white border-blue-600"
@@ -63,7 +69,7 @@ const CourseCard = ({ course, onTagClick, selectedTags = [] }) => {
           })}
         </div>
       )}
-    </div>
+    </Link>
   );
 };
 

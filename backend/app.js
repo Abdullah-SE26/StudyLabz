@@ -5,6 +5,7 @@ import questionRoutes from "./routes/questions.js";
 import commentRoutes from "./routes/comments.js"; 
 import contactRoutes from "./routes/contact.js";  
 import courseRoutes from "./routes/courses.js";
+import examRoutes from './routes/exams.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/comments", commentRoutes);  
 app.use("/api/contact", contactRoutes);
 app.use("/api/courses", courseRoutes);
+app.use('/api/exams', examRoutes);
 
 
 export default app;
