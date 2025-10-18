@@ -11,30 +11,6 @@ BACKEND:
 fix the image url in authController.js after deploying to vercel
 
 
-Unable to delete row as it is currently referenced by a foreign key constraint from the table Exam.
-Option 1: Cascade delete
-
-Delete all related Exam rows automatically when deleting the Course.
-
-Step 1: Update your Prisma schema:
-
-model Course {
-  id         Int     @id @default(autoincrement())
-  name       String  @unique
-  code       String  @unique
-  description String?
-  tags       String[]
-  createdById Int
-  exams      Exam[]  @relation(onDelete: Cascade) // <-- add cascade delete
-}
-
-
-Step 2: Run:
-
-npx prisma migrate dev --name cascade_course_exam
-
-
-Now when you delete a course, all related exams are deleted automatically.
 
 
 

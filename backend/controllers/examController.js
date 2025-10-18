@@ -4,14 +4,19 @@ import prisma from '../prismaClient.js';
 // Get all exams
 export const getAllExams = async (req, res) => {
   try {
+    const { courseId } = req.query;
+
     const exams = await prisma.exam.findMany({
+      where: courseId ? { courseId: Number(courseId) } : {},
       include: { course: true },
     });
+
     res.status(200).json(exams);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch exams', details: err.message });
   }
 };
+
 
 // Get single exam by ID
 export const getExamById = async (req, res) => {

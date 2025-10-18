@@ -6,7 +6,7 @@ import {
   IconChevronDown,
 } from "@tabler/icons-react";
 import { useStore } from "../store/authStore";
-import { useNavigate } from "react-router-dom"; // React Router
+import { useNavigate } from "react-router-dom";
 
 export default function UserMenu({ closeMenu }) {
   const [open, setOpen] = useState(false);
@@ -16,45 +16,27 @@ export default function UserMenu({ closeMenu }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
         setOpen(false);
       }
-    }
+    };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  if (!user) return null;
-
-  const handleLogout = () => {
-    localStorage.removeItem("authToken");
-    clearAuth();
-    setOpen(false);
-    if (closeMenu) closeMenu();
-  };
-
-  const goToDashboard = () => {
-    setOpen(false);
-    navigate("/Dashboard"); // Navigate to Dashboard
-    if (closeMenu) closeMenu();
-  };
+  if (!user) return null; // hide menu if not logged in
 
   const displayName = user.studentId || user.name || "User";
 
   return (
     <div className="relative w-max" ref={menuRef}>
       <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="px-4 py-2 flex items-center rounded-lg text-slate-900 text-sm font-medium border border-slate-300 outline-none hover:bg-slate-100"
+        onClick={() => setOpen(!open)}
+        className="px-4 py-2 flex items-center rounded-lg border border-slate-300 text-slate-900 hover:bg-slate-100"
       >
         {user.avatar ? (
-          <img
-            src={user.avatar}
-            alt="avatar"
-            className="w-7 h-7 mr-3 rounded-full shrink-0"
-          />
+          <img src={user.avatar} alt="avatar" className="w-7 h-7 mr-3 rounded-full" />
         ) : (
           <IconUser className="w-5 h-6 mr-3 text-slate-500" />
         )}
@@ -65,15 +47,24 @@ export default function UserMenu({ closeMenu }) {
       {open && (
         <ul className="absolute right-0 mt-2 shadow-lg bg-white py-2 z-50 min-w-full w-max rounded-lg border border-gray-100">
           <li
-            onClick={goToDashboard}
-            className="dropdown-item py-2.5 px-5 flex items-center hover:bg-slate-100 text-slate-600 font-medium text-sm cursor-pointer"
+            onClick={() => {
+              setOpen(false);
+              navigate("/Dashboard");
+              if (closeMenu) closeMenu();
+            }}
+            className="flex items-center py-2.5 px-5 hover:bg-slate-100 text-slate-600 cursor-pointer"
           >
             <IconLayoutDashboard size={18} className="mr-3 text-slate-500" />
             Dashboard
           </li>
           <li
-            onClick={handleLogout}
-            className="dropdown-item py-2.5 px-5 flex items-center hover:bg-slate-100 text-slate-600 font-medium text-sm cursor-pointer"
+            onClick={() => {
+              clearAuth();
+              setOpen(false);
+              if (closeMenu) closeMenu();
+              navigate("/login");
+            }}
+            className="flex items-center py-2.5 px-5 hover:bg-slate-100 text-slate-600 cursor-pointer"
           >
             <IconLogout size={18} className="mr-3 text-slate-500" />
             Logout
