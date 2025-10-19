@@ -1,9 +1,8 @@
-// pages/Dashboard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../../store/authStore";
 
-export default function Dashboard() {
+export default function CreateCoursesPage() {
   const user = useStore((state) => state.user);
   const authToken = useStore((state) => state.authToken);
   const navigate = useNavigate();

@@ -32,17 +32,15 @@ export default function MagicLinkVerify() {
 
         const data = await res.json();
 
-        if (res.ok && data.authToken) {
-          const decoded = JSON.parse(atob(data.authToken.split(".")[1]));
-          const user = {
-            name: decoded.name || null,
-            studentId: decoded.studentId || null,
-          };
+        if (res.ok && data.authToken && data.user) {
+          // Store full user object including role
+          setAuth(data.authToken, data.user);
 
-          setAuth(data.authToken, user);
           toast.success("Logged in successfully!");
           setStatus("Success! Redirecting...");
-          setTimeout(() => navigate("/"), 1000);
+
+          // Redirect to dashboard after short delay
+          setTimeout(() => navigate("/dashboard"), 1000);
         } else if (res.status === 401) {
           toast.error(data.error || "Invalid or expired link.");
           setStatus("This link is invalid or expired.");

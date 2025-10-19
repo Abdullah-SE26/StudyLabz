@@ -49,7 +49,7 @@ export default function UserMenu({ closeMenu }) {
           <li
             onClick={() => {
               setOpen(false);
-              navigate("/Dashboard");
+              navigate("/dashboard");
               if (closeMenu) closeMenu();
             }}
             className="flex items-center py-2.5 px-5 hover:bg-slate-100 text-slate-600 cursor-pointer"

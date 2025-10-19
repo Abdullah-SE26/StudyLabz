@@ -70,9 +70,18 @@ export const sendMagicLink = async (req, res) => {
     // Rate limiting: 2 minutes
     const now = new Date();
     const cooldown = 2 * 60 * 1000;
-    if (user.lastMagicLinkSent && now - new Date(user.lastMagicLinkSent) < cooldown) {
-      const wait = Math.ceil((cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000);
-      return res.status(429).json({ error: `Please wait ${wait}s before requesting a new magic link.` });
+    if (
+      user.lastMagicLinkSent &&
+      now - new Date(user.lastMagicLinkSent) < cooldown
+    ) {
+      const wait = Math.ceil(
+        (cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000
+      );
+      return res
+        .status(429)
+        .json({
+          error: `Please wait ${wait}s before requesting a new magic link.`,
+        });
     }
 
     // Generate token
@@ -90,7 +99,9 @@ export const sendMagicLink = async (req, res) => {
     });
 
     // Verify update
-    const updatedUser = await prisma.user.findUnique({ where: { email: user.email } });
+    const updatedUser = await prisma.user.findUnique({
+      where: { email: user.email },
+    });
     console.log("Updated user with token:", updatedUser);
 
     const magicLink = `${process.env.BACKEND_URL}/api/auth/verify-magic-link?token=${token}&email=${email}`;
@@ -119,7 +130,8 @@ export const handleMagicLink = async (req, res) => {
 // -----------------------------
 export const verifyMagicLink = async (req, res) => {
   const { token, email } = req.body;
-  if (!token || !email) return res.status(400).json({ error: "Missing token or email" });
+  if (!token || !email)
+    return res.status(400).json({ error: "Missing token or email" });
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
@@ -128,10 +140,12 @@ export const verifyMagicLink = async (req, res) => {
     }
 
     const expiry = new Date(user.magicTokenExpiry);
-    if (expiry < new Date()) return res.status(401).json({ error: "Link expired" });
+    if (expiry < new Date())
+      return res.status(401).json({ error: "Link expired" });
 
     const isValid = await bcrypt.compare(token, user.magicToken);
-    if (!isValid) return res.status(401).json({ error: "Invalid or expired link" });
+    if (!isValid)
+      return res.status(401).json({ error: "Invalid or expired link" });
 
     // Clear token after successful verification
     await prisma.user.update({
@@ -139,6 +153,7 @@ export const verifyMagicLink = async (req, res) => {
       data: { magicToken: null, magicTokenExpiry: null },
     });
 
+    // Create JWT
     const authToken = jwt.sign(
       {
         id: user.id,
@@ -151,7 +166,17 @@ export const verifyMagicLink = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res.json({ authToken });
+    // ✅ Return both token and user info
+    return res.json({
+      authToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        studentId: user.studentId || null,
+        name: user.name || null,
+        role: user.role,
+      },
+    });
   } catch (err) {
     console.error("verifyMagicLink error:", err);
     return res.status(500).json({ error: "Server error" });

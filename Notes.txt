@@ -2,7 +2,7 @@ TODOs:
 
 FRONTEND:
 Stagger Testimonials from hover.dev for courses featured section
-
+navabar responsiveness
 
 
 
