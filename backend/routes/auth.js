@@ -3,14 +3,12 @@ import { authMiddleware } from "../middleware/authMiddleware.js";
 import {
   sendMagicLink,
   verifyMagicLink,
-  handleMagicLink,
-} from "../controllers/authController.js"; // <--- THIS
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
-// Existing magic link routes
+// Magic link routes
 router.post("/send-magic-link", sendMagicLink);
-router.get("/verify-magic-link", handleMagicLink);
 router.post("/verify-magic-link", verifyMagicLink);
 
 // ✅ New route to verify JWT
