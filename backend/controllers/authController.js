@@ -1,7 +1,7 @@
 import prisma from "../prismaClient.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendMail } from "../config/mailer.js"; 
+import { sendMail } from "../config/mailer.js"; // SendGrid API wrapper
 
 // -----------------------------
 // Send Magic Link
@@ -75,7 +75,7 @@ export const sendMagicLink = async (req, res) => {
     `;
 
     await sendMail({
-      from: process.env.EMAIL_FROM,
+      from: process.env.EMAIL_FROM, // ✅ Verified sender
       to: email,
       subject: "Your Login Link for StudyLabz",
       html: emailHTML,
@@ -104,8 +104,7 @@ export const handleMagicLink = async (req, res) => {
 // -----------------------------
 export const verifyMagicLink = async (req, res) => {
   const { token, email } = req.body;
-  if (!token || !email)
-    return res.status(400).json({ error: "Missing token or email" });
+  if (!token || !email) return res.status(400).json({ error: "Missing token or email" });
 
   try {
     const user = await prisma.user.findUnique({ where: { email } });
@@ -113,41 +112,21 @@ export const verifyMagicLink = async (req, res) => {
       return res.status(401).json({ error: "Invalid or expired link" });
     }
 
-    if (new Date(user.magicTokenExpiry) < new Date())
-      return res.status(401).json({ error: "Link expired" });
+    if (new Date(user.magicTokenExpiry) < new Date()) return res.status(401).json({ error: "Link expired" });
 
     const isValid = await bcrypt.compare(token, user.magicToken);
-    if (!isValid)
-      return res.status(401).json({ error: "Invalid or expired link" });
+    if (!isValid) return res.status(401).json({ error: "Invalid or expired link" });
 
-    // Clear token after successful verification
-    await prisma.user.update({
-      where: { email },
-      data: { magicToken: null, magicTokenExpiry: null },
-    });
+    // Clear token
+    await prisma.user.update({ where: { email }, data: { magicToken: null, magicTokenExpiry: null } });
 
     const authToken = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        studentId: user.studentId || null,
-        name: user.name || null,
-        role: user.role,
-      },
+      { id: user.id, email: user.email, studentId: user.studentId || null, name: user.name || null, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    return res.json({
-      authToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        studentId: user.studentId || null,
-        name: user.name || null,
-        role: user.role,
-      },
-    });
+    return res.json({ authToken, user: { id: user.id, email: user.email, studentId: user.studentId || null, name: user.name || null, role: user.role } });
   } catch (err) {
     console.error("verifyMagicLink error:", err);
     return res.status(500).json({ error: "Server error" });

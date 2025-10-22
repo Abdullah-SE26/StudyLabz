@@ -13,27 +13,28 @@ export const sendContactForm = async (req, res) => {
 
     const fullName = `${firstName} ${lastName}`;
 
-    // Send email
+    // Compose email HTML
+    const emailHTML = `
+      <h2>New Contact Form Submission</h2>
+      <p><b>Name:</b> ${fullName}</p>
+      <p><b>Phone:</b> ${phone || "Not provided"}</p>
+      <p><b>Email:</b> ${email}</p>
+      <p><b>Subject:</b> ${subject || "General Inquiry"}</p>
+      <p><b>Message:</b><br/>${message}</p>
+    `;
+
+    // Send email via SendGrid
     await sendMail({
-      from: `"StudyLabz Contact" <${process.env.EMAIL_FROM}>`,
-      to: process.env.EMAIL_FROM, 
+      from: `"StudyLabz Contact" <${process.env.EMAIL_FROM}>`, // ✅ Verified sender
+      to: process.env.EMAIL_FROM, // You receive the contact form in your inbox
       subject: `📩 ${subject || "General Inquiry"} - Message from ${fullName}`,
-      html: `
-    <h2>New Contact Form Submission</h2>
-    <p><b>Name:</b> ${fullName}</p>
-    <p><b>Phone:</b> ${phone || "Not provided"}</p>
-    <p><b>Email:</b> ${email}</p>
-    <p><b>Subject:</b> ${subject || "General Inquiry"}</p>
-    <p><b>Message:</b><br/>${message}</p>
-  `,
+      html: emailHTML,
     });
 
     console.log("✅ Email sent successfully");
-    res
-      .status(200)
-      .json({ success: true, message: "Message sent successfully" });
+    return res.status(200).json({ success: true, message: "Message sent successfully" });
   } catch (error) {
     console.error("❌ Error sending email:", error);
-    res.status(500).json({ error: "Failed to send message" });
+    return res.status(500).json({ error: "Failed to send message" });
   }
 };
