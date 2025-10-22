@@ -75,7 +75,7 @@ export const sendMagicLink = async (req, res) => {
     `;
 
     await sendMail({
-      from: process.env.EMAIL_USER,
+      from: process.env.EMAIL_FROM,
       to: email,
       subject: "Your Login Link for StudyLabz",
       html: emailHTML,
