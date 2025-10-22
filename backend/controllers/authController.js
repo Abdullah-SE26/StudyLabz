@@ -32,11 +32,9 @@ export const sendMagicLink = async (req, res) => {
       const wait = Math.ceil(
         (cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000
       );
-      return res
-        .status(429)
-        .json({
-          error: `Please wait ${wait}s before requesting a new magic link.`,
-        });
+      return res.status(429).json({
+        error: `Please wait ${wait}s before requesting a new magic link.`,
+      });
     }
 
     // Generate token
