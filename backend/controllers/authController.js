@@ -1,52 +1,7 @@
 import prisma from "../prismaClient.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
-
-// -----------------------------
-// Helper: send email
-// -----------------------------
-const sendEmail = async (to, magicLink) => {
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
-
-  const emailHTML = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <img src="/frontend/public/scientist_owl_512.png" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
-      </div>
-      <h2 style="text-align: center; color: #333;">Hello!</h2>
-      <p style="font-size: 16px; color: #555; line-height: 1.5;">
-        You requested a login link for <strong>StudyLabz</strong>. Click the button below to sign in. 
-        This link will expire in 15 minutes.
-      </p>
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${magicLink}" style="
-          background-color: #4a90e2;
-          color: white;
-          text-decoration: none;
-          padding: 12px 25px;
-          border-radius: 5px;
-          font-weight: bold;
-          display: inline-block;
-        ">Sign In to StudyLabz</a>
-      </div>
-      <p style="font-size: 14px; color: #999; text-align: center;">
-        If you did not request this email, you can safely ignore it.<br/>
-        &copy; ${new Date().getFullYear()} StudyLabz. All rights reserved.
-      </p>
-    </div>
-  `;
-
-  await transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to,
-    subject: "Your Login Link for StudyLabz",
-    html: emailHTML,
-  });
-};
+import { sendMail } from "../config/mailer.js"; 
 
 // -----------------------------
 // Send Magic Link
@@ -70,18 +25,9 @@ export const sendMagicLink = async (req, res) => {
     // Rate limiting: 2 minutes
     const now = new Date();
     const cooldown = 2 * 60 * 1000;
-    if (
-      user.lastMagicLinkSent &&
-      now - new Date(user.lastMagicLinkSent) < cooldown
-    ) {
-      const wait = Math.ceil(
-        (cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000
-      );
-      return res
-        .status(429)
-        .json({
-          error: `Please wait ${wait}s before requesting a new magic link.`,
-        });
+    if (user.lastMagicLinkSent && now - new Date(user.lastMagicLinkSent) < cooldown) {
+      const wait = Math.ceil((cooldown - (now - new Date(user.lastMagicLinkSent))) / 1000);
+      return res.status(429).json({ error: `Please wait ${wait}s before requesting a new magic link.` });
     }
 
     // Generate token
@@ -98,14 +44,42 @@ export const sendMagicLink = async (req, res) => {
       },
     });
 
-    // Verify update
-    const updatedUser = await prisma.user.findUnique({
-      where: { email: user.email },
-    });
-    console.log("Updated user with token:", updatedUser);
-
+    // Compose magic link email
     const magicLink = `${process.env.BACKEND_URL}/api/auth/verify-magic-link?token=${token}&email=${email}`;
-    await sendEmail(email, magicLink);
+    const emailHTML = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="${process.env.FRONTEND_URL}/scientist_owl_512.png" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
+        </div>
+        <h2 style="text-align: center; color: #333;">Hello!</h2>
+        <p style="font-size: 16px; color: #555; line-height: 1.5;">
+          You requested a login link for <strong>StudyLabz</strong>. Click the button below to sign in. 
+          This link will expire in 15 minutes.
+        </p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${magicLink}" style="
+            background-color: #4a90e2;
+            color: white;
+            text-decoration: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+          ">Sign In to StudyLabz</a>
+        </div>
+        <p style="font-size: 14px; color: #999; text-align: center;">
+          If you did not request this email, you can safely ignore it.<br/>
+          &copy; ${new Date().getFullYear()} StudyLabz. All rights reserved.
+        </p>
+      </div>
+    `;
+
+    await sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Your Login Link for StudyLabz",
+      html: emailHTML,
+    });
 
     return res.json({ message: "Magic link sent!" });
   } catch (err) {
@@ -139,8 +113,7 @@ export const verifyMagicLink = async (req, res) => {
       return res.status(401).json({ error: "Invalid or expired link" });
     }
 
-    const expiry = new Date(user.magicTokenExpiry);
-    if (expiry < new Date())
+    if (new Date(user.magicTokenExpiry) < new Date())
       return res.status(401).json({ error: "Link expired" });
 
     const isValid = await bcrypt.compare(token, user.magicToken);
@@ -153,7 +126,6 @@ export const verifyMagicLink = async (req, res) => {
       data: { magicToken: null, magicTokenExpiry: null },
     });
 
-    // Create JWT
     const authToken = jwt.sign(
       {
         id: user.id,
@@ -166,7 +138,6 @@ export const verifyMagicLink = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // ✅ Return both token and user info
     return res.json({
       authToken,
       user: {

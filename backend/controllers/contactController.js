@@ -15,21 +15,23 @@ export const sendContactForm = async (req, res) => {
 
     // Send email
     await sendMail({
-      from: `"StudyLabz Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      from: `"StudyLabz Contact" <${process.env.EMAIL_FROM}>`,
+      to: process.env.EMAIL_FROM, 
       subject: `📩 ${subject || "General Inquiry"} - Message from ${fullName}`,
       html: `
-        <h2>New Contact Form Submission</h2>
-        <p><b>Name:</b> ${fullName}</p>
-        <p><b>Phone:</b> ${phone || "Not provided"}</p>
-        <p><b>Email:</b> ${email}</p>
-        <p><b>Subject:</b> ${subject || "General Inquiry"}</p>
-        <p><b>Message:</b><br/>${message}</p>
-      `,
+    <h2>New Contact Form Submission</h2>
+    <p><b>Name:</b> ${fullName}</p>
+    <p><b>Phone:</b> ${phone || "Not provided"}</p>
+    <p><b>Email:</b> ${email}</p>
+    <p><b>Subject:</b> ${subject || "General Inquiry"}</p>
+    <p><b>Message:</b><br/>${message}</p>
+  `,
     });
 
     console.log("✅ Email sent successfully");
-    res.status(200).json({ success: true, message: "Message sent successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Message sent successfully" });
   } catch (error) {
     console.error("❌ Error sending email:", error);
     res.status(500).json({ error: "Failed to send message" });
