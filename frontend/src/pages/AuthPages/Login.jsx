@@ -11,6 +11,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const API_URL = import.meta.env.VITE_API_URL; // ✅ use env
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -26,14 +28,12 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res = await fetch(
-        "http://localhost:5000/api/auth/send-magic-link",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/auth/send-magic-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
       const data = await res.json();
 
       if (res.ok) {

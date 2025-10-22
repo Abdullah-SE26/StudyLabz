@@ -12,51 +12,50 @@ export default function MagicLinkVerify() {
   const token = searchParams.get("token");
   const email = searchParams.get("email");
 
-  useEffect(() => {
+useEffect(() => {
+  const verifyLink = async () => {
     if (!token || !email) {
       toast.error("Invalid magic link.");
       navigate("/");
       return;
     }
 
-    const verifyLink = async () => {
-      try {
-        const res = await fetch(
-          "http://localhost:5000/api/auth/verify-magic-link",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token, email }),
-          }
-        );
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
 
-        const data = await res.json();
+      const res = await fetch(`${API_URL}/api/auth/verify-magic-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, email }),
+      });
 
-        if (res.ok && data.authToken && data.user) {
-          // Store full user object including role
-          setAuth(data.authToken, data.user);
+      const data = await res.json();
 
-          toast.success("Logged in successfully!");
-          setStatus("Success! Redirecting...");
+      if (res.ok && data.authToken && data.user) {
+        // Store full user object including role
+        setAuth(data.authToken, data.user);
 
-          // Redirect to dashboard after short delay
-          setTimeout(() => navigate("/dashboard"), 1000);
-        } else if (res.status === 401) {
-          toast.error(data.error || "Invalid or expired link.");
-          setStatus("This link is invalid or expired.");
-        } else {
-          toast.error(data.error || "Failed to log in.");
-          setStatus("Something went wrong. Please try again.");
-        }
-      } catch (err) {
-        console.error(err);
-        toast.error("An unexpected error occurred.");
-        setStatus("Network or server error. Try again.");
+        toast.success("Logged in successfully!");
+        setStatus("Success! Redirecting...");
+
+        // Redirect to dashboard after short delay
+        setTimeout(() => navigate("/dashboard"), 1000);
+      } else if (res.status === 401) {
+        toast.error(data.error || "Invalid or expired link.");
+        setStatus("This link is invalid or expired.");
+      } else {
+        toast.error(data.error || "Failed to log in.");
+        setStatus("Something went wrong. Please try again.");
       }
-    };
+    } catch (err) {
+      console.error(err);
+      toast.error("An unexpected error occurred.");
+      setStatus("Network or server error. Try again.");
+    }
+  };
 
-    verifyLink();
-  }, [token, email, navigate, setAuth]);
+  verifyLink();
+}, [token, email, navigate, setAuth]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
