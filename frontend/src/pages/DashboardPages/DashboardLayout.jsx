@@ -73,7 +73,7 @@ export default function DashboardLayout() {
       icon: <BookOpen className="w-5 h-5 flex-shrink-0" />,
     },
     {
-      to: "/dashboard/manage-courses",
+      to: "/courses",
       label: "Manage Courses",
       icon: <BookOpen className="w-5 h-5 flex-shrink-0" />,
     },

@@ -9,7 +9,7 @@ import {
   Tag,
   Hash,
   ArrowLeft,
-  Save,
+  Pickaxe,
   FileText,
   Image,
 } from "lucide-react";
@@ -107,18 +107,15 @@ export default function CreateCoursesPage() {
       }
 
       const data = await res.json();
-
       toast.dismiss(loadingToast);
       toast.success("Course created successfully! 🎉");
 
-      // Reset form
       setName("");
       setDescription("");
       setImage("");
       setTags([]);
       setTagInput("");
 
-      // Navigate back to dashboard after a short delay
       setTimeout(() => {
         navigate("/dashboard");
       }, 1500);
@@ -132,30 +129,29 @@ export default function CreateCoursesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="font-medium">Back</span>
-        </button>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 ">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Back</span>
+          </button>
 
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-600">
-            <BookOpen className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="p-3 rounded-lg bg-blue-600">
+              <BookOpen className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-slate-800">Create Course</h1>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Create Course</h1>
         </div>
-      </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Course Name */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <label className="block text-sm font-semibold text-slate-700">
               Course Name *
             </label>
@@ -163,14 +159,14 @@ export default function CreateCoursesPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Introduction to Computer Science"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              placeholder="Introduction to Computer Science"
+              className="w-full px-5 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
             />
           </div>
 
-          {/* Course Code - Disabled */}
-          <div className="space-y-2">
+          {/* Course Code */}
+          <div className="space-y-1">
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Hash className="w-4 h-4 text-slate-500" />
               Course Code
@@ -179,13 +175,13 @@ export default function CreateCoursesPage() {
               type="text"
               value={name ? generateCourseCode(name) : ""}
               placeholder="Auto Generated"
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
+              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
               disabled
             />
           </div>
 
-          {/* Description - Disabled */}
-          <div className="space-y-2">
+          {/* Description */}
+          <div className="space-y-1">
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <FileText className="w-4 h-4 text-slate-500" />
               Description
@@ -193,14 +189,14 @@ export default function CreateCoursesPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed resize-none"
-              rows={3}
+              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed resize-none"
+              rows={1}
               disabled
             />
           </div>
 
-          {/* Image URL - Disabled */}
-          <div className="space-y-2">
+          {/* Image URL */}
+          <div className="space-y-1">
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Image className="w-4 h-4 text-slate-500" />
               Image URL
@@ -209,13 +205,13 @@ export default function CreateCoursesPage() {
               type="text"
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
+              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
               disabled
             />
           </div>
 
           {/* Tags */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Tag className="w-4 h-4 text-slate-500" />
               Tags *
@@ -227,21 +223,19 @@ export default function CreateCoursesPage() {
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="e.g., programming, beginner"
-                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Add
               </button>
             </div>
-
-            {/* Tags Display */}
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -261,26 +255,24 @@ export default function CreateCoursesPage() {
             )}
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading || !name.trim() || tags.length === 0}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-            >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  Create Course
-                </>
-              )}
-            </button>
-          </div>
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading || !name.trim() || tags.length === 0}
+            className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-semibold"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Creating...
+              </>
+            ) : (
+              <>
+                <Pickaxe className="w-5 h-5" />
+                Create Course
+              </>
+            )}
+          </button>
         </form>
       </div>
     </div>

@@ -1,99 +1,122 @@
 import React from "react";
-import { CalendarDays, Tag as TagIcon, Pencil, Trash2, Beaker } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { CalendarDays, Tag as TagIcon, Pencil, Trash2 } from "lucide-react";
 
-const CourseCard = ({
+export default function CourseCard({
   course,
   onTagClick,
   selectedTags = [],
   isAdminMode = false,
   onEdit,
   onDelete,
-}) => {
+}) {
+  const navigate = useNavigate();
   const formattedDate = new Date(course.createdAt).toLocaleDateString();
 
-  return (
-    <div
-      className={`relative rounded-2xl overflow-hidden backdrop-blur-md border border-white/30
-        shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer
-        bg-gradient-to-br from-white/70 to-blue-50/40`}
+  const handleNavigate = () => navigate(`/courses/${course.id}/exams`);
+
+  const TagButton = ({ tag, isSelected }) => (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onTagClick?.(tag);
+      }}
+      className={`flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full transition-all duration-300 
+        animate-fadeIn
+        ${
+          isSelected
+            ? "bg-amber-600 text-white shadow-sm"
+            : "bg-amber-100/60 text-amber-800 hover:bg-amber-200/70"
+        }`}
     >
-      {/* Decorative top icon */}
-      <div className="flex justify-center mt-4">
-        <div className="bg-blue-100 p-2 rounded-full shadow-sm">
-          <Beaker className="w-6 h-6 text-blue-600 animate-bounce-slow" />
+      <TagIcon size={12} />
+      {tag}
+    </button>
+  );
+
+  const CardInner = (
+    <div className="flex flex-col gap-3 p-5 animate-fadeInSlow">
+      {/* Header */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-800 leading-snug text-center">
+          {course.title || course.name}
+        </h3>
+        <div className="flex items-center justify-center gap-1 text-xs text-gray-500 m-2">
+          <CalendarDays size={14} />
+          <span>{formattedDate}</span>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 flex flex-col items-center text-center">
-        <h3 className="text-lg font-bold text-slate-800 mb-1">{course.title || course.name}</h3>
+      {/* Description */}
+      {course.description && (
+        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+          {course.description}
+        </p>
+      )}
 
-        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-          <span className="flex items-center gap-1">
-            <CalendarDays size={14} className="text-blue-600" />
-            {formattedDate}
-          </span>
+      {/* Tags */}
+      {course.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-1">
+          {course.tags.map((tag, i) => (
+            <TagButton
+              key={i}
+              tag={tag}
+              isSelected={selectedTags.includes(tag)}
+            />
+          ))}
         </div>
+      )}
 
-        {course.description && (
-          <p className="text-gray-600 text-sm line-clamp-3 mb-3">
-            {course.description}
-          </p>
-        )}
+      {/* Admin Buttons */}
+      {isAdminMode && (
+        <div className="flex gap-3 mt-3 animate-fadeInDelay">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(course);
+            }}
+            className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md 
+            bg-teal-100 text-teal-800 border border-teal-200 
+            hover:bg-teal-200 transition-all duration-300 shadow-sm"
+          >
+            <Pencil size={14} /> Edit
+          </button>
 
-        {/* Tags */}
-        {course.tags?.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-2 mb-3">
-            {course.tags.map((tag, i) => {
-              const isSelected = selectedTags.includes(tag);
-              return (
-                <button
-                  key={i}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onTagClick?.(tag);
-                  }}
-                  className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border transition-all duration-200
-                    ${
-                      isSelected
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white/80 text-blue-700 border-blue-300 hover:bg-blue-50"
-                    }`}
-                >
-                  <TagIcon size={12} />
-                  {tag}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Admin actions */}
-        {isAdminMode && (
-          <div className="flex gap-2 mt-2">
-            <button
-              onClick={() => onEdit(course)}
-              className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-200 transition"
-            >
-              <Pencil size={14} /> Edit
-            </button>
-            <button
-              onClick={() => onDelete(course.id)}
-              className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 transition"
-            >
-              <Trash2 size={14} /> Delete
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Link overlay for normal users */}
-      {!isAdminMode && (
-        <Link to={`/courses/${course.id}/exams`} className="absolute inset-0 z-0" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(course.id);
+            }}
+            className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md 
+            bg-rose-100 text-rose-700 border border-rose-200 
+            hover:bg-rose-200 transition-all duration-300 shadow-sm"
+          >
+            <Trash2 size={14} /> Delete
+          </button>
+        </div>
       )}
     </div>
   );
-};
 
-export default CourseCard;
+  return (
+    <div
+      onClick={!isAdminMode ? undefined : handleNavigate}
+      className="group relative rounded-2xl border border-amber-100/60 
+      bg-gradient-to-br from-amber-50 via-white to-amber-100/40 
+      shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden"
+    >
+      {!isAdminMode ? (
+        <Link to={`/courses/${course.id}/exams`} className="block h-full">
+          {CardInner}
+        </Link>
+      ) : (
+        CardInner
+      )}
+
+      {/* Subtle hover shine */}
+      <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/15 to-transparent pointer-events-none"></div>
+    </div>
+  );
+}
+
+

@@ -43,12 +43,15 @@ const Courses = ({ isAdminMode = false }) => {
       setLoading(true);
       const params = new URLSearchParams();
       if (search) params.append("search", search);
-      if (selectedTags.length > 0) params.append("tags", selectedTags.join(","));
+      if (selectedTags.length > 0)
+        params.append("tags", selectedTags.join(","));
       if (sortOrder) params.append("sort", sortOrder);
       params.append("page", currentPage);
       params.append("limit", itemsPerPage);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses?${params.toString()}`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/courses?${params.toString()}`
+      );
       if (!res.ok) throw new Error("Failed to fetch courses");
       const data = await res.json();
 
@@ -56,7 +59,9 @@ const Courses = ({ isAdminMode = false }) => {
       setTotalPages(Math.ceil((data.totalCount || 0) / itemsPerPage));
 
       const tagsSet = new Set();
-      (data.courses || []).forEach((course) => course.tags?.forEach(tag => tagsSet.add(tag)));
+      (data.courses || []).forEach((course) =>
+        course.tags?.forEach((tag) => tagsSet.add(tag))
+      );
       setAllTags([...tagsSet]);
 
       setError(null);
@@ -80,18 +85,20 @@ const Courses = ({ isAdminMode = false }) => {
   };
 
   const handleTagClickFromCard = (tag) => {
-    setSelectedTags(prev => (prev.includes(tag) ? prev : [...prev, tag]));
+    setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     setSearch("");
   };
 
   const handleCourseSaved = (updatedCourse) => {
-    setCourses(prev => prev.map(c => (c.id === updatedCourse.id ? updatedCourse : c)));
+    setCourses((prev) =>
+      prev.map((c) => (c.id === updatedCourse.id ? updatedCourse : c))
+    );
     setSelectedCourse(null);
     setModalType(null);
   };
 
   const handleCourseDeleted = (deletedId) => {
-    setCourses(prev => prev.filter(c => c.id !== deletedId));
+    setCourses((prev) => prev.filter((c) => c.id !== deletedId));
     setSelectedCourse(null);
     setModalType(null);
   };
@@ -113,7 +120,9 @@ const Courses = ({ isAdminMode = false }) => {
 
   return (
     <div className="p-6 relative z-0">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Available Courses</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        Available Courses
+      </h1>
 
       <PageFilters
         search={search}
@@ -139,7 +148,7 @@ const Courses = ({ isAdminMode = false }) => {
             <p className="text-gray-600 mt-6">No courses match your filters.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
-              {courses.map(course => (
+              {courses.map((course) => (
                 <CourseCard
                   key={course.id}
                   course={course}
@@ -155,14 +164,18 @@ const Courses = ({ isAdminMode = false }) => {
         </>
       )}
 
-      <Pagination totalPages={totalPages} currentPage={currentPage} handlePageChange={handlePageChange} />
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        handlePageChange={handlePageChange}
+      />
 
       {/* Modals */}
       {modalType === "edit" && selectedCourse && (
         <EditCourseModal
           course={selectedCourse}
           onClose={closeModal}
-          onSaved={handleCourseSaved}
+          onUpdated={handleCourseSaved}
         />
       )}
 

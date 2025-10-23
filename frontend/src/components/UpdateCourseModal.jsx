@@ -47,18 +47,18 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
+        <div className="bg-base-100 rounded-lg shadow-lg p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
           <h4 className="font-bold text-lg mb-4">Edit Course</h4>
-          
+
           <div className="flex flex-col gap-3 mb-4">
             <input
-              className="border rounded px-3 py-2 w-full"
+              className="input input-bordered w-full"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Course name"
             />
             <input
-              className="border rounded px-3 py-2 w-full"
+              className="input input-bordered w-full"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="Tags (comma separated)"
@@ -69,13 +69,15 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
             <button
               onClick={handleSave}
               disabled={loading}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition cursor-pointer disabled:opacity-50"
+              className="btn btn-primary flex items-center gap-2 disabled:opacity-50"
             >
+              {loading && <span className="loading loading-spinner loading-sm"></span>}
               {loading ? "Saving..." : "Save"}
             </button>
             <button
               onClick={onClose}
-              className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition cursor-pointer"
+              disabled={loading}
+              className="btn btn-ghost"
             >
               Cancel
             </button>

@@ -21,8 +21,10 @@ import CreateCoursesPage from "./pages/DashboardPages/CreateCoursesPage";
 import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
 
+
+
 function App() {
-  const isAdminMode = true; // 🔹 Set this based on your auth system
+  const isAdminMode = true;
 
   return (
     <>
