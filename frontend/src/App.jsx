@@ -1,3 +1,4 @@
+// App.js
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
@@ -21,6 +22,8 @@ import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
 
 function App() {
+  const isAdminMode = true; // 🔹 Set this based on your auth system
+
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
@@ -34,7 +37,10 @@ function App() {
             <Route path="/verify-email" element={<VerifyRequest />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route path="/courses" element={<Courses />} />
+            <Route
+              path="/courses"
+              element={<Courses isAdminMode={isAdminMode} />}
+            />
             <Route
               path="/courses/:courseId/exams"
               element={<ExamsDashboard />}

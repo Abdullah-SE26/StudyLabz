@@ -12,7 +12,10 @@ export const getCourses = async (req, res, next) => {
 
     const baseWhere = {};
     if (tags) {
-      const tagsArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      const tagsArray = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       if (tagsArray.length) {
         baseWhere.AND = tagsArray.map((tag) => ({ tags: { has: tag } }));
       }
@@ -36,7 +39,8 @@ export const getCourses = async (req, res, next) => {
       if (!search) return candidates;
       const lower = search.toLowerCase();
       return candidates.filter((course) => {
-        const nameMatch = course.name && course.name.toLowerCase().includes(lower);
+        const nameMatch =
+          course.name && course.name.toLowerCase().includes(lower);
         const tagsMatch =
           Array.isArray(course.tags) &&
           course.tags.some((t) => t && t.toLowerCase().includes(lower));
@@ -60,11 +64,18 @@ export const createCourse = async (req, res, next) => {
     const userId = req.user.id;
     const role = req.user.role;
 
-    if (role !== "admin") return res.status(403).json({ error: "Only admins can create courses" });
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can create courses" });
     if (!name) return res.status(400).json({ error: "Name is required" });
 
     // Generate code from title
-    let code = frontendCode || name.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    let code =
+      frontendCode ||
+      name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
     let uniqueCode = code;
     let suffix = 1;
     while (await prisma.course.findUnique({ where: { code: uniqueCode } })) {
@@ -74,12 +85,17 @@ export const createCourse = async (req, res, next) => {
     code = uniqueCode;
 
     const existingName = await prisma.course.findUnique({ where: { name } });
-    if (existingName) return res.status(400).json({ error: "Course name already exists" });
+    if (existingName)
+      return res.status(400).json({ error: "Course name already exists" });
 
     // Parse tags
     let tagsArray = [];
     if (Array.isArray(tags)) tagsArray = tags;
-    else if (typeof tags === "string") tagsArray = tags.split(",").map((t) => t.trim()).filter(Boolean);
+    else if (typeof tags === "string")
+      tagsArray = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
 
     // Create course + default exams in **one atomic query**
     const course = await prisma.course.create({
@@ -108,15 +124,57 @@ export const createCourse = async (req, res, next) => {
   }
 };
 
+// PATCH /courses/:id - update course (admin only)
+export const updateCourse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const role = req.user.role;
+
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can update courses" });
+
+    const { name, tags, description } = req.body;
+
+    const existing = await prisma.course.findUnique({
+      where: { id: Number(id) },
+    });
+    if (!existing) return res.status(404).json({ error: "Course not found" });
+
+    let tagsArray = [];
+    if (Array.isArray(tags)) tagsArray = tags;
+    else if (typeof tags === "string")
+      tagsArray = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+    const updated = await prisma.course.update({
+      where: { id: Number(id) },
+      data: {
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(tagsArray.length && { tags: tagsArray }),
+      },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /courses/:id - admin only
 export const deleteCourse = async (req, res, next) => {
   try {
     const { id } = req.params;
     const role = req.user.role;
 
-    if (role !== "admin") return res.status(403).json({ error: "Only admins can delete courses" });
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can delete courses" });
 
-    const existing = await prisma.course.findUnique({ where: { id: Number(id) } });
+    const existing = await prisma.course.findUnique({
+      where: { id: Number(id) },
+    });
     if (!existing) return res.status(404).json({ error: "Course not found" });
 
     await prisma.course.delete({ where: { id: Number(id) } });

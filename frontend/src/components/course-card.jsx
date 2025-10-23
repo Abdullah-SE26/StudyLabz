@@ -1,75 +1,98 @@
 import React from "react";
-import { CalendarDays, Tag as TagIcon } from "lucide-react";
+import { CalendarDays, Tag as TagIcon, Pencil, Trash2, Beaker } from "lucide-react";
 import { Link } from "react-router-dom";
 
-const CourseCard = ({ course, onTagClick, selectedTags = [] }) => {
+const CourseCard = ({
+  course,
+  onTagClick,
+  selectedTags = [],
+  isAdminMode = false,
+  onEdit,
+  onDelete,
+}) => {
   const formattedDate = new Date(course.createdAt).toLocaleDateString();
 
   return (
-    <Link
-      to={`/courses/${course.id}/exams`}
-      className="cursor-pointer relative rounded-2xl bg-gradient-to-br from-white/80 to-blue-50/60 backdrop-blur-md 
-      border border-blue-100 shadow-sm hover:shadow-lg hover:-translate-y-1 
-      transition-all duration-300 ease-out p-6 flex flex-col justify-between"
+    <div
+      className={`relative rounded-2xl overflow-hidden backdrop-blur-md border border-white/30
+        shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer
+        bg-gradient-to-br from-white/70 to-blue-50/40`}
     >
-      {/* Header */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center leading-snug">
-          {course.title || course.name}
-        </h3>
+      {/* Decorative top icon */}
+      <div className="flex justify-center mt-4">
+        <div className="bg-blue-100 p-2 rounded-full shadow-sm">
+          <Beaker className="w-6 h-6 text-blue-600 animate-bounce-slow" />
+        </div>
+      </div>
 
-        {/* Meta info */}
-        <div className="flex justify-center items-center gap-2 text-xs text-gray-500 mb-2">
-          {course.code && <span className="font-medium">#{course.code}</span>}
+      {/* Content */}
+      <div className="p-4 flex flex-col items-center text-center">
+        <h3 className="text-lg font-bold text-slate-800 mb-1">{course.title || course.name}</h3>
+
+        <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
           <span className="flex items-center gap-1">
-            <CalendarDays size={14} />
+            <CalendarDays size={14} className="text-blue-600" />
             {formattedDate}
           </span>
         </div>
 
-        {/* Description */}
         {course.description && (
-          <p className="text-gray-600 text-sm leading-relaxed text-center">
-            {course.description.length > 110
-              ? `${course.description.slice(0, 110)}...`
-              : course.description}
+          <p className="text-gray-600 text-sm line-clamp-3 mb-3">
+            {course.description}
           </p>
+        )}
+
+        {/* Tags */}
+        {course.tags?.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-2 mb-3">
+            {course.tags.map((tag, i) => {
+              const isSelected = selectedTags.includes(tag);
+              return (
+                <button
+                  key={i}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onTagClick?.(tag);
+                  }}
+                  className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border transition-all duration-200
+                    ${
+                      isSelected
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white/80 text-blue-700 border-blue-300 hover:bg-blue-50"
+                    }`}
+                >
+                  <TagIcon size={12} />
+                  {tag}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Admin actions */}
+        {isAdminMode && (
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => onEdit(course)}
+              className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-200 hover:bg-yellow-200 transition"
+            >
+              <Pencil size={14} /> Edit
+            </button>
+            <button
+              onClick={() => onDelete(course.id)}
+              className="flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-md bg-red-100 text-red-700 border border-red-200 hover:bg-red-200 transition"
+            >
+              <Trash2 size={14} /> Delete
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Divider */}
-      <div className="h-px bg-gradient-to-r from-transparent via-blue-200 to-transparent my-4"></div>
-
-      {/* Tags */}
-      {course.tags && course.tags.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          {course.tags.map((tag, index) => {
-            const isSelected = selectedTags.includes(tag);
-
-            return (
-              <button
-                key={index}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault(); // Prevent link navigation when clicking tag
-                  onTagClick && onTagClick(tag);
-                }}
-                className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all 
-                  ${
-                    isSelected
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "bg-white text-blue-700 border-blue-300 hover:bg-blue-50"
-                  }`}
-                title="Filter by this tag"
-              >
-                <TagIcon size={12} />
-                {tag}
-              </button>
-            );
-          })}
-        </div>
+      {/* Link overlay for normal users */}
+      {!isAdminMode && (
+        <Link to={`/courses/${course.id}/exams`} className="absolute inset-0 z-0" />
       )}
-    </Link>
+    </div>
   );
 };
 
