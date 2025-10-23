@@ -129,7 +129,8 @@ export default function CreateCoursesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className=" bg-slate-50 flex items-start justify-center pt-1 px-6">
+
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 ">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -149,7 +150,7 @@ export default function CreateCoursesPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-3">
           {/* Course Name */}
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-slate-700">
@@ -189,6 +190,7 @@ export default function CreateCoursesPage() {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder= "N/A"
               className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed resize-none"
               rows={1}
               disabled
@@ -205,6 +207,7 @@ export default function CreateCoursesPage() {
               type="text"
               value={image}
               onChange={(e) => setImage(e.target.value)}
+              placeholder= "N/A"
               className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
               disabled
             />
@@ -259,7 +262,7 @@ export default function CreateCoursesPage() {
           <button
             type="submit"
             disabled={loading || !name.trim() || tags.length === 0}
-            className="w-full px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-semibold"
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-semibold"
           >
             {loading ? (
               <>

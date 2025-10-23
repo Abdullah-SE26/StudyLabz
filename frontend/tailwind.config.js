@@ -11,6 +11,16 @@ export default {
         "lab-emerald": "#10b981",
         "lab-purple": "#8b5cf6",
         "lab-orange": "#f59e0b",
+
+        // Global beige-white theme
+        "theme-light": "#FFFBEB",    // amber-50
+        "theme-base": "#FFFFFF",      // white
+        "theme-dark": "#FEF3C7",      // amber-100
+        "theme-border": "#FEF3C7",    // amber-100
+        "theme-text": "#5C4A3D",      // optional: soft brown text
+      },
+      backgroundImage: {
+        "theme-gradient": "linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7)",
       },
       animation: {
         float: "float 3s ease-in-out infinite",
