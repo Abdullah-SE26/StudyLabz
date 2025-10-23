@@ -1,3 +1,17 @@
 @import "tailwindcss";
 @import 'tippy.js/dist/tippy.css';
 @plugin "daisyui";
+
+@layer utilities {
+  .bg-theme {
+    background-image: linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7);
+  }
+
+  .border-theme {
+    border: 1px solid #FEF3C7;
+  }
+
+  .text-theme {
+    color: #5C4A3D;
+  }
+}
