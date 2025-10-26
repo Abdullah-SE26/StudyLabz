@@ -41,47 +41,76 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
+// GET /questions by exam
+export const getQuestionsByExam = async (req, res, next) => {
+  try {
+    const examId = Number(req.params.id);
+
+    const questions = await prisma.question.findMany({
+      where: { examId },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(questions);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ✅ POST /questions
 export const createQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const {
-      text,
-      type,
-      options,
-      marks,
-      courseId,
-      examId,
-      image,
-    } = req.body;
+    const { text, type, options, marks, courseId, examId, image } = req.body;
 
     // --- 1️⃣ Validation ---
     if (!text || !text.trim()) {
-      return res.status(400).json({ success: false, error: "Question text is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Question text is required" });
     }
 
     if (!type || !["MCQ", "Essay"].includes(type)) {
-      return res.status(400).json({ success: false, error: "Invalid question type" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid question type" });
     }
 
     if (!marks || isNaN(marks) || marks <= 0) {
-      return res.status(400).json({ success: false, error: "Marks must be a positive number" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Marks must be a positive number" });
     }
 
     if (!courseId) {
-      return res.status(400).json({ success: false, error: "Course ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Course ID is required" });
     }
 
     // --- 2️⃣ Verify Course & Exam existence ---
-    const course = await prisma.course.findUnique({ where: { id: Number(courseId) } });
+    const course = await prisma.course.findUnique({
+      where: { id: Number(courseId) },
+    });
     if (!course) {
-      return res.status(404).json({ success: false, error: "Course not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
     }
 
     if (examId) {
-      const exam = await prisma.exam.findUnique({ where: { id: Number(examId) } });
+      const exam = await prisma.exam.findUnique({
+        where: { id: Number(examId) },
+      });
       if (!exam) {
-        return res.status(404).json({ success: false, error: "Exam not found" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Exam not found" });
       }
     }
 
@@ -170,7 +199,9 @@ export const reportQuestion = async (req, res, next) => {
     const { reason } = req.body;
 
     if (!reason || !reason.trim()) {
-      return res.status(400).json({ success: false, error: "Reason is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Reason is required" });
     }
 
     const report = await prisma.report.create({
@@ -202,7 +233,9 @@ export const deleteQuestion = async (req, res, next) => {
     });
 
     if (!question) {
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
     }
 
     if (question.userId !== userId) {

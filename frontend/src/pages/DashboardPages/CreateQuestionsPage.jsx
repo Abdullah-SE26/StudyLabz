@@ -18,34 +18,53 @@ export default function CreateQuestionPage() {
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
 
-  // Safe fetch wrapped in useCallback
-  const safeFetchJSON = useCallback(async (url) => {
-    try {
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      const contentType = res.headers.get("content-type");
+  // Safe fetch with useCallback
+  const safeFetchJSON = useCallback(
+    async (url) => {
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to fetch");
-      } else if (!contentType?.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Invalid server response: " + text);
+        const contentType = res.headers.get("content-type");
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Failed to fetch");
+        } else if (!contentType?.includes("application/json")) {
+          const text = await res.text();
+          throw new Error("Invalid server response: " + text);
+        }
+
+        return await res.json();
+      } catch (err) {
+        toast.error(`❌ ${err.message}`, { duration: 4000 });
+        return null;
       }
+    },
+    [token]
+  );
 
-      return await res.json();
-    } catch (err) {
-      toast.error(`❌ ${err.message}`, { duration: 4000 });
-      return null;
-    }
-  }, [token]);
-
-  // Fetch courses
+  // Fetch courses on mount
   useEffect(() => {
     if (!token) return;
+
     const fetchCourses = async () => {
       const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/api/courses`);
-      if (data) setCourses(Array.isArray(data) ? data : data.courses || []);
+      if (!data) return;
+
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data.courses)
+        ? data.courses
+        : [];
+      setCourses(
+        normalized.map((c) => ({
+          id: String(c.id),
+          name: c.name,
+        }))
+      );
     };
+
     fetchCourses();
   }, [token, safeFetchJSON]);
 
@@ -61,11 +80,22 @@ export default function CreateQuestionPage() {
       const data = await safeFetchJSON(
         `${import.meta.env.VITE_API_URL}/api/exams?courseId=${courseId}`
       );
-      if (data) {
-        setExams(data.exams || []);
-        setExamId(""); // reset exam selection on course change
-      }
+      if (!data) return;
+
+      const examsArray = Array.isArray(data)
+        ? data
+        : Array.isArray(data.exams)
+        ? data.exams
+        : [];
+      setExams(
+        examsArray.map((ex) => ({
+          id: String(ex.id),
+          title: ex.title,
+        }))
+      );
+      setExamId(""); // reset exam selection on course change
     };
+
     fetchExams();
   }, [courseId, safeFetchJSON]);
 
@@ -77,7 +107,8 @@ export default function CreateQuestionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!courseId || !examId) return toast.error("Please select a course and an exam");
+    if (!courseId || !examId)
+      return toast.error("Please select a course and an exam");
 
     const payload = {
       text,
@@ -182,7 +213,7 @@ export default function CreateQuestionPage() {
         >
           <option value="">Select Course</option>
           {courses.map((c) => (
-            <option key={c.id} value={String(c.id)}>
+            <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
@@ -192,19 +223,15 @@ export default function CreateQuestionPage() {
       {/* Exam */}
       <div>
         <label className="block mb-1 font-medium">Exam</label>
-        <p>Exams length: {exams.length}</p>
-        <select className="border rounded px-2 py-1 w-full z-50 relative"
-
+        <select
+          className="border rounded px-2 py-1 w-full"
           value={examId}
           onChange={(e) => setExamId(e.target.value)}
-          disabled={!exams.length}
-
+          disabled={exams.length === 0}
         >
-          
-
           <option value="">Select Exam</option>
           {exams.map((ex) => (
-            <option key={ex.id} value={String(ex.id)}>
+            <option key={ex.id} value={ex.id}>
               {ex.title}
             </option>
           ))}
