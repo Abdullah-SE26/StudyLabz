@@ -40,16 +40,44 @@ export default function DashboardLayout() {
 
   const baseLinks = [
     { to: "/dashboard", label: "Home", icon: <Home className="w-4 h-4" /> },
-    { to: "/dashboard/my-questions", label: "My Questions", icon: <HelpCircle className="w-4 h-4" /> },
-    { to: "/dashboard/bookmarks", label: "My Bookmarks", icon: <Bookmark className="w-4 h-4" /> },
-    { to: "/dashboard/create-question", label: "Create Question", icon: <FilePlus className="w-4 h-4" /> },
+    {
+      to: "/dashboard/my-questions",
+      label: "My Questions",
+      icon: <HelpCircle className="w-4 h-4" />,
+    },
+    {
+      to: "/dashboard/bookmarks",
+      label: "My Bookmarks",
+      icon: <Bookmark className="w-4 h-4" />,
+    },
+    {
+      to: "/dashboard/create-question",
+      label: "Create Question",
+      icon: <FilePlus className="w-4 h-4" />,
+    },
   ];
 
   const adminLinks = [
-    { to: "/dashboard/create-course", label: "Create Course", icon: <BookOpen className="w-4 h-4" /> },
-    { to: "/courses", label: "Manage Courses", icon: <BookOpen className="w-4 h-4" /> },
-    { to: "/dashboard/users", label: "Manage Users", icon: <Users className="w-4 h-4" /> },
-    { to: "/dashboard/reports", label: "Manage Reports", icon: <ClipboardList className="w-4 h-4" /> },
+    {
+      to: "/dashboard/create-course",
+      label: "Create Course",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      to: "/courses",
+      label: "Manage Courses",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      to: "/dashboard/users",
+      label: "Manage Users",
+      icon: <Users className="w-4 h-4" />,
+    },
+    {
+      to: "/dashboard/reports",
+      label: "Manage Reports",
+      icon: <ClipboardList className="w-4 h-4" />,
+    },
   ];
 
   // Determine active link
@@ -61,7 +89,9 @@ export default function DashboardLayout() {
   // Keep admin menu open if inside admin page
   useEffect(() => {
     if (user?.role === "admin") {
-      const isAdminPage = adminLinks.some((link) => location.pathname.startsWith(link.to));
+      const isAdminPage = adminLinks.some((link) =>
+        location.pathname.startsWith(link.to)
+      );
       setAdminOpen(isAdminPage);
     }
   }, [location.pathname]);
@@ -98,7 +128,11 @@ export default function DashboardLayout() {
               const active = currentPage?.to === link.to;
               const linkClass = `flex items-center gap-2 w-full rounded-lg transition-all duration-200 ${
                 sidebarOpen ? "px-3 py-2 text-sm" : "px-0 py-2 justify-center"
-              } ${active ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"}`;
+              } ${
+                active
+                  ? "bg-blue-600 text-white"
+                  : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"
+              }`;
               return (
                 <li key={link.to} className="w-full">
                   {sidebarOpen ? (
@@ -107,8 +141,17 @@ export default function DashboardLayout() {
                       <span className="truncate font-medium">{link.label}</span>
                     </Link>
                   ) : (
-                    <Tippy content={link.label} placement="right" animation="fade" theme="light-border">
-                      <Link to={link.to} className={linkClass} aria-label={link.label}>
+                    <Tippy
+                      content={link.label}
+                      placement="right"
+                      animation="fade"
+                      theme="light-border"
+                    >
+                      <Link
+                        to={link.to}
+                        className={linkClass}
+                        aria-label={link.label}
+                      >
                         {link.icon}
                       </Link>
                     </Tippy>
@@ -127,12 +170,22 @@ export default function DashboardLayout() {
                     >
                       <div className="flex items-center gap-3">
                         <LayoutDashboard className="w-4 h-4 text-slate-600" />
-                        <span className="font-medium text-slate-800">Admin Panel</span>
+                        <span className="font-medium text-slate-800">
+                          Admin Panel
+                        </span>
                       </div>
-                      {adminOpen ? <ChevronDown className="w-4 h-4 text-slate-600" /> : <ChevronRight className="w-4 h-4 text-slate-600" />}
+                      {adminOpen ? (
+                        <ChevronDown className="w-4 h-4 text-slate-600" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4 text-slate-600" />
+                      )}
                     </button>
 
-                    <div className={`overflow-hidden transition-all duration-300 ${adminOpen ? "max-h-80 mt-1" : "max-h-0"}`}>
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ${
+                        adminOpen ? "max-h-80 mt-1" : "max-h-0"
+                      }`}
+                    >
                       <ul className="ml-4 space-y-1">
                         {adminLinks.map((link) => {
                           const active = currentPage?.to === link.to;
@@ -141,11 +194,15 @@ export default function DashboardLayout() {
                               <Link
                                 to={link.to}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
-                                  active ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"
+                                  active
+                                    ? "bg-blue-600 text-white"
+                                    : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"
                                 }`}
                               >
                                 {link.icon}
-                                <span className="font-medium">{link.label}</span>
+                                <span className="font-medium">
+                                  {link.label}
+                                </span>
                               </Link>
                             </li>
                           );
@@ -154,7 +211,12 @@ export default function DashboardLayout() {
                     </div>
                   </>
                 ) : (
-                  <Tippy content="Admin Panel" placement="right" animation="fade" theme="light-border">
+                  <Tippy
+                    content="Admin Panel"
+                    placement="right"
+                    animation="fade"
+                    theme="light-border"
+                  >
                     <button
                       className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-all"
                       onClick={() => {
@@ -182,7 +244,12 @@ export default function DashboardLayout() {
                 <span className="font-medium">Logout</span>
               </button>
             ) : (
-              <Tippy content="Logout" placement="right" animation="fade" theme="light-border">
+              <Tippy
+                content="Logout"
+                placement="right"
+                animation="fade"
+                theme="light-border"
+              >
                 <button
                   onClick={clearAuth}
                   className="flex items-center justify-center w-full p-2 rounded-lg text-red-600 hover:bg-red-50 transition-all"

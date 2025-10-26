@@ -20,6 +20,8 @@ import DashboardHome from "./pages/DashboardPages/DashboardHome";
 import CreateCoursesPage from "./pages/DashboardPages/CreateCoursesPage";
 import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
+import CreateQuestionsPage from "./pages/DashboardPages/CreateQuestionsPage";
+
 
 
 
@@ -59,6 +61,7 @@ function App() {
               <Route path="questions" element={<ExamQuestions />} />
               <Route path="users" element={<ManageUsers />} />
               <Route path="reports" element={<ManageReports />} />
+              <Route path="create-question" element={<CreateQuestionsPage />}/>
             </Route>
           </Routes>
         </PageWrapper>

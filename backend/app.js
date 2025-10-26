@@ -8,12 +8,15 @@ import courseRoutes from "./routes/courses.js";
 import examRoutes from "./routes/exams.js";
 import dashboardRoutes from "./routes/dashboard.js";
 
+import { createRouteHandler } from "uploadthing/express";
+import { uploadRouter } from "./routes/uploadthing.js";
+
 const app = express();
 
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH" , "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
@@ -35,4 +38,14 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
+// UploadThing route
+app.use(
+  "/api/uploadthing",
+  createRouteHandler({
+    router: uploadRouter,
+    config: {
+      callbackUrl: `${process.env.FRONTEND_URL}/api/uploadthing/callback`,
+    },
+  })
+);
 export default app;
