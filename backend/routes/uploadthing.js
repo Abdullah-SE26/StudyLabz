@@ -3,18 +3,21 @@ import { createUploadthing } from "uploadthing/express";
 const f = createUploadthing();
 
 export const uploadRouter = {
-  // Define as many FileRoutes as you like, each with a unique routeSlug
   imageUploader: f({
     image: {
-      /**
-       * For full list of options and defaults, see the File Route API reference
-       * @see https://docs.uploadthing.com/file-routes#route-config
-       */
       maxFileSize: "4MB",
       maxFileCount: 1,
     },
-  }).onUploadComplete((data) => {
-    console.log("upload completed", data);
+  }).onUploadComplete(async (file) => {
+    try {
+      console.log("Upload completed:", file);
+
+      // Optional: save file info to DB
+      // await prisma.question.update({ ... });
+
+    } catch (err) {
+      console.error("Error in UploadThing callback:", err);
+  
+    }
   }),
 };
-

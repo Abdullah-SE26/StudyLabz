@@ -39,21 +39,21 @@ export default function DashboardLayout() {
   }, []);
 
   const baseLinks = [
-    { to: "/dashboard", label: "Home", icon: <Home className="w-4 h-4" /> },
+    { to: "/dashboard", label: "Home", icon: <Home className="w-5 h-5" /> },
     {
       to: "/dashboard/my-questions",
       label: "My Questions",
-      icon: <HelpCircle className="w-4 h-4" />,
+      icon: <HelpCircle className="w-5 h-5" />,
     },
     {
       to: "/dashboard/bookmarks",
       label: "My Bookmarks",
-      icon: <Bookmark className="w-4 h-4" />,
+      icon: <Bookmark className="w-5 h-5" />,
     },
     {
       to: "/dashboard/create-question",
       label: "Create Question",
-      icon: <FilePlus className="w-4 h-4" />,
+      icon: <FilePlus className="w-5 h-5" />,
     },
   ];
 
@@ -61,22 +61,22 @@ export default function DashboardLayout() {
     {
       to: "/dashboard/create-course",
       label: "Create Course",
-      icon: <BookOpen className="w-4 h-4" />,
+      icon: <BookOpen className="w-5 h-5" />,
     },
     {
       to: "/courses",
       label: "Manage Courses",
-      icon: <BookOpen className="w-4 h-4" />,
+      icon: <BookOpen className="w-5 h-5" />,
     },
     {
       to: "/dashboard/users",
       label: "Manage Users",
-      icon: <Users className="w-4 h-4" />,
+      icon: <Users className="w-5 h-5" />,
     },
     {
       to: "/dashboard/reports",
       label: "Manage Reports",
-      icon: <ClipboardList className="w-4 h-4" />,
+      icon: <ClipboardList className="w-5 h-5" />,
     },
   ];
 

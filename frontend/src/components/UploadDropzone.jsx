@@ -1,42 +1,76 @@
-// frontend/components/UploadDropzone.jsx
 import { useState } from "react";
-import { generateUploadButton } from "@uploadthing/react";
-import { toast } from "react-hot-toast";
+import { ImagePlus, X } from "lucide-react";
+import toast from "react-hot-toast";
 
-// Use meta env for backend URL
-const backendUrl = import.meta.env.VITE_API_URL;
+export default function UploadDropzone({ onFileSelect, maxFiles = 1 }) {
+  const [files, setFiles] = useState([]);
+  const [preview, setPreview] = useState(null);
 
-// Generate a pre-configured UploadButton for your backend
-export const UploadButton = generateUploadButton({
-  url: `${backendUrl}/api/uploadthing`,
-});
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-export default function UploadDropzone({ endpoint, onUploadComplete, maxFiles = 1 }) {
-  const [uploadedFiles, setUploadedFiles] = useState([]);
+    // Only PNG/JPG allowed
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      toast.error("Only PNG and JPG images are allowed!");
+      return;
+    }
+
+    // Limit max files
+    if (files.length >= maxFiles) {
+      toast.error(`You can only upload up to ${maxFiles} file(s).`);
+      return;
+    }
+
+    setFiles([file]);
+    onFileSelect?.(file);
+
+    // Preview
+    const reader = new FileReader();
+    reader.onload = () => setPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemove = () => {
+    setFiles([]);
+    setPreview(null);
+    onFileSelect?.(null);
+  };
 
   return (
-    <UploadButton
-      endpoint={endpoint}
-      onClientUploadComplete={(res) => {
-        if (res?.length) {
-          const urls = res.map((file) => file.fileUrl);
-          setUploadedFiles(urls);
-          onUploadComplete?.(urls); // send uploaded URLs back to parent
-          toast.success("Upload completed!");
-        }
-      }}
-      onUploadError={(err) => {
-        console.error("Upload error:", err);
-        toast.error("Upload failed!");
-      }}
-      maxFiles={maxFiles}
-    >
-      <button
-        type="button"
-        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-      >
-        Upload File
-      </button>
-    </UploadButton>
+    <div className="p-4 border-2 border-dashed rounded-xl border-gray-300 hover:border-blue-400 transition relative">
+      {files.length === 0 ? (
+        <label className="flex flex-col items-center justify-center gap-2 cursor-pointer text-gray-700">
+          <ImagePlus className="w-12 h-12 text-gray-500" />
+          <p className="font-medium">Drag & drop an image here</p>
+          <p className="text-sm text-gray-500">or click to browse (PNG/JPG only)</p>
+          <input
+            type="file"
+            accept="image/png, image/jpeg"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </label>
+      ) : (
+        <div className="flex flex-col items-center gap-3">
+          {preview && (
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-48 h-48 object-cover rounded-lg border shadow-sm"
+            />
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+              onClick={handleRemove}
+            >
+              <X className="w-4 h-4 inline" /> Remove
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

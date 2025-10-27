@@ -1,280 +1,227 @@
-// frontend/pages/CreateQuestionPage.jsx
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { useStore } from "../../store/authStore";
+import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
 
 export default function CreateQuestionPage() {
   const token = useStore((state) => state.authToken);
 
   const [text, setText] = useState("");
+  const [marks, setMarks] = useState("");
   const [type, setType] = useState("MCQ");
-  const [marks, setMarks] = useState(1);
   const [options, setOptions] = useState(["", "", "", ""]);
-  const [hasImage, setHasImage] = useState(false);
-  const [image, setImage] = useState(null);
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const [courses, setCourses] = useState([]);
   const [exams, setExams] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
 
-  // Safe fetch with useCallback
-  const safeFetchJSON = useCallback(
-    async (url) => {
-      try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const contentType = res.headers.get("content-type");
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || "Failed to fetch");
-        } else if (!contentType?.includes("application/json")) {
-          const text = await res.text();
-          throw new Error("Invalid server response: " + text);
-        }
-
-        return await res.json();
-      } catch (err) {
-        toast.error(`❌ ${err.message}`, { duration: 4000 });
-        return null;
+  const safeFetchJSON = useCallback(async (url) => {
+    try {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to fetch");
+      } else if (!contentType?.includes("application/json")) {
+        const text = await res.text();
+        throw new Error("Invalid server response: " + text);
       }
-    },
-    [token]
-  );
+      return await res.json();
+    } catch (err) {
+      toast.error(err.message, { duration: 4000 });
+      return null;
+    }
+  }, [token]);
 
-  // Fetch courses on mount
   useEffect(() => {
     if (!token) return;
-
     const fetchCourses = async () => {
       const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/api/courses`);
       if (!data) return;
-
       const normalized = Array.isArray(data)
         ? data
         : Array.isArray(data.courses)
         ? data.courses
         : [];
-      setCourses(
-        normalized.map((c) => ({
-          id: String(c.id),
-          name: c.name,
-        }))
-      );
+      setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
     };
-
     fetchCourses();
   }, [token, safeFetchJSON]);
 
-  // Fetch exams when course changes
   useEffect(() => {
     if (!courseId) {
       setExams([]);
       setExamId("");
       return;
     }
-
     const fetchExams = async () => {
       const data = await safeFetchJSON(
         `${import.meta.env.VITE_API_URL}/api/exams?courseId=${courseId}`
       );
       if (!data) return;
-
       const examsArray = Array.isArray(data)
         ? data
         : Array.isArray(data.exams)
         ? data.exams
         : [];
-      setExams(
-        examsArray.map((ex) => ({
-          id: String(ex.id),
-          title: ex.title,
-        }))
-      );
-      setExamId(""); // reset exam selection on course change
+      setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
+      setExamId("");
     };
-
     fetchExams();
   }, [courseId, safeFetchJSON]);
 
-  const handleOptionChange = (i, value) => {
-    const newOptions = [...options];
-    newOptions[i] = value;
-    setOptions(newOptions);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!courseId || !examId)
-      return toast.error("Please select a course and an exam");
+    if (!courseId || !examId) return toast.error("Select course and exam");
+    if (!text.trim()) return toast.error("Question text cannot be empty");
+    if (!marks || isNaN(marks) || marks <= 0) return toast.error("Marks must be a positive number");
+    if (type === "MCQ" && options.some((o) => !o.trim())) return toast.error("All 4 options are required");
 
-    const payload = {
-      text,
-      type,
-      marks,
-      options: type === "MCQ" ? options : null,
-      courseId,
-      examId,
-      image,
-    };
+    setLoading(true);
 
     try {
+      let uploadedFileUrl = null;
+      if (attachmentFile) {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/uploadthing`, {
+          method: "POST",
+          body: attachmentFile,
+        });
+        const data = await res.json();
+        uploadedFileUrl = data?.fileUrl || null;
+      }
+
+      const payload = {
+        text,
+        type,
+        marks: Number(marks),
+        courseId,
+        examId,
+        image: uploadedFileUrl,
+        options: type === "MCQ" ? options : undefined,
+      };
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/questions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error || "Failed to create question");
-      }
-
-      toast.success("✅ Question created successfully!", { duration: 3000 });
-
-      // Reset form
-      setText("");
-      setType("MCQ");
-      setMarks(1);
-      setOptions(["", "", "", ""]);
-      setHasImage(false);
-      setImage(null);
-      setCourseId("");
-      setExamId("");
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Question created successfully!");
+        setText("");
+        setMarks("");
+        setOptions(["", "", "", ""]);
+        setAttachmentFile(null);
+        setCourseId("");
+        setExamId("");
+        setType("MCQ");
+      } else toast.error(data.error || "Failed to create question");
     } catch (err) {
-      toast.error(`❌ ${err.message}`, { duration: 4000 });
+      console.error(err);
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="space-y-4 max-w-3xl mx-auto p-4 bg-white shadow rounded"
-    >
-      {/* Question Type */}
-      <div>
-        <label className="block mb-1 font-medium">Question Type</label>
-        <select
-          className="border rounded px-2 py-1 w-full"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-        >
-          <option value="MCQ">MCQ</option>
-          <option value="Essay">Essay</option>
-        </select>
-      </div>
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-base-200 rounded-2xl shadow-xl">
+      <h1 className="text-2xl font-semibold mb-6 flex items-center gap-2">
+        <Upload className="w-6 h-6 text-primary" /> Create New Question
+      </h1>
 
-      {/* Question Text */}
-      <div>
-        <label className="block mb-1 font-medium">Question Text</label>
-        <textarea
-          className="border rounded px-2 py-1 w-full"
-          rows={4}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Course & Exam */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="font-medium">Course</label>
+            <select
+              className="select select-bordered w-full mt-2"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+            >
+              <option value="">Select Course</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="font-medium">Exam</label>
+            <select
+              className="select select-bordered w-full mt-2"
+              value={examId}
+              onChange={(e) => setExamId(e.target.value)}
+              disabled={!exams.length}
+            >
+              <option value="">Select Exam</option>
+              {exams.map((ex) => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
+            </select>
+          </div>
+        </div>
 
-      {/* MCQ Options */}
-      {type === "MCQ" &&
-        options.map((opt, i) => (
-          <div key={i}>
+        {/* Marks & Question Type */}
+        <div className="grid grid-cols-2 gap-4 items-end">
+          <div>
+            <label className="font-medium">Marks</label>
             <input
-              type="text"
-              className="border rounded px-2 py-1 w-full mb-1"
-              value={opt}
-              onChange={(e) => handleOptionChange(i, e.target.value)}
-              placeholder={`Option ${i + 1}`}
+              type="number"
+              className="input input-bordered w-full mt-2"
+              placeholder="Marks"
+              value={marks}
+              onChange={(e) => setMarks(e.target.value)}
+              min={1}
             />
           </div>
-        ))}
-
-      {/* Marks */}
-      <div>
-        <label className="block mb-1 font-medium">Marks</label>
-        <input
-          type="number"
-          min={1}
-          className="border rounded px-2 py-1 w-24"
-          value={marks}
-          onChange={(e) => setMarks(Number(e.target.value))}
-        />
-      </div>
-
-      {/* Course */}
-      <div>
-        <label className="block mb-1 font-medium">Course</label>
-        <select
-          className="border rounded px-2 py-1 w-full"
-          value={courseId}
-          onChange={(e) => setCourseId(e.target.value)}
-        >
-          <option value="">Select Course</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Exam */}
-      <div>
-        <label className="block mb-1 font-medium">Exam</label>
-        <select
-          className="border rounded px-2 py-1 w-full"
-          value={examId}
-          onChange={(e) => setExamId(e.target.value)}
-          disabled={exams.length === 0}
-        >
-          <option value="">Select Exam</option>
-          {exams.map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              {ex.title}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Image Toggle */}
-      <div className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="hasImage"
-          checked={hasImage}
-          onChange={(e) => setHasImage(e.target.checked)}
-        />
-        <label htmlFor="hasImage">Include Image/Diagram</label>
-      </div>
-
-      {/* UploadDropzone */}
-      {hasImage && (
-        <div className="mt-2">
-          <label className="block mb-1 font-medium">Upload Image</label>
-          <UploadDropzone
-            endpoint="imageUploader"
-            onUploadComplete={(urls) => {
-              if (urls?.[0]) {
-                setImage(urls[0].fileUrl);
-                toast.success("✅ Image uploaded successfully!", { duration: 2000 });
-              }
-            }}
-            onUploadError={(err) => toast.error(`❌ ${err.message}`)}
-            maxFiles={1}
-            accept={["image/*"]}
-          />
-          {image && <p className="text-sm mt-1">Uploaded: {image}</p>}
+          <div>
+            <label className="font-medium">Question Type</label>
+            <select
+              className="select select-bordered w-full mt-2"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              <option value="MCQ">MCQ</option>
+              <option value="Essay">Essay</option>
+            </select>
+          </div>
         </div>
-      )}
 
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Create Question
-      </button>
-    </form>
+        {/* Question Text */}
+        <div>
+          <label className="font-medium">Question Text</label>
+          <textarea
+            className="textarea textarea-bordered w-full mt-2"
+            rows={3}
+            placeholder="Enter the question here..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+        </div>
+
+        {/* Attachment */}
+        <div>
+          <label className="font-medium">Attachment (optional)</label>
+          <UploadDropzone
+            onFileSelect={(file) => setAttachmentFile(file)}
+            maxFiles={1}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2"
+          disabled={loading}
+        >
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
+        </button>
+      </form>
+    </div>
   );
 }

@@ -17,7 +17,14 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-UploadThing-Package",
+      "X-UploadThing-Version",
+      "traceparent",
+      "b3",
+    ],
     credentials: true,
   })
 );
@@ -44,7 +51,7 @@ app.use(
   createRouteHandler({
     router: uploadRouter,
     config: {
-      callbackUrl: `${process.env.FRONTEND_URL}/api/uploadthing/callback`,
+      callbackUrl: `${process.env.BACKEND_URL}/api/uploadthing/callback`,
     },
   })
 );
