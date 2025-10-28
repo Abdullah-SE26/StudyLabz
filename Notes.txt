@@ -15,5 +15,9 @@ BACKEND:
 
 fix all the opened files (their ui and ux)
 
+upload thing image upload not working.
+shouod be upoaded after clciking on create question
+pointing to the wrong url (frontend instead of backend)
+
 
 

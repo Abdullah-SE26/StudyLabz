@@ -4,6 +4,15 @@ import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
 
+// UploadThing client
+import { genUploader } from "uploadthing/client";
+
+const uploader = genUploader({
+  url: `${import.meta.env.VITE_API_URL}/api/uploadthing`, // use url instead of apiBase
+});
+
+const uploadFiles = uploader.uploadFiles;
+
 export default function CreateQuestionPage() {
   const token = useStore((state) => state.authToken);
 
@@ -13,34 +22,41 @@ export default function CreateQuestionPage() {
   const [options, setOptions] = useState(["", "", "", ""]);
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
-
   const [courses, setCourses] = useState([]);
   const [exams, setExams] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
 
-  const safeFetchJSON = useCallback(async (url) => {
-    try {
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-      const contentType = res.headers.get("content-type");
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to fetch");
-      } else if (!contentType?.includes("application/json")) {
-        const text = await res.text();
-        throw new Error("Invalid server response: " + text);
+  const safeFetchJSON = useCallback(
+    async (url) => {
+      try {
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const contentType = res.headers.get("content-type");
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || "Failed to fetch");
+        } else if (!contentType?.includes("application/json")) {
+          const text = await res.text();
+          throw new Error("Invalid server response: " + text);
+        }
+        return await res.json();
+      } catch (err) {
+        toast.error(err.message, { duration: 4000 });
+        return null;
       }
-      return await res.json();
-    } catch (err) {
-      toast.error(err.message, { duration: 4000 });
-      return null;
-    }
-  }, [token]);
+    },
+    [token]
+  );
 
+  // Fetch courses
   useEffect(() => {
     if (!token) return;
     const fetchCourses = async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/api/courses`);
+      const data = await safeFetchJSON(
+        `${import.meta.env.VITE_API_URL}/api/courses`
+      );
       if (!data) return;
       const normalized = Array.isArray(data)
         ? data
@@ -52,6 +68,7 @@ export default function CreateQuestionPage() {
     fetchCourses();
   }, [token, safeFetchJSON]);
 
+  // Fetch exams
   useEffect(() => {
     if (!courseId) {
       setExams([]);
@@ -68,7 +85,9 @@ export default function CreateQuestionPage() {
         : Array.isArray(data.exams)
         ? data.exams
         : [];
-      setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
+      setExams(
+        examsArray.map((ex) => ({ id: String(ex.id), title: ex.title }))
+      );
       setExamId("");
     };
     fetchExams();
@@ -76,22 +95,25 @@ export default function CreateQuestionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!courseId || !examId) return toast.error("Select course and exam");
     if (!text.trim()) return toast.error("Question text cannot be empty");
-    if (!marks || isNaN(marks) || marks <= 0) return toast.error("Marks must be a positive number");
-    if (type === "MCQ" && options.some((o) => !o.trim())) return toast.error("All 4 options are required");
+    if (!marks || isNaN(Number(marks)) || Number(marks) <= 0)
+      return toast.error("Marks must be a positive number");
+    if (type === "MCQ" && options.some((o) => !o.trim()))
+      return toast.error("All 4 options are required");
 
     setLoading(true);
 
     try {
       let uploadedFileUrl = null;
+
+      // Upload attachment only when submitting
       if (attachmentFile) {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/uploadthing`, {
-          method: "POST",
-          body: attachmentFile,
+        const uploaded = await uploadFiles("imageUploader", {
+          files: [attachmentFile],
         });
-        const data = await res.json();
-        uploadedFileUrl = data?.fileUrl || null;
+        uploadedFileUrl = uploaded[0]?.ufsUrl || null;
       }
 
       const payload = {
@@ -116,6 +138,7 @@ export default function CreateQuestionPage() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Question created successfully!");
+        // Reset everything
         setText("");
         setMarks("");
         setOptions(["", "", "", ""]);
@@ -123,10 +146,12 @@ export default function CreateQuestionPage() {
         setCourseId("");
         setExamId("");
         setType("MCQ");
-      } else toast.error(data.error || "Failed to create question");
+      } else {
+        toast.error(data.error || "Failed to create question");
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong");
+      toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -149,7 +174,11 @@ export default function CreateQuestionPage() {
               onChange={(e) => setCourseId(e.target.value)}
             >
               <option value="">Select Course</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -161,12 +190,16 @@ export default function CreateQuestionPage() {
               disabled={!exams.length}
             >
               <option value="">Select Exam</option>
-              {exams.map((ex) => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
+              {exams.map((ex) => (
+                <option key={ex.id} value={ex.id}>
+                  {ex.title}
+                </option>
+              ))}
             </select>
           </div>
         </div>
 
-        {/* Marks & Question Type */}
+        {/* Marks & Type */}
         <div className="grid grid-cols-2 gap-4 items-end">
           <div>
             <label className="font-medium">Marks</label>
@@ -204,22 +237,48 @@ export default function CreateQuestionPage() {
           />
         </div>
 
+        {/* MCQ Options */}
+        {type === "MCQ" && (
+          <div className="space-y-2">
+            <label className="font-medium">Options</label>
+            {options.map((opt, idx) => (
+              <input
+                key={idx}
+                type="text"
+                className="input input-bordered w-full"
+                value={opt}
+                onChange={(e) => {
+                  const newOptions = [...options];
+                  newOptions[idx] = e.target.value;
+                  setOptions(newOptions);
+                }}
+                placeholder={`Option ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Attachment */}
         <div>
           <label className="font-medium">Attachment (optional)</label>
           <UploadDropzone
+            file={attachmentFile} // controlled
             onFileSelect={(file) => setAttachmentFile(file)}
             maxFiles={1}
           />
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
           className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2"
           disabled={loading}
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            "Save Question"
+          )}
         </button>
       </form>
     </div>

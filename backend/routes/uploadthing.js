@@ -12,12 +12,10 @@ export const uploadRouter = {
     try {
       console.log("Upload completed:", file);
 
-      // Optional: save file info to DB
+      // Optional: Save to DB
       // await prisma.question.update({ ... });
-
     } catch (err) {
-      console.error("Error in UploadThing callback:", err);
-  
+      console.error("UploadThing callback error:", err);
     }
   }),
 };
