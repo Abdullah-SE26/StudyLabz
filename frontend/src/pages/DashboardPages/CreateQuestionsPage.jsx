@@ -190,7 +190,7 @@ export default function CreateQuestionPage() {
             >
               <option value="">Select Exam</option>
               {exams.map((ex) => (
-                <option key={ex.id} value={ex.id}>
+                <option key={ex.id} value={ex.id} className="bg-white">
                   {ex.title}
                 </option>
               ))}
