@@ -1,16 +1,18 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CalendarDays, Tag as TagIcon, Pencil, Trash2 } from "lucide-react";
+import { useStore } from "../store/authStore"; // assuming your authStore has user info
 
 export default function CourseCard({
   course,
   onTagClick,
   selectedTags = [],
-  isAdminMode = false,
   onEdit,
   onDelete,
 }) {
   const navigate = useNavigate();
+  const user = useStore((state) => state.user); // your logged-in user
+  const isAdminMode = user?.role === "admin";   // auto-check role
   const formattedDate = new Date(course.createdAt).toLocaleDateString();
 
   const handleNavigate = () => navigate(`/courses/${course.id}/exams`);
@@ -36,7 +38,6 @@ export default function CourseCard({
 
   const CardInner = (
     <div className="flex flex-col gap-3 p-5 animate-fadeInSlow">
-      {/* Header */}
       <div>
         <h3 className="text-lg font-semibold text-gray-800 leading-snug text-center">
           {course.title || course.name}
@@ -47,14 +48,12 @@ export default function CourseCard({
         </div>
       </div>
 
-      {/* Description */}
       {course.description && (
         <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
           {course.description}
         </p>
       )}
 
-      {/* Tags */}
       {course.tags?.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-1">
           {course.tags.map((tag, i) => (
@@ -67,7 +66,7 @@ export default function CourseCard({
         </div>
       )}
 
-      {/* Admin Buttons */}
+      {/* Only show buttons for admins */}
       {isAdminMode && (
         <div className="flex gap-3 mt-3 animate-fadeInDelay">
           <button
@@ -100,7 +99,7 @@ export default function CourseCard({
 
   return (
     <div
-      onClick={!isAdminMode ? undefined : handleNavigate}
+      onClick={!isAdminMode ? handleNavigate : undefined}
       className="group relative rounded-2xl border border-amber-100/60 
       bg-gradient-to-br from-amber-50 via-white to-amber-100/40 
       shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-500 cursor-pointer overflow-hidden"
@@ -113,10 +112,7 @@ export default function CourseCard({
         CardInner
       )}
 
-      {/* Subtle hover shine */}
       <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-tr from-transparent via-white/15 to-transparent pointer-events-none"></div>
     </div>
   );
 }
-
-
