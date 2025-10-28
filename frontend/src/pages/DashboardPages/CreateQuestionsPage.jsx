@@ -157,7 +157,7 @@ export default function CreateQuestionPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 bg-base-200 rounded-2xl shadow-xl">
+    <div className="max-w-3xl mx-auto mt-10 p-6 rounded-2xl shadow-xl">
       <h1 className="text-2xl font-semibold mb-6 flex items-center gap-2">
         <Upload className="w-6 h-6 text-primary" /> Create New Question
       </h1>
