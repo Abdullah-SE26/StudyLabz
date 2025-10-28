@@ -1,6 +1,7 @@
 // src/pages/ExamQuestions.jsx
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import DOMPurify from "dompurify";
 
 const ExamQuestions = () => {
   const { examId } = useParams();
@@ -41,7 +42,11 @@ const ExamQuestions = () => {
   }
 
   if (!questions.length) {
-    return <p className="text-center mt-10 text-gray-500">No questions available for this exam.</p>;
+    return (
+      <p className="text-center mt-10 text-gray-500">
+        No questions available for this exam.
+      </p>
+    );
   }
 
   return (
@@ -53,9 +58,10 @@ const ExamQuestions = () => {
             key={q.id}
             className="card bg-base-100 shadow-md border hover:border-blue-400 transition-all p-4"
           >
-            <p className="font-medium">
-              {idx + 1}. {q.text}
-            </p>
+            <div
+              className="font-medium"
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.text) }}
+            />
             {q.options && Array.isArray(q.options) && (
               <ul className="list-disc list-inside mt-2 text-gray-600">
                 {q.options.map((opt, i) => (
