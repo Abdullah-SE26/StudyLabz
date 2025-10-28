@@ -3,12 +3,11 @@ import toast from "react-hot-toast";
 import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
-
-// UploadThing client
 import { genUploader } from "uploadthing/client";
+import RichTextEditor from "../../components/JoditEditor";
 
 const uploader = genUploader({
-  url: `${import.meta.env.VITE_API_URL}/api/uploadthing`, // use url instead of apiBase
+  url: `${import.meta.env.VITE_API_URL}/api/uploadthing`,
 });
 
 const uploadFiles = uploader.uploadFiles;
@@ -228,13 +227,9 @@ export default function CreateQuestionPage() {
         {/* Question Text */}
         <div>
           <label className="font-medium">Question Text</label>
-          <textarea
-            className="textarea textarea-bordered w-full mt-2"
-            rows={3}
-            placeholder="Enter the question here..."
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
+          <div>
+            <RichTextEditor value={text} onChange={setText} />
+          </div>
         </div>
 
         {/* MCQ Options */}
