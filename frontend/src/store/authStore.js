@@ -3,6 +3,7 @@ import { create } from "zustand";
 const savedUser = localStorage.getItem("user");
 const savedToken = localStorage.getItem("authToken");
 
+
 export const useStore = create((set) => ({
   authToken: savedToken || null,
   user: savedUser ? JSON.parse(savedUser) : null,

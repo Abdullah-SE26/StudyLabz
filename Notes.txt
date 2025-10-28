@@ -1,36 +1,23 @@
 TODOs:
 
 FRONTEND:
-Stagger Testimonials from hover.dev for courses featured section
 navabar responsiveness
+delete modal add x button
 
 
 
 
 BACKEND:
-fix the image url in authController.js after deploying to vercel
 
 
 
 
 
-Tippy:
-import Tippy from "@tippyjs/react";
-import "tippy.js/dist/tippy.css";
-import "tippy.js/animations/scale-extreme.css";
+fix all the opened files (their ui and ux)
 
- <Tippy
-content="GitHub Profile"
-placement="bottom"
-arrow={true}
-animation="scale-extrem
- >
-<a
-href={member.github}
-target="_blank"
-rel="noopener noreferrer"
-className="text-slate-700 hover:text-blue-500 transition"
->
-<IconBrandGithub size={25} />
- </a>
- </Tippy>
+upload thing image upload not working.
+shouod be upoaded after clciking on create question
+pointing to the wrong url (frontend instead of backend)
+
+
+

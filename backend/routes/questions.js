@@ -5,6 +5,7 @@ import {
   toggleLikeQuestion,
   reportQuestion,
   deleteQuestion,
+  getQuestionsByExam,
 } from "../controllers/questionController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
@@ -15,5 +16,6 @@ router.post("/", authMiddleware, createQuestion);
 router.post("/:id/like", authMiddleware, toggleLikeQuestion);
 router.post("/:id/report", authMiddleware, reportQuestion);
 router.delete("/:id", authMiddleware, deleteQuestion);
+
 
 export default router;

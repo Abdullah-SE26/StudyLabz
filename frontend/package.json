@@ -13,6 +13,7 @@
     "@tabler/icons-react": "^3.35.0",
     "@tailwindcss/vite": "^4.1.13",
     "@tippyjs/react": "^4.2.6",
+    "@uploadthing/react": "^7.3.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.544.0",
     "motion": "^12.23.22",
@@ -22,6 +23,7 @@
     "react-router-dom": "^7.9.1",
     "tailwind-merge": "^3.3.1",
     "tippy.js": "^6.3.7",
+    "uploadthing": "^7.7.4",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

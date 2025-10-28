@@ -1,4 +1,5 @@
 import prisma from "../prismaClient.js";
+import { sanitize } from "../utils/sanitize.js";
 
 // ✅ GET /questions?page=1&limit=10&search=keyword
 export const getQuestions = async (req, res, next) => {
@@ -40,20 +41,110 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
+// GET /questions by exam
+export const getQuestionsByExam = async (req, res, next) => {
+  try {
+    const examId = Number(req.params.id);
+
+    const questions = await prisma.question.findMany({
+      where: { examId },
+      include: {
+        createdBy: { select: { id: true, name: true } },
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json(questions);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ✅ POST /questions
 export const createQuestion = async (req, res, next) => {
   try {
-    const { text } = req.body;
     const userId = req.user.id;
+    const { text, type, options, marks, courseId, examId, image } = req.body;
 
+    // --- 1️⃣ Validation ---
     if (!text || !text.trim()) {
-      return res.status(400).json({ success: false, error: "Text is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Question text is required" });
     }
 
+    if (!type || !["MCQ", "Essay"].includes(type)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid question type" });
+    }
+
+    if (!marks || isNaN(marks) || marks <= 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Marks must be a positive number" });
+    }
+
+    if (!courseId) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Course ID is required" });
+    }
+
+    // --- 2️⃣ Verify Course & Exam existence ---
+    const course = await prisma.course.findUnique({
+      where: { id: Number(courseId) },
+    });
+    if (!course) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
+    }
+
+    if (examId) {
+      const exam = await prisma.exam.findUnique({
+        where: { id: Number(examId) },
+      });
+      if (!exam) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Exam not found" });
+      }
+    }
+
+    // --- 3️⃣ Sanitize the text ---
+    const cleanText = sanitize(text);
+
+    // --- 4️⃣ Handle options for MCQ only ---
+    let parsedOptions = null;
+    if (type === "MCQ") {
+      if (!options || !Array.isArray(options) || options.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "MCQ questions must have at least two options",
+        });
+      }
+      parsedOptions = options.map((opt) => sanitize(opt));
+    }
+
+    // --- 5️⃣ Create the Question ---
     const question = await prisma.question.create({
       data: {
-        text: text.trim(),
-        userId,
+        type,
+        text: cleanText,
+        options: parsedOptions,
+        marks: Number(marks),
+        image: image?.trim() || null,
+        course: { connect: { id: Number(courseId) } },
+        exam: examId ? { connect: { id: Number(examId) } } : undefined,
+        createdBy: { connect: { id: userId } },
+      },
+      include: {
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+        createdBy: { select: { id: true, name: true } },
       },
     });
 
@@ -108,7 +199,9 @@ export const reportQuestion = async (req, res, next) => {
     const { reason } = req.body;
 
     if (!reason || !reason.trim()) {
-      return res.status(400).json({ success: false, error: "Reason is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Reason is required" });
     }
 
     const report = await prisma.report.create({
@@ -140,7 +233,9 @@ export const deleteQuestion = async (req, res, next) => {
     });
 
     if (!question) {
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
     }
 
     if (question.userId !== userId) {

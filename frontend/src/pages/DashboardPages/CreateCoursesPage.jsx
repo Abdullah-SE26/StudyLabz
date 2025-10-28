@@ -9,7 +9,7 @@ import {
   Tag,
   Hash,
   ArrowLeft,
-  Pickaxe,
+  PencilLine,
   FileText,
   Image,
 } from "lucide-react";
@@ -271,7 +271,7 @@ export default function CreateCoursesPage() {
               </>
             ) : (
               <>
-                <Pickaxe className="w-5 h-5" />
+                <PencilLine className="w-5 h-5" />
                 Create Course
               </>
             )}
