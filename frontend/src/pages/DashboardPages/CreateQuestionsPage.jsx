@@ -168,7 +168,7 @@ export default function CreateQuestionPage() {
           <div>
             <label className="font-medium">Course</label>
             <select
-              className="select select-bordered w-full mt-2"
+              className="select select-bordered w-full mt-2 bg-white"
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
             >
@@ -183,7 +183,7 @@ export default function CreateQuestionPage() {
           <div>
             <label className="font-medium">Exam</label>
             <select
-              className="select select-bordered w-full mt-2"
+              className="select select-bordered w-full mt-2 bg-white"
               value={examId}
               onChange={(e) => setExamId(e.target.value)}
               disabled={!exams.length}
@@ -204,7 +204,7 @@ export default function CreateQuestionPage() {
             <label className="font-medium">Marks</label>
             <input
               type="number"
-              className="input input-bordered w-full mt-2"
+              className="input input-bordered w-full mt-2 bg-white"
               placeholder="Marks"
               value={marks}
               onChange={(e) => setMarks(e.target.value)}
@@ -214,7 +214,7 @@ export default function CreateQuestionPage() {
           <div>
             <label className="font-medium">Question Type</label>
             <select
-              className="select select-bordered w-full mt-2"
+              className="select select-bordered w-full mt-2 bg-white"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
@@ -240,7 +240,7 @@ export default function CreateQuestionPage() {
               <input
                 key={idx}
                 type="text"
-                className="input input-bordered w-full"
+                className="input input-bordered w-full bg-white"
                 value={opt}
                 onChange={(e) => {
                   const newOptions = [...options];
