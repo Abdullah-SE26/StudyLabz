@@ -110,11 +110,11 @@ function ErrorMessage({ error }) {
 function WelcomeBanner({ isAdmin }) {
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-4">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 justify-center">
         <div className="p-2 bg-blue-100 rounded-lg">
           <GraduationCap className="w-6 h-6 text-blue-600" />
         </div>
-        <h1 className="text-xl font-bold text-slate-800">
+        <h1 className="text-xl font-bold text-slate-800 ">
           {isAdmin ? "Admin Dashboard" : "User Dashboard"}
         </h1>
       </div>
