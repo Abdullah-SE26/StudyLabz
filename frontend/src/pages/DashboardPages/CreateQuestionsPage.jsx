@@ -4,7 +4,7 @@ import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
 import { genUploader } from "uploadthing/client";
-import RichTextEditor from "../../components/JoditEditor";
+import RichTextEditor from "../../components/RichTextEditor";
 
 const uploader = genUploader({
   url: `${import.meta.env.VITE_API_URL}/api/uploadthing`,

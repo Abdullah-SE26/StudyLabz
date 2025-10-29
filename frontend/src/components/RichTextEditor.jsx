@@ -7,6 +7,7 @@ export default function RichTextEditor({ value, onChange }) {
   const config = {
     readonly: false,
     height: 500,
+    iframe: false, // ✅ KEY FIX — disable iframe sandbox
     toolbarButtonSize: "middle",
     buttons: [
       "bold",
@@ -23,7 +24,6 @@ export default function RichTextEditor({ value, onChange }) {
     askBeforePasteHTML: false,
     askBeforePasteFromWord: false,
     events: {
-      // ESC to exit fullscreen
       keydown: (e) => {
         if (e.key === "Escape") {
           const ed = editor.current?.editor;

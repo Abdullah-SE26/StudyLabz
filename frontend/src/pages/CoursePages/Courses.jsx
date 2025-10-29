@@ -17,7 +17,7 @@ function useDebounce(callback, delay) {
   );
 }
 
-const Courses = ({ isAdminMode = false }) => {
+const Courses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,9 +154,8 @@ const Courses = ({ isAdminMode = false }) => {
                   course={course}
                   onTagClick={handleTagClickFromCard}
                   selectedTags={selectedTags}
-                  isAdminMode={isAdminMode}
-                  onEdit={() => openEditModal(course)}
-                  onDelete={() => openDeleteModal(course)}
+                  onEdit={openEditModal}
+                  onDelete={openDeleteModal}
                 />
               ))}
             </div>

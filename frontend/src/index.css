@@ -15,3 +15,18 @@
     color: #5C4A3D;
   }
 }
+
+.jodit-wysiwyg ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+}
+
+.jodit-wysiwyg ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+}
+
+.jodit-wysiwyg ol[type="A"] { list-style-type: upper-alpha; }
+.jodit-wysiwyg ol[type="a"] { list-style-type: lower-alpha; }
+.jodit-wysiwyg ol[type="I"] { list-style-type: upper-roman; }
+.jodit-wysiwyg ol[type="i"] { list-style-type: lower-roman; }
