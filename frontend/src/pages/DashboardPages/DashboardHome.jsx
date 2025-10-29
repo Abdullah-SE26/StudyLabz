@@ -1,20 +1,24 @@
 import {
-  Home,
+  Users,
   HelpCircle,
   Bookmark,
-  FilePlus,
-  Users,
   BookOpen,
   ClipboardList,
-  TrendingUp,
   Activity,
-  Zap,
   GraduationCap,
-  BookOpenCheck,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function DashboardHome() {
   const user = useStore((state) => state.user);
@@ -34,14 +38,10 @@ export default function DashboardHome() {
       try {
         const API_URL = import.meta.env.VITE_API_URL;
         const response = await fetch(`${API_URL}/api/dashboard/stats`, {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
+          headers: { Authorization: `Bearer ${authToken}` },
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch dashboard stats");
-        }
+        if (!response.ok) throw new Error("Failed to fetch dashboard stats");
 
         const data = await response.json();
         setStats(data.data);
@@ -57,365 +57,260 @@ export default function DashboardHome() {
     fetchDashboardStats();
   }, [authToken]);
 
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold">
-                Welcome to StudyLabz
-              </h1>
-              <p className="text-blue-100 text-base sm:text-lg">
-                Your educational platform for university students
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Loading skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-white rounded-xl p-6 shadow-lg border border-slate-200/50 animate-pulse"
-            >
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-4 bg-slate-200 rounded w-24"></div>
-                  <div className="h-8 bg-slate-200 rounded w-16"></div>
-                </div>
-                <div className="p-3 bg-slate-200 rounded-lg w-12 h-12"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl">
-              <GraduationCap className="w-8 h-8" />
-            </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold">
-                Welcome to StudyLabz
-              </h1>
-              <p className="text-blue-100 text-base sm:text-lg">
-                Your educational platform for university students
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-          <p className="text-red-600">Error loading dashboard data: {error}</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSkeleton />;
+  if (error) return <ErrorMessage error={error} />;
 
   const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 mb-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <GraduationCap className="w-8 h-8 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">
-              Welcome to StudyLabz
-            </h1>
-            <p className="text-slate-600">
-              Your educational platform for university students
-            </p>
-          </div>
-        </div>
-      </div>
+      <WelcomeBanner isAdmin={isAdmin} />
+      <QuickStats stats={stats} isAdmin={isAdmin} />
+      {isAdmin ? <AdminCharts stats={stats} /> : <UserCharts stats={stats} />}
+    </div>
+  );
+}
 
-      {/* Quick Stats */}
+/* ---------- COMPONENTS ---------- */
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Banner skeleton */}
+      <div className="skeleton h-28 rounded-xl w-full" />
+
+      {/* Quick stats skeletons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {isAdmin ? (
-          <>
-            {/* Admin Stats */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Total Users
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {stats?.totalUsers || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Activity className="w-4 h-4 mr-1" />
-                <span>Registered users</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-emerald-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Total Courses
-                  </p>
-                  <p className="text-3xl font-bold text-emerald-600">
-                    {stats?.totalCourses || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-emerald-100 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-emerald-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                <span>Available courses</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-purple-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Total Questions
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600">
-                    {stats?.totalQuestions || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <HelpCircle className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Zap className="w-4 h-4 mr-1" />
-                <span>All questions</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Total Reports
-                  </p>
-                  <p className="text-3xl font-bold text-orange-600">
-                    {stats?.totalReports || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <ClipboardList className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Activity className="w-4 h-4 mr-1" />
-                <span>Reported content</span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* User Stats */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    My Questions
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {stats?.userQuestions || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <HelpCircle className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <TrendingUp className="w-4 h-4 mr-1" />
-                <span>Questions created</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-emerald-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    My Bookmarks
-                  </p>
-                  <p className="text-3xl font-bold text-emerald-600">
-                    {stats?.userBookmarks || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-emerald-100 rounded-lg">
-                  <Bookmark className="w-6 h-6 text-emerald-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Activity className="w-4 h-4 mr-1" />
-                <span>Saved questions</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-purple-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Total Courses
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600">
-                    {stats?.totalCourses || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <BookOpen className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Zap className="w-4 h-4 mr-1" />
-                <span>Available courses</span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-200/50 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium">
-                    Recent Activity
-                  </p>
-                  <p className="text-3xl font-bold text-orange-600">
-                    {stats?.recentQuestions?.length || 0}
-                  </p>
-                </div>
-                <div className="p-3 bg-orange-100 rounded-lg">
-                  <Activity className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center text-sm text-green-600">
-                <Activity className="w-4 h-4 mr-1" />
-                <span>Recent questions</span>
-              </div>
-            </div>
-          </>
-        )}
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="skeleton h-28 rounded-xl w-full" />
+        ))}
       </div>
 
-      {/* Recent Activity */}
+      {/* Charts skeletons */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <HelpCircle className="w-5 h-5 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800">
-              {isAdmin ? "Recent Questions" : "My Recent Questions"}
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {stats?.recentQuestions?.length > 0 ? (
-              stats.recentQuestions.map((question, index) => (
-                <div
-                  key={question.id}
-                  className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg"
-                >
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      index === 0
-                        ? "bg-blue-500"
-                        : index === 1
-                        ? "bg-emerald-500"
-                        : "bg-purple-500"
-                    }`}
-                  ></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-800">
-                      {question.course} - {question.text}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      {isAdmin && question.createdBy
-                        ? `By ${question.createdBy}`
-                        : ""}
-                      {new Date(question.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                <HelpCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No recent questions found</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <BookOpenCheck className="w-5 h-5 text-emerald-600" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-800">
-              Course Overview
-            </h3>
-          </div>
-          <div className="space-y-3">
-            {stats?.courseStats?.length > 0 ? (
-              stats.courseStats.map((course, index) => (
-                <div
-                  key={course.id}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <BookOpen
-                      className={`w-5 h-5 ${
-                        index === 0
-                          ? "text-blue-600"
-                          : index === 1
-                          ? "text-emerald-600"
-                          : "text-purple-600"
-                      }`}
-                    />
-                    <span className="font-medium text-slate-800">
-                      {course.name}
-                    </span>
-                  </div>
-                  <span
-                    className={`text-sm font-medium ${
-                      course.questionCount > 10
-                        ? "text-green-600"
-                        : course.questionCount > 5
-                        ? "text-orange-600"
-                        : "text-red-600"
-                    }`}
-                  >
-                    {course.questionCount} Questions
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-slate-500">
-                <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>No courses available</p>
-              </div>
-            )}
-          </div>
-        </div>
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="skeleton h-64 rounded-xl w-full" />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function ErrorMessage({ error }) {
+  return (
+    <div className="space-y-6">
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-4 text-white shadow-xl" />
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+        <p className="text-red-600">Error loading dashboard data: {error}</p>
+      </div>
+    </div>
+  );
+}
+
+function WelcomeBanner({ isAdmin }) {
+  return (
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-4">
+      <div className="flex items-center gap-4">
+        <div className="p-2 bg-blue-100 rounded-lg">
+          <GraduationCap className="w-6 h-6 text-blue-600" />
+        </div>
+        <h1 className="text-xl font-bold text-slate-800">
+          {isAdmin ? "Admin Dashboard" : "User Dashboard"}
+        </h1>
+      </div>
+    </div>
+  );
+}
+
+function QuickStats({ stats, isAdmin }) {
+  const statCards = isAdmin
+    ? [
+        {
+          label: "Total Users",
+          value: stats?.totalUsers || 0,
+          icon: <Users className="w-5 h-5 text-blue-600" />,
+          color: "blue",
+          subtitle: "Registered users",
+        },
+        {
+          label: "Total Courses",
+          value: stats?.totalCourses || 0,
+          icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
+          color: "emerald",
+          subtitle: "Available courses",
+        },
+        {
+          label: "Total Questions",
+          value: stats?.totalQuestions || 0,
+          icon: <HelpCircle className="w-5 h-5 text-purple-600" />,
+          color: "purple",
+          subtitle: "All questions",
+        },
+        {
+          label: "Total Reports",
+          value: stats?.totalReports || 0,
+          icon: <ClipboardList className="w-5 h-5 text-orange-600" />,
+          color: "orange",
+          subtitle: "Reported content",
+        },
+      ]
+    : [
+        {
+          label: "My Questions",
+          value: stats?.userQuestions || 0,
+          icon: <HelpCircle className="w-5 h-5 text-blue-600" />,
+          color: "blue",
+          subtitle: "Questions created",
+        },
+        {
+          label: "My Bookmarks",
+          value: stats?.userBookmarks || 0,
+          icon: <Bookmark className="w-5 h-5 text-emerald-600" />,
+          color: "emerald",
+          subtitle: "Saved questions",
+        },
+        {
+          label: "Total Courses",
+          value: stats?.totalCourses || 0,
+          icon: <BookOpen className="w-5 h-5 text-purple-600" />,
+          color: "purple",
+          subtitle: "Available courses",
+        },
+        {
+          label: "Recent Activity",
+          value: stats?.recentQuestions?.length || 0,
+          icon: <Activity className="w-5 h-5 text-orange-600" />,
+          color: "orange",
+          subtitle: "Recent questions",
+        },
+      ];
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {statCards.map((card, idx) => (
+        <div
+          key={idx}
+          className={`bg-white rounded-xl p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-200 hover:scale-105`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-600 text-sm font-medium">{card.label}</p>
+              <p className={`text-3xl font-bold text-${card.color}-600`}>
+                {card.value}
+              </p>
+            </div>
+            <div className={`p-2 bg-${card.color}-100 rounded-lg`}>
+              {card.icon}
+            </div>
+          </div>
+          <div className="mt-2 flex items-center text-sm text-green-600">
+            <Activity className="w-4 h-4 mr-1" />
+            <span>{card.subtitle}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- ADMIN CHARTS ---------- */
+function AdminCharts({ stats }) {
+  const usersData = stats?.dailyUsers || [];
+  const questionsData = stats?.dailyQuestions || [];
+
+  const chartCard = (title, icon, data, color) => (
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`p-2 bg-${color}-100 rounded-lg`}>{icon}</div>
+        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+      </div>
+      <div style={{ width: "100%", height: 250 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke={color === "blue" ? "#3b82f6" : "#a855f7"}
+              strokeWidth={2}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {chartCard(
+        "Daily Users",
+        <Users className="w-5 h-5 text-blue-600" />,
+        usersData,
+        "blue"
+      )}
+      {chartCard(
+        "Daily Questions",
+        <HelpCircle className="w-5 h-5 text-purple-600" />,
+        questionsData,
+        "purple"
+      )}
+    </div>
+  );
+}
+
+/* ---------- USER CHARTS ---------- */
+function UserCharts({ stats }) {
+  const userQuestionsData = stats?.dailyUserQuestions || [];
+  const bookmarksData = stats?.dailyBookmarks || [];
+
+  const chartCard = (title, icon, data, color) => (
+    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`p-2 bg-${color}-100 rounded-lg`}>{icon}</div>
+        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+      </div>
+      <div style={{ width: "100%", height: 250 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={data}
+            margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="count"
+              stroke={color === "blue" ? "#3b82f6" : "#10b981"}
+              strokeWidth={2}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {chartCard(
+        "My Questions Over Time",
+        <HelpCircle className="w-5 h-5 text-blue-600" />,
+        userQuestionsData,
+        "blue"
+      )}
+      {chartCard(
+        "My Bookmarks Over Time",
+        <Bookmark className="w-5 h-5 text-green-600" />,
+        bookmarksData,
+        "green"
+      )}
     </div>
   );
 }

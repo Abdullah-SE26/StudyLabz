@@ -1,103 +1,59 @@
 import prisma from "../prismaClient.js";
+import { subDays, formatISO } from "date-fns";
 
-// GET /dashboard/stats - Get dashboard statistics based on user role
 export const getDashboardStats = async (req, res) => {
   try {
     const user = req.user;
+    if (!user) return res.status(401).json({ success: false, error: "Unauthorized" });
 
-    if (!user) {
-      return res.status(401).json({ success: false, error: "Unauthorized" });
-    }
+    const today = new Date();
+    const startDate = subDays(today, 6); // last 7 days including today
+    const formatDate = (date) => formatISO(date, { representation: "date" }); // YYYY-MM-DD
+
+    // Helper to aggregate records per day
+    const aggregatePerDay = (records) =>
+      [...Array(7)].map((_, i) => {
+        const date = formatDate(subDays(today, 6 - i));
+        const count = records.filter(r => formatDate(r.createdAt) === date).length;
+        return { date, count };
+      });
 
     if (user.role === "admin") {
-      // Admin: global stats
-      const totalUsers = await prisma.user.count().catch(() => 0);
-      const totalCourses = await prisma.course.count().catch(() => 0);
-      const totalQuestions = await prisma.question.count().catch(() => 0);
+      // Admin stats
+      const [totalUsers, totalCourses, totalQuestions, totalReports, usersRaw, questionsRaw] =
+        await Promise.all([
+          prisma.user.count(),
+          prisma.course.count(),
+          prisma.question.count(),
+          prisma.question.count({ where: { reportedBy: { some: {} } } }),
+          prisma.user.findMany({ where: { createdAt: { gte: startDate } }, select: { createdAt: true } }),
+          prisma.question.findMany({ where: { createdAt: { gte: startDate } }, select: { createdAt: true } }),
+        ]);
 
-      const totalReports = await prisma.question.count({
-        where: { reportedBy: { some: {} } },
-      }).catch(() => 0);
-
-      const recentQuestions = await prisma.question.findMany({
-        take: 3,
-        orderBy: { createdAt: "desc" },
-        include: {
-          course: { select: { name: true } },
-          createdBy: { select: { name: true, email: true } },
-        },
-      }).catch(() => []);
-
-      const courseStats = await prisma.course.findMany({
-        include: { _count: { select: { questions: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }).catch(() => []);
+      const dailyUsers = aggregatePerDay(usersRaw);
+      const dailyQuestions = aggregatePerDay(questionsRaw);
 
       return res.json({
         success: true,
-        data: {
-          totalUsers,
-          totalCourses,
-          totalQuestions,
-          totalReports,
-          recentQuestions: recentQuestions.map(q => ({
-            id: q.id,
-            text: q.text.length > 50 ? q.text.slice(0, 50) + "..." : q.text,
-            course: q.course?.name || "N/A",
-            createdBy: q.createdBy?.name || q.createdBy?.email || "Unknown",
-            createdAt: q.createdAt,
-          })),
-          courseStats: courseStats.map(c => ({
-            id: c.id,
-            name: c.name,
-            questionCount: c._count.questions || 0,
-          })),
-        },
+        data: { totalUsers, totalCourses, totalQuestions, totalReports, dailyUsers, dailyQuestions },
       });
     } else {
-      // Regular user: personal stats
-      const userQuestions = await prisma.question.count({
-        where: { createdById: user.id },
-      }).catch(() => 0);
+      // Regular user stats
+      const [userQuestions, userBookmarks, totalCourses, userQuestionsRaw, bookmarksRaw] =
+        await Promise.all([
+          prisma.question.count({ where: { createdById: user.id } }),
+          prisma.question.count({ where: { bookmarkedBy: { some: { id: user.id } } } }),
+          prisma.course.count(),
+          prisma.question.findMany({ where: { createdById: user.id, createdAt: { gte: startDate } }, select: { createdAt: true } }),
+          prisma.question.findMany({ where: { bookmarkedBy: { some: { id: user.id } }, createdAt: { gte: startDate } }, select: { createdAt: true } }),
+        ]);
 
-      const userBookmarks = await prisma.question.count({
-        where: { bookmarkedBy: { some: { id: user.id } } },
-      }).catch(() => 0);
-
-      const totalCourses = await prisma.course.count().catch(() => 0);
-
-      const recentQuestions = await prisma.question.findMany({
-        where: { createdById: user.id },
-        take: 3,
-        orderBy: { createdAt: "desc" },
-        include: { course: { select: { name: true } } },
-      }).catch(() => []);
-
-      const courseStats = await prisma.course.findMany({
-        include: { _count: { select: { questions: true } } },
-        orderBy: { createdAt: "desc" },
-        take: 3,
-      }).catch(() => []);
+      const dailyUserQuestions = aggregatePerDay(userQuestionsRaw);
+      const dailyBookmarks = aggregatePerDay(bookmarksRaw);
 
       return res.json({
         success: true,
-        data: {
-          userQuestions,
-          userBookmarks,
-          totalCourses,
-          recentQuestions: recentQuestions.map(q => ({
-            id: q.id,
-            text: q.text.length > 50 ? q.text.slice(0, 50) + "..." : q.text,
-            course: q.course?.name || "N/A",
-            createdAt: q.createdAt,
-          })),
-          courseStats: courseStats.map(c => ({
-            id: c.id,
-            name: c.name,
-            questionCount: c._count.questions || 0,
-          })),
-        },
+        data: { userQuestions, userBookmarks, totalCourses, dailyUserQuestions, dailyBookmarks },
       });
     }
   } catch (err) {
