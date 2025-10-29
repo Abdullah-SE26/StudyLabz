@@ -164,32 +164,76 @@ export const toggleLikeQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const existingLike = await prisma.like.findFirst({
-      where: { userId, questionId },
+    // 1️⃣ Get the question with current likes
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { likedBy: true },
     });
 
-    if (existingLike) {
-      await prisma.like.delete({ where: { id: existingLike.id } });
-      return res.status(200).json({
-        success: true,
-        liked: false,
-        message: "Like removed",
-      });
+    if (!question) {
+      return res.status(404).json({ success: false, error: "Question not found" });
     }
 
-    await prisma.like.create({
-      data: { userId, questionId },
-    });
+    // 2️⃣ Check if user has already liked
+    const hasLiked = question.likedBy.some((user) => user.id === userId);
 
-    res.status(200).json({
-      success: true,
-      liked: true,
-      message: "Question liked successfully",
-    });
+    // 3️⃣ Toggle like
+    if (hasLiked) {
+      await prisma.question.update({
+        where: { id: questionId },
+        data: { likedBy: { disconnect: { id: userId } } },
+      });
+      return res.status(200).json({ success: true, liked: false, message: "Like removed" });
+    } else {
+      await prisma.question.update({
+        where: { id: questionId },
+        data: { likedBy: { connect: { id: userId } } },
+      });
+      return res.status(200).json({ success: true, liked: true, message: "Question liked" });
+    }
   } catch (err) {
     next(err);
   }
 };
+
+// ✅ POST /questions/:id/bookmark (Toggle Bookmark)
+export const toggleBookmarkQuestion = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const questionId = Number(req.params.id);
+
+    // 1️⃣ Get the question with current bookmarks
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { bookmarkedBy: true },
+    });
+
+    if (!question) {
+      return res.status(404).json({ success: false, error: "Question not found" });
+    }
+
+    // 2️⃣ Check if user has already bookmarked
+    const hasBookmarked = question.bookmarkedBy.some((user) => user.id === userId);
+
+    // 3️⃣ Toggle bookmark
+    if (hasBookmarked) {
+      await prisma.question.update({
+        where: { id: questionId },
+        data: { bookmarkedBy: { disconnect: { id: userId } } },
+      });
+      return res.status(200).json({ success: true, bookmarked: false, message: "Bookmark removed" });
+    } else {
+      await prisma.question.update({
+        where: { id: questionId },
+        data: { bookmarkedBy: { connect: { id: userId } } },
+      });
+      return res.status(200).json({ success: true, bookmarked: true, message: "Question bookmarked" });
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 // ✅ POST /questions/:id/report
 export const reportQuestion = async (req, res, next) => {

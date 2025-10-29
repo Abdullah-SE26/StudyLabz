@@ -24,19 +24,28 @@ const SkeletonCard = () => (
 const ExamQuestions = () => {
   const { examId } = useParams();
   const user = useStore((state) => state.user);
+  const authToken = useStore((state) => state.authToken);
+
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Fetch questions
   useEffect(() => {
+    if (!authToken) {
+      setError("You must be logged in to view questions");
+      setLoading(false);
+      return;
+    }
+
     const fetchQuestions = async () => {
       setLoading(true);
       try {
         const res = await fetch(
           `${import.meta.env.VITE_API_URL}/api/exams/${examId}/questions`,
-          { headers: { Authorization: `Bearer ${user.token}` } }
+          { headers: { Authorization: `Bearer ${authToken}` } }
         );
-        if (!res.ok) throw new Error("Failed to fetch questions");
+        if (!res.ok) throw new Error(`Failed to fetch questions (${res.status})`);
         const data = await res.json();
         setQuestions(data);
       } catch (err) {
@@ -46,15 +55,25 @@ const ExamQuestions = () => {
         setLoading(false);
       }
     };
-    fetchQuestions();
-  }, [examId, user.token]);
 
+    fetchQuestions();
+  }, [examId, authToken]);
+
+  // Toggle like
   const toggleLike = async (qId) => {
+    if (!authToken) return toast.error("You must be logged in");
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`,
-        { method: "POST", headers: { Authorization: `Bearer ${user.token}` } }
+        { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }
       );
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Backend error (like):", text);
+        return toast.error("Failed to toggle like");
+      }
+
       const data = await res.json();
       setQuestions((prev) =>
         prev.map((q) =>
@@ -62,8 +81,8 @@ const ExamQuestions = () => {
             ? {
                 ...q,
                 likedBy: data.liked
-                  ? [...q.likedBy, user]
-                  : q.likedBy.filter((u) => u.id !== user.id),
+                  ? [...(q.likedBy || []), user]
+                  : (q.likedBy || []).filter((u) => u.id !== user.id),
               }
             : q
         )
@@ -74,12 +93,21 @@ const ExamQuestions = () => {
     }
   };
 
+  // Toggle bookmark
   const toggleBookmark = async (qId) => {
+    if (!authToken) return toast.error("You must be logged in");
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`,
-        { method: "POST", headers: { Authorization: `Bearer ${user.token}` } }
+        { method: "POST", headers: { Authorization: `Bearer ${authToken}` } }
       );
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("Backend error (bookmark):", text);
+        return toast.error("Failed to toggle bookmark");
+      }
+
       const data = await res.json();
       setQuestions((prev) =>
         prev.map((q) =>
@@ -87,8 +115,8 @@ const ExamQuestions = () => {
             ? {
                 ...q,
                 bookmarkedBy: data.bookmarked
-                  ? [...q.bookmarkedBy, user]
-                  : q.bookmarkedBy.filter((u) => u.id !== user.id),
+                  ? [...(q.bookmarkedBy || []), user]
+                  : (q.bookmarkedBy || []).filter((u) => u.id !== user.id),
               }
             : q
         )
@@ -100,11 +128,13 @@ const ExamQuestions = () => {
     }
   };
 
+  // Copy link
   const copyLink = (qId) => {
     navigator.clipboard.writeText(`${window.location.origin}/questions/${qId}`);
     toast.success("Link copied!");
   };
 
+  // Share question
   const shareQuestion = (qId) => {
     if (navigator.share) {
       navigator
@@ -112,7 +142,7 @@ const ExamQuestions = () => {
           title: "Check this question",
           url: `${window.location.origin}/questions/${qId}`,
         })
-        .catch((err) => console.error(err));
+        .catch(console.error);
     } else {
       copyLink(qId);
     }
@@ -128,12 +158,11 @@ const ExamQuestions = () => {
     );
   }
 
-  if (error)
-    return <p className="text-center text-red-500 mt-10">{error}</p>;
+  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
   if (!questions.length)
     return (
       <p className="text-center mt-10 text-gray-500">
-        No questions available for this Course.
+        No questions available for this Exam.
       </p>
     );
 
@@ -143,8 +172,8 @@ const ExamQuestions = () => {
         Exam Questions
       </h2>
       {questions.map((q) => {
-        const liked = q.likedBy?.some((u) => u.id === user.id);
-        const bookmarked = q.bookmarkedBy?.some((u) => u.id === user.id);
+        const liked = (q.likedBy || []).some((u) => u.id === user?.id);
+        const bookmarked = (q.bookmarkedBy || []).some((u) => u.id === user?.id);
 
         return (
           <div
@@ -156,6 +185,7 @@ const ExamQuestions = () => {
               className="font-medium break-words"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(q.text) }}
             />
+
             {/* Options */}
             {q.options && Array.isArray(q.options) && (
               <ul className="list-disc list-inside mt-2 text-gray-600">
@@ -165,45 +195,31 @@ const ExamQuestions = () => {
               </ul>
             )}
 
-            {/* Divider */}
             <div className="border-t border-gray-200 mt-2" />
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-4 mt-2 text-gray-500 text-sm">
-              <button
-                onClick={() => toggleLike(q.id)}
-                className="flex items-center gap-1"
-              >
+              <button onClick={() => toggleLike(q.id)} className="flex items-center gap-1">
                 <Heart size={16} className={liked ? "text-red-500" : ""} />
                 <span>{q.likedBy?.length || 0}</span>
               </button>
-              <button
-                onClick={() => toggleBookmark(q.id)}
-                className="flex items-center gap-1"
-              >
-                <Bookmark
-                  size={16}
-                  className={bookmarked ? "text-blue-500" : ""}
-                />
+
+              <button onClick={() => toggleBookmark(q.id)} className="flex items-center gap-1">
+                <Bookmark size={16} className={bookmarked ? "text-blue-500" : ""} />
               </button>
-              <button
-                onClick={() => copyLink(q.id)}
-                className="flex items-center gap-1"
-              >
+
+              <button onClick={() => copyLink(q.id)} className="flex items-center gap-1">
                 <Share2 size={16} />
               </button>
-              <button
-                onClick={() => shareQuestion(q.id)}
-                className="flex items-center gap-1"
-              >
+
+              <button onClick={() => shareQuestion(q.id)} className="flex items-center gap-1">
                 Share
               </button>
             </div>
 
-            {/* Divider */}
             <div className="border-t border-gray-200 mt-2" />
 
-            {/* Comments Section */}
+            {/* Comments */}
             <CommentsSection questionId={q.id} />
           </div>
         );
