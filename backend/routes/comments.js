@@ -1,17 +1,24 @@
 import express from "express";
-import { getCommentsByQuestion, createComment, toggleLikeComment, reportComment, deleteComment } from "../controllers/commentController.js";
+import {
+  getCommentsByQuestion,
+  getRepliesByComment,
+  createComment,
+  toggleLikeComment,
+  reportComment,
+  deleteComment,
+} from "../controllers/commentController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // -----------------------------
-// Create comment
+// Create comment or reply
 // POST /api/comments
 // -----------------------------
 router.post("/", authMiddleware, createComment);
 
 // -----------------------------
-// Toggle like
+// Toggle like/unlike comment
 // PATCH /api/comments/:commentId/like
 // -----------------------------
 router.patch("/:commentId/like", authMiddleware, toggleLikeComment);
@@ -23,16 +30,21 @@ router.patch("/:commentId/like", authMiddleware, toggleLikeComment);
 router.patch("/:commentId/report", authMiddleware, reportComment);
 
 // -----------------------------
-// Delete comment
+// Delete comment (recursive)
 // DELETE /api/comments/:commentId
 // -----------------------------
 router.delete("/:commentId", authMiddleware, deleteComment);
 
 // -----------------------------
-// Get all comments for a question
-// GET /api/questions/:questionId/comments
+// Get all top-level comments for a question
+// GET /api/comments/question/:questionId
 // -----------------------------
-const questionCommentsRouter = express.Router();
-questionCommentsRouter.get("/:questionId/comments", getCommentsByQuestion);
+router.get("/question/:questionId", authMiddleware, getCommentsByQuestion);
 
-export { router as commentRoutes, questionCommentsRouter };
+// -----------------------------
+// Get direct replies for a comment (lazy load)
+// GET /api/comments/replies?parentCommentId=ID
+// -----------------------------
+router.get("/replies", authMiddleware, getRepliesByComment);
+
+export { router as commentRoutes };
