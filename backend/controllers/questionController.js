@@ -52,6 +52,8 @@ export const getQuestionsByExam = async (req, res, next) => {
         createdBy: { select: { id: true, name: true } },
         course: { select: { id: true, name: true } },
         exam: { select: { id: true, title: true } },
+        bookmarkedBy: { where: { id: req.user.id }, select: { id: true } },
+        likedBy: { where: { id: req.user.id }, select: { id: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -171,7 +173,9 @@ export const toggleLikeQuestion = async (req, res, next) => {
     });
 
     if (!question) {
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
     }
 
     // 2️⃣ Check if user has already liked
@@ -183,14 +187,30 @@ export const toggleLikeQuestion = async (req, res, next) => {
         where: { id: questionId },
         data: { likedBy: { disconnect: { id: userId } } },
       });
-      return res.status(200).json({ success: true, liked: false, message: "Like removed" });
     } else {
       await prisma.question.update({
         where: { id: questionId },
         data: { likedBy: { connect: { id: userId } } },
       });
-      return res.status(200).json({ success: true, liked: true, message: "Question liked" });
     }
+
+    // 4️⃣ Return updated question with fresh relations
+    const updated = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        likedBy: { select: { id: true, name: true } },
+        bookmarkedBy: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } },
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: hasLiked ? "Like removed" : "Question liked",
+      data: updated,
+    });
   } catch (err) {
     next(err);
   }
@@ -202,38 +222,53 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    // 1️⃣ Get the question with current bookmarks
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: { bookmarkedBy: true },
     });
 
     if (!question) {
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
     }
 
-    // 2️⃣ Check if user has already bookmarked
-    const hasBookmarked = question.bookmarkedBy.some((user) => user.id === userId);
+    const hasBookmarked = question.bookmarkedBy.some(
+      (user) => user.id === userId
+    );
 
-    // 3️⃣ Toggle bookmark
     if (hasBookmarked) {
       await prisma.question.update({
         where: { id: questionId },
         data: { bookmarkedBy: { disconnect: { id: userId } } },
       });
-      return res.status(200).json({ success: true, bookmarked: false, message: "Bookmark removed" });
     } else {
       await prisma.question.update({
         where: { id: questionId },
         data: { bookmarkedBy: { connect: { id: userId } } },
       });
-      return res.status(200).json({ success: true, bookmarked: true, message: "Question bookmarked" });
     }
+
+    const updated = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        likedBy: { select: { id: true, name: true } },
+        bookmarkedBy: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, name: true } },
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: hasBookmarked ? "Bookmark removed" : "Question bookmarked",
+      data: updated,
+    });
   } catch (err) {
     next(err);
   }
 };
-
 
 // ✅ POST /questions/:id/report
 export const reportQuestion = async (req, res, next) => {

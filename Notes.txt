@@ -13,8 +13,12 @@ BACKEND:
 
 
 
-edit and delete button visible for on admins
-colour of inputs
+
+speed of bookmark and likes
+persistency of bookmarks and likes
+comments not visible issue
+
+
 
 
 
