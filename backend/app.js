@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.js";
 import questionRoutes from "./routes/questions.js";
-import commentRoutes from "./routes/comments.js";
+import { commentRoutes, questionCommentsRouter } from "./routes/comments.js";
 import contactRoutes from "./routes/contact.js";
 import courseRoutes from "./routes/courses.js";
 import examRoutes from "./routes/exams.js";
@@ -39,11 +39,12 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/questions", questionRoutes);
-app.use("/api/comments", commentRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/comments", commentRoutes);          // create, like, report, delete
+app.use("/api/questions", questionCommentsRouter); // GET comments by question
 
 // UploadThing route
 app.use(

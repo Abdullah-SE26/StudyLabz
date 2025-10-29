@@ -12,7 +12,7 @@ import AboutPage from "./pages/About";
 import Courses from "./pages/CoursePages/Courses";
 import ExamsDashboard from "./pages/CoursePages/ExamsDashboard";
 import ExamQuestions from "./pages/CoursePages/ExamQuestions";
-import PageWrapper from "./components/page-wrapper";
+import PageWrapper from "./components/PageWrapper";
 
 // Dashboard
 import DashboardLayout from "./pages/DashboardPages/DashboardLayout";
