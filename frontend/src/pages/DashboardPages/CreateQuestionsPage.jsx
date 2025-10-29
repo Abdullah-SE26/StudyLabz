@@ -234,21 +234,23 @@ export default function CreateQuestionPage() {
 
         {/* MCQ Options */}
         {type === "MCQ" && (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <label className="font-medium">Options</label>
             {options.map((opt, idx) => (
-              <input
-                key={idx}
-                type="text"
-                className="input input-bordered w-full bg-white"
-                value={opt}
-                onChange={(e) => {
-                  const newOptions = [...options];
-                  newOptions[idx] = e.target.value;
-                  setOptions(newOptions);
-                }}
-                placeholder={`Option ${idx + 1}`}
-              />
+              <div key={idx} className="border rounded-md p-2">
+                <label className="font-medium block mb-1">
+                  Option {idx + 1}
+                </label>
+                <RichTextEditor
+                  value={opt}
+                  onChange={(val) => {
+                    const newOptions = [...options];
+                    newOptions[idx] = val;
+                    setOptions(newOptions);
+                  }}
+                  height={100} // smaller editor for options
+                />
+              </div>
             ))}
           </div>
         )}

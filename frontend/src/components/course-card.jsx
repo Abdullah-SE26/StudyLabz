@@ -99,7 +99,7 @@ export default function CourseCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(course.id);
+                    onDelete(course);
                   }}
                   className="flex items-center justify-center w-9 h-9 rounded-full 
                     bg-rose-50 text-rose-700 border border-rose-100 hover:bg-rose-100 transition-all cursor-pointer"

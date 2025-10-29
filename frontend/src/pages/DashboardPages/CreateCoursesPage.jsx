@@ -28,6 +28,12 @@ export default function CreateCoursesPage() {
 
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
+
+    if (tags.length >= 4) {
+      toast.error("Maximum of 4 tags allowed!");
+      return;
+    }
+
     if (trimmed && !tags.includes(trimmed)) {
       setTags([...tags, trimmed]);
       setTagInput("");
@@ -129,9 +135,8 @@ export default function CreateCoursesPage() {
   };
 
   return (
-    <div className=" bg-slate-50 flex items-start justify-center pt-1 px-6">
-
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 ">
+    <div className="bg-slate-50 flex items-start justify-center pt-1 px-6">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8">
         {/* Header */}
         <div className="flex items-center gap-4">
           <button
@@ -150,7 +155,7 @@ export default function CreateCoursesPage() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3 mt-6">
           {/* Course Name */}
           <div className="space-y-1">
             <label className="block text-sm font-semibold text-slate-700">
@@ -181,38 +186,6 @@ export default function CreateCoursesPage() {
             />
           </div>
 
-          {/* Description */}
-          <div className="space-y-1">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <FileText className="w-4 h-4 text-slate-500" />
-              Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder= "N/A"
-              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed resize-none"
-              rows={1}
-              disabled
-            />
-          </div>
-
-          {/* Image URL */}
-          <div className="space-y-1">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <Image className="w-4 h-4 text-slate-500" />
-              Image URL
-            </label>
-            <input
-              type="text"
-              value={image}
-              onChange={(e) => setImage(e.target.value)}
-              placeholder= "N/A"
-              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
-              disabled
-            />
-          </div>
-
           {/* Tags */}
           <div className="space-y-1">
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -227,16 +200,19 @@ export default function CreateCoursesPage() {
                 onKeyPress={handleKeyPress}
                 placeholder="e.g., programming, beginner"
                 className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                disabled={tags.length >= 4}
               />
               <button
                 type="button"
                 onClick={handleAddTag}
-                className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                disabled={tags.length >= 4}
+                className="px-5 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4" />
                 Add
               </button>
             </div>
+
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (
@@ -255,6 +231,11 @@ export default function CreateCoursesPage() {
                   </span>
                 ))}
               </div>
+            )}
+
+            {/* Max tags info */}
+            {tags.length >= 4 && (
+              <p className="text-xs text-red-500 mt-1">Maximum of 4 tags reached</p>
             )}
           </div>
 
