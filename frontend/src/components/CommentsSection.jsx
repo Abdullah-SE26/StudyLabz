@@ -16,7 +16,10 @@ const CommentsSection = ({ questionId, onNewComment }) => {
   const removeCommentRecursively = (commentsArr, deletedId) =>
     commentsArr
       .filter((c) => c.id !== deletedId)
-      .map((c) => ({ ...c, replies: removeCommentRecursively(c.replies || [], deletedId) }));
+      .map((c) => ({
+        ...c,
+        replies: removeCommentRecursively(c.replies || [], deletedId),
+      }));
 
   // -----------------------------
   // Fetch comments
@@ -109,10 +112,13 @@ const CommentsSection = ({ questionId, onNewComment }) => {
       setLikesCount(prevLiked ? prevCount - 1 : prevCount + 1);
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/like`, {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/like`,
+          {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
         if (!res.ok) throw new Error("Failed to like comment");
         const data = await res.json();
         if (typeof data.likesCount === "number") setLikesCount(data.likesCount);
@@ -128,10 +134,13 @@ const CommentsSection = ({ questionId, onNewComment }) => {
       if (!authToken) return toast.error("You must be logged in");
       setIsDeleting(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment.id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/comments/${comment.id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
         if (!res.ok) throw new Error("Failed to delete comment");
         setComments((prev) => removeCommentRecursively(prev, comment.id));
         toast.success("Comment deleted");
@@ -147,10 +156,13 @@ const CommentsSection = ({ questionId, onNewComment }) => {
     const handleReport = async () => {
       if (!authToken) return toast.error("You must be logged in");
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/report`, {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/report`,
+          {
+            method: "PATCH",
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
         if (!res.ok) throw new Error("Failed to report comment");
         toast.success("Reported comment");
       } catch {
@@ -176,18 +188,21 @@ const CommentsSection = ({ questionId, onNewComment }) => {
       setShowReplyInput(false);
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({
-            questionId,
-            parentCommentId: comment.id,
-            text: tempReply.text,
-          }),
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/comments`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              questionId,
+              parentCommentId: comment.id,
+              text: tempReply.text,
+            }),
+          }
+        );
         if (!res.ok) throw new Error("Failed to post reply");
         const data = await res.json();
         setReplies((prev) =>
@@ -206,9 +221,14 @@ const CommentsSection = ({ questionId, onNewComment }) => {
 
       setIsRepliesLoading(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments?parentCommentId=${comment.id}`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
+        const res = await fetch(
+          `${
+            import.meta.env.VITE_API_URL
+          }/api/comments/replies?parentCommentId=${comment.id}`,
+          {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
         if (!res.ok) throw new Error("Failed to fetch replies");
         const data = await res.json();
         setReplies(data);
@@ -221,13 +241,19 @@ const CommentsSection = ({ questionId, onNewComment }) => {
     };
 
     return (
-      <div className={`flex flex-col gap-2 mt-2 ${depth > 0 ? "pl-6 border-l border-gray-200" : ""}`}>
+      <div
+        className={`flex flex-col gap-2 mt-2 ${
+          depth > 0 ? "pl-6 border-l border-gray-200" : ""
+        }`}
+      >
         <div className="flex justify-between items-start gap-2 p-2 rounded-lg">
           <div className="flex-1">
             <p className="text-sm font-medium">{comment.user?.name}</p>
             <div
               className="text-gray-700 text-sm break-words"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.text) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(comment.text),
+              }}
             />
             <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
               <button onClick={handleLike} className="flex items-center gap-1">
@@ -248,7 +274,10 @@ const CommentsSection = ({ questionId, onNewComment }) => {
                   <Trash2 size={14} /> Delete
                 </label>
               )}
-              <button onClick={handleReport} className="flex items-center gap-1 text-yellow-600">
+              <button
+                onClick={handleReport}
+                className="flex items-center gap-1 text-yellow-600"
+              >
                 <AlertTriangle size={14} /> Report
               </button>
             </div>
@@ -283,10 +312,14 @@ const CommentsSection = ({ questionId, onNewComment }) => {
                 else setShowReplies(false);
               }}
             >
-              {showReplies ? `Hide ${replies.length || comment.repliesCount} replies` : `Show ${comment.repliesCount} replies`}
+              {showReplies
+                ? `Hide ${replies.length || comment.repliesCount} replies`
+                : `Show ${comment.repliesCount} replies`}
             </button>
 
-            {isRepliesLoading && <span className="loading loading-dots loading-md"></span>}
+            {isRepliesLoading && (
+              <span className="loading loading-dots loading-md"></span>
+            )}
 
             {showReplies &&
               replies.map((r) => (
@@ -306,10 +339,17 @@ const CommentsSection = ({ questionId, onNewComment }) => {
         <div className="modal">
           <div className="modal-box">
             <h3 className="font-bold text-lg">Delete Comment</h3>
-            <p className="py-4">Are you sure you want to delete this comment and all its replies?</p>
+            <p className="py-4">
+              Are you sure you want to delete this comment and all its replies?
+            </p>
             <div className="modal-action">
-              <button className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className={`btn btn-error ${isDeleting ? "loading" : ""}`} onClick={handleDelete}>
+              <button className="btn" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+              <button
+                className={`btn btn-error ${isDeleting ? "loading" : ""}`}
+                onClick={handleDelete}
+              >
                 Delete
               </button>
             </div>

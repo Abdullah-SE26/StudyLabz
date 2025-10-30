@@ -16,7 +16,9 @@ export const getQuestions = async (req, res, next) => {
         },
         include: {
           user: { select: { id: true, name: true } },
-          _count: { select: { likes: true, reports: true } },
+          likedBy: { select: { id: true } },
+          bookmarkedBy: { select: { id: true } },
+          _count: { select: { likes: true, reports: true, comments: true } }, // ✅ Add comments count
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -29,12 +31,18 @@ export const getQuestions = async (req, res, next) => {
       }),
     ]);
 
+    // ✅ Map _count.comments to commentsCount
+    const formatted = questions.map((q) => ({
+      ...q,
+      commentsCount: q._count.comments,
+    }));
+
     res.status(200).json({
       success: true,
       page,
       totalPages: Math.ceil(total / limit),
       totalItems: total,
-      data: questions,
+      data: formatted,
     });
   } catch (err) {
     next(err);
@@ -54,11 +62,18 @@ export const getQuestionsByExam = async (req, res, next) => {
         exam: { select: { id: true, title: true } },
         bookmarkedBy: { where: { id: req.user.id }, select: { id: true } },
         likedBy: { where: { id: req.user.id }, select: { id: true } },
+        _count: { select: { comments: true } }, // ✅ Add this line
       },
       orderBy: { createdAt: "desc" },
     });
 
-    res.status(200).json(questions);
+    // ✅ Map _count.comments to commentsCount
+    const formatted = questions.map((q) => ({
+      ...q,
+      commentsCount: q._count.comments,
+    }));
+
+    res.status(200).json(formatted);
   } catch (err) {
     next(err);
   }
