@@ -26,7 +26,6 @@ const ExamQuestions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch questions
   useEffect(() => {
     if (!authToken) {
       setError("You must be logged in to view questions");
@@ -41,10 +40,23 @@ const ExamQuestions = () => {
           `${import.meta.env.VITE_API_URL}/api/exams/${examId}/questions`,
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
-        if (!res.ok)
-          throw new Error(`Failed to fetch questions (${res.status})`);
+        if (!res.ok) throw new Error(`Failed to fetch questions (${res.status})`);
+
         const data = await res.json();
-        setQuestions(data);
+
+        // ✅ Use creatorName directly
+        const normalized = data.map((q) => ({
+          ...q,
+          creatorName: q.creatorName || "Unknown User",
+          likedBy: q.likedBy || [],
+          bookmarkedBy: q.bookmarkedBy || [],
+          commentsCount: q.commentsCount || 0,
+          marks: q.marks || 0,
+          course: q.course || { id: null, name: "Unknown Course" },
+          exam: q.exam || { id: null, title: "Unknown Exam" },
+        }));
+
+        setQuestions(normalized);
       } catch (err) {
         console.error(err);
         setError(err.message);
@@ -56,85 +68,79 @@ const ExamQuestions = () => {
     fetchQuestions();
   }, [examId, authToken]);
 
-  // Like a question (optimistic UI, no toast)
   const toggleLike = async (qId) => {
+    const prevQuestions = [...questions];
     setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id !== qId) return q;
-        const liked = q.likedBy.some((u) => u.id === user?.id);
-        return {
-          ...q,
-          likedBy: liked
-            ? q.likedBy.filter((u) => u.id !== user?.id)
-            : [...q.likedBy, { id: user?.id }],
-        };
-      })
+      prev.map((q) =>
+        q.id === qId
+          ? {
+              ...q,
+              likedBy: q.likedBy.some((u) => u.id === user?.id)
+                ? q.likedBy.filter((u) => u.id !== user?.id)
+                : [...q.likedBy, { id: user?.id }],
+            }
+          : q
+      )
     );
 
-    // sync with server
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (!res.ok) throw new Error("Failed to sync like with server");
+
+      const updated = await res.json();
+      setQuestions((prev) => prev.map((q) => (q.id === qId ? updated.data : q)));
     } catch (err) {
       console.error(err);
       toast.error("Failed to sync like with server");
+      setQuestions(prevQuestions);
     }
   };
 
-  // Bookmark a question (optimistic UI, proper toast)
   const toggleBookmark = async (qId) => {
     if (!user?.id) {
       toast.error("You must be logged in to bookmark questions");
       return;
     }
 
-    const question = questions.find((q) => q.id === qId);
-    if (!question) return;
-
-    const isBookmarked = question.bookmarkedBy.some((u) => u.id === user.id);
-    const actionMessage = isBookmarked
-      ? "Question removed from bookmarks"
-      : "Question added to bookmarks";
-
-    // Optimistically update UI
+    const prevQuestions = [...questions];
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === qId
           ? {
               ...q,
-              bookmarkedBy: isBookmarked
+              bookmarkedBy: q.bookmarkedBy.some((u) => u.id === user.id)
                 ? q.bookmarkedBy.filter((u) => u.id !== user.id)
-                : [...q.bookmarkedBy, { id: user.id, name: user.name }],
+                : [...q.bookmarkedBy, { id: user.id }],
             }
           : q
       )
     );
 
-    toast.success(actionMessage);
-
-    // sync with server
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
       if (!res.ok) throw new Error("Failed to sync bookmark with server");
+
+      const updated = await res.json();
+      setQuestions((prev) => prev.map((q) => (q.id === qId ? updated.data : q)));
+
+      toast.success(
+        updated.data.bookmarkedBy.some((u) => u.id === user.id)
+          ? "Question added to bookmarks"
+          : "Question removed from bookmarks"
+      );
     } catch (err) {
       console.error(err);
       toast.error("Failed to sync bookmark with server");
+      setQuestions(prevQuestions);
     }
   };
 
-  // UI states
   if (loading)
     return (
       <div className="p-6 space-y-6">

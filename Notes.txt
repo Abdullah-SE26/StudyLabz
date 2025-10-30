@@ -6,17 +6,8 @@ delete modal add x button
 
 
 
-
 BACKEND:
-
-
-
-
-
-
-speed of bookmark and likes
-persistency of bookmarks and likes
-comments not visible issue
+create report schema
 
 
 
