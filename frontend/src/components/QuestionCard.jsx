@@ -23,34 +23,33 @@ const QuestionCard = ({
   const liked = question.likedBy?.some((u) => u.id === user?.id);
   const bookmarked = question.bookmarkedBy?.some((u) => u.id === user?.id);
 
+  // ✅ Updated Solve with ChatGPT
   const handleSolveWithChatGPT = async () => {
-    const html = question.text || "";
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    const plain = doc.body.innerText?.trim() || "";
+    if (!question) return;
 
-    let prompt = `Solve this question step by step and explain the reasoning in detail. Show calculations or logic clearly.\n\nQuestion:\n${plain}`;
-
-    if (question.options?.length > 0) {
-      prompt += `\n\nOptions:\n${question.options
-        .map((opt, i) => `${i + 1}. ${opt}`)
-        .join("\n")}`;
-    }
-
-    const encoded = encodeURIComponent(prompt);
-    const MAX_SAFE_LENGTH = 1800;
+    const prompt = [
+      "Solve this question step by step and explain the reasoning in detail. Show calculations or logic clearly.",
+      `Question: ${question.text || ""}`,
+      question.options?.length
+        ? `Options:\n${question.options
+            .map((opt, i) => `${i + 1}. ${opt}`)
+            .join("\n")}`
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
 
     try {
-      if (encoded.length <= MAX_SAFE_LENGTH) {
-        const url = `https://chat.openai.com/?q=${encoded}`;
-        window.open(url, "_blank");
-      } else {
-        await navigator.clipboard.writeText(prompt);
-        window.open("https://chat.openai.com/chat", "_blank");
-        toast.success("Prompt copied — paste it in ChatGPT to start solving!");
-      }
-    } catch {
+      await navigator.clipboard.writeText(prompt);
+
+      toast.success(
+        "Prompt copied to clipboard! Open ChatGPT and paste to solve."
+      );
       window.open("https://chat.openai.com/chat", "_blank");
-      toast.error("Couldn't copy the prompt. Please paste manually.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not copy the prompt. Paste manually in ChatGPT.");
+      window.open("https://chat.openai.com/chat", "_blank");
     }
   };
 
@@ -59,7 +58,6 @@ const QuestionCard = ({
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-sm">
-          {/* Created by with studentId */}
           <span className="font-semibold text-theme">
             Author: {question.creatorName || "Unknown User"}
           </span>
@@ -94,7 +92,6 @@ const QuestionCard = ({
           }}
         />
 
-        {/* Question Image */}
         {question.image && (
           <img
             src={question.image}
@@ -103,7 +100,6 @@ const QuestionCard = ({
           />
         )}
 
-        {/* MCQ Options */}
         {question.options?.length > 0 && (
           <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base space-y-1">
             {question.options.map((opt, i) => (
@@ -157,33 +153,35 @@ const QuestionCard = ({
                 <Send size={23} />
               </button>
             </Tippy>
+          </div>
 
+          <div className="flex items-center justify-end gap-3">
             <Tippy content="Solve with ChatGPT" placement="bottom">
               <button
                 onClick={handleSolveWithChatGPT}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-purple-100 hover:text-purple-600 transition shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
               >
                 <IconBrandOpenai size={20} />
                 Solve with ChatGPT
               </button>
             </Tippy>
-          </div>
 
-          <Tippy content="Bookmark" placement="bottom">
-            <button
-              onClick={onToggleBookmark}
-              className={`flex items-center gap-2 text-2xl transition cursor-pointer ${
-                bookmarked
-                  ? "text-blue-500"
-                  : "text-gray-500 hover:text-blue-500"
-              }`}
-            >
-              <Bookmark fill={bookmarked ? "blue" : "none"} size={23} />
-              <span className="text-base">
-                {question.bookmarkedBy?.length || 0}
-              </span>
-            </button>
-          </Tippy>
+            <Tippy content="Bookmark" placement="bottom">
+              <button
+                onClick={onToggleBookmark}
+                className={`flex items-center gap-2 text-2xl transition cursor-pointer ${
+                  bookmarked
+                    ? "text-blue-500"
+                    : "text-gray-500 hover:text-blue-500"
+                }`}
+              >
+                <Bookmark fill={bookmarked ? "blue" : "none"} size={23} />
+                <span className="text-base">
+                  {question.bookmarkedBy?.length || 0}
+                </span>
+              </button>
+            </Tippy>
+          </div>
         </div>
 
         {showComments && (

@@ -4,6 +4,8 @@ FRONTEND:
 navabar responsiveness
 delete modal add x button
 
+fix chatgpt solving bug
+fix copy link in html
 
 
 BACKEND:
