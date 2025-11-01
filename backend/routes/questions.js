@@ -5,14 +5,15 @@ import {
   toggleLikeQuestion,
   reportQuestion,
   deleteQuestion,
-  getQuestionsByExam,
-  toggleBookmarkQuestion, 
+  getQuestionsByCourse,
+  toggleBookmarkQuestion,
 } from "../controllers/questionController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/", authMiddleware, getQuestions);
+router.get("/courses/:courseId/questions", authMiddleware, getQuestionsByCourse);
 router.post("/", authMiddleware, createQuestion);
 router.post("/:id/like", authMiddleware, toggleLikeQuestion);
 router.post("/:id/bookmark", authMiddleware, toggleBookmarkQuestion); 

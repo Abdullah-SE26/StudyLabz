@@ -46,6 +46,62 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
+// GET /courses/:courseId/questions?examTypes=final,midterm&page=1&limit=10
+export const getQuestionsByCourse = async (req, res, next) => {
+  try {
+    const courseId = Number(req.params.courseId);
+    const examTypes = req.query.examTypes ? req.query.examTypes.split(",") : [];
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    // Validate course exists
+    const course = await prisma.course.findUnique({ where: { id: courseId } });
+    if (!course) return res.status(404).json({ success: false, error: "Course not found" });
+
+    // Build filter
+    const where = { courseId };
+    if (examTypes.length > 0) {
+      where.exam = { type: { in: examTypes } };
+    }
+
+    const [questions, total] = await Promise.all([
+      prisma.question.findMany({
+        where,
+        include: {
+          createdBy: { select: { id: true, studentId: true } },
+          likedBy: { select: { id: true } },
+          bookmarkedBy: { select: { id: true } },
+          exam: { select: { id: true, title: true, type: true } },
+          _count: { select: { comments: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.question.count({ where }),
+    ]);
+
+    const formatted = questions.map((q) => ({
+      ...q,
+      commentsCount: q._count.comments,
+      creatorName: q.createdBy?.studentId || "Unknown",
+      marks: q.marks,
+    }));
+
+    res.status(200).json({
+      success: true,
+      page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      data: formatted,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 // GET /questions/exam/:id
 export const getQuestionsByExam = async (req, res, next) => {
   try {

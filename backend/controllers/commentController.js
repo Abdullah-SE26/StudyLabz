@@ -55,7 +55,7 @@ export const getCommentsByQuestion = async (req, res, next) => {
       where: { questionId, parentCommentId: null },
       orderBy: { createdAt: "asc" },
       include: {
-        user: { select: { id: true, name: true, avatar: true } },
+        user: { select: { id: true, studentId: true, avatar: true, name: true } },
         likedBy: true,
         reportedBy: true,
       },
@@ -100,7 +100,7 @@ export const getRepliesByComment = async (req, res, next) => {
       where: { parentCommentId },
       orderBy: { createdAt: "asc" },
       include: {
-        user: { select: { id: true, name: true, avatar: true } },
+        user: { select: { id: true, studentId: true, avatar: true, name: true } },
         likedBy: true,
         reportedBy: true,
       },

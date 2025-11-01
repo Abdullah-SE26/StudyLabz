@@ -17,7 +17,7 @@ export default function CourseCard({
   const isAdmin = user?.role === "admin";
 
   const formattedDate = new Date(course.createdAt).toLocaleDateString();
-  const handleNavigate = () => navigate(`/courses/${course.id}/exams`);
+  const handleNavigate = () => navigate(`/courses/${course.id}/questions`);
 
   const TagButton = ({ tag, isSelected }) => (
     <button

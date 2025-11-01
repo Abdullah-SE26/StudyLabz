@@ -371,6 +371,7 @@ At the end, please solve the following problem:
           <div className="mt-4 border-t border-gray-100 pt-4">
             <CommentsSection
               questionId={question.id}
+              questionCreatorId={question.studentId} 
               onNewComment={() => setCommentsCount((prev) => prev + 1)}
             />
           </div>

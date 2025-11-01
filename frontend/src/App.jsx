@@ -11,7 +11,7 @@ import Contact from "./pages/Contact";
 import AboutPage from "./pages/About";
 import Courses from "./pages/CoursePages/Courses";
 import ExamsDashboard from "./pages/CoursePages/ExamsDashboard";
-import ExamQuestions from "./pages/CoursePages/ExamQuestions";
+import CourseQuestions from "./pages/CoursePages/CourseQuestions";
 import PageWrapper from "./components/PageWrapper";
 
 // Dashboard
@@ -21,9 +21,6 @@ import CreateCoursesPage from "./pages/DashboardPages/CreateCoursesPage";
 import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
 import CreateQuestionsPage from "./pages/DashboardPages/CreateQuestionsPage";
-
-
-
 
 function App() {
   const isAdminMode = true;
@@ -41,27 +38,20 @@ function App() {
             <Route path="/verify-email" element={<VerifyRequest />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<AboutPage />} />
-            <Route
-              path="/courses"
-              element={<Courses isAdminMode={isAdminMode} />}
-            />
-            <Route
-              path="/courses/:courseId/exams"
-              element={<ExamsDashboard />}
-            />
-            <Route
-              path="/courses/:courseId/exams/:examId"
-              element={<ExamQuestions />}
-            />
+
+            {/* Courses */}
+            <Route path="/courses" element={<Courses isAdminMode={isAdminMode} />} />
+            <Route path="/courses/:courseId/exams" element={<ExamsDashboard />} />
+            <Route path="/courses/:courseId/questions" element={<CourseQuestions />} />
 
             {/* Dashboard */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
               <Route path="create-course" element={<CreateCoursesPage />} />
-              <Route path="questions" element={<ExamQuestions />} />
+              <Route path="questions" element={<CourseQuestions />} />
               <Route path="users" element={<ManageUsers />} />
               <Route path="reports" element={<ManageReports />} />
-              <Route path="create-question" element={<CreateQuestionsPage />}/>
+              <Route path="create-question" element={<CreateQuestionsPage />} />
             </Route>
           </Routes>
         </PageWrapper>
