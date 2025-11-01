@@ -9,6 +9,7 @@ const CommentsSection = ({ questionId, onNewComment }) => {
   const user = useStore((state) => state.user);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
+  const [isCommentsLoading, setIsCommentsLoading] = useState(true);
 
   // -----------------------------
   // Recursive remove helper
@@ -26,6 +27,7 @@ const CommentsSection = ({ questionId, onNewComment }) => {
   // -----------------------------
   const fetchComments = useCallback(async () => {
     if (!authToken) return; // wait for token
+    setIsCommentsLoading(true);
     try {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/comments/question/${questionId}`,
@@ -37,6 +39,8 @@ const CommentsSection = ({ questionId, onNewComment }) => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to fetch comments");
+    } finally {
+      setIsCommentsLoading(false);
     }
   }, [questionId, authToken]);
 
@@ -102,6 +106,7 @@ const CommentsSection = ({ questionId, onNewComment }) => {
     const [isRepliesLoading, setIsRepliesLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [repliesCount, setRepliesCount] = useState(comment.repliesCount || 0);
 
     // Like/unlike
     const handleLike = async () => {
@@ -184,6 +189,8 @@ const CommentsSection = ({ questionId, onNewComment }) => {
       };
 
       setReplies((prev) => [...prev, tempReply]);
+      setShowReplies(true);
+      setRepliesCount((prev) => prev + 1);
       setReplyText("");
       setShowReplyInput(false);
 
@@ -211,12 +218,15 @@ const CommentsSection = ({ questionId, onNewComment }) => {
       } catch {
         toast.error("Failed to post reply");
         setReplies((prev) => prev.filter((r) => r.id !== tempReply.id));
+        setShowReplies(false);
+        setRepliesCount((prev) => prev - 1);
       }
     };
 
     // Fetch replies
     const fetchReplies = async () => {
       if (!authToken) return;
+      if (isRepliesLoading) return; // Prevent double-fetch
       if (replies.length > 0) return setShowReplies(true);
 
       setIsRepliesLoading(true);
@@ -303,7 +313,7 @@ const CommentsSection = ({ questionId, onNewComment }) => {
         </div>
 
         {/* Show/Hide Replies */}
-        {comment.repliesCount > 0 && (
+        {repliesCount > 0 && (
           <div className="flex flex-col mt-1">
             <button
               className="text-xs text-gray-400 mb-1 self-start hover:underline"
@@ -313,8 +323,8 @@ const CommentsSection = ({ questionId, onNewComment }) => {
               }}
             >
               {showReplies
-                ? `Hide ${replies.length || comment.repliesCount} replies`
-                : `Show ${comment.repliesCount} replies`}
+                ? `Hide ${replies.length || repliesCount} replies`
+                : `Show ${repliesCount} replies`}
             </button>
 
             {isRepliesLoading && (
@@ -376,6 +386,11 @@ const CommentsSection = ({ questionId, onNewComment }) => {
           Comment
         </button>
       </div>
+      {isCommentsLoading && (
+        <div className="flex justify-center py-4">
+          <span className="loading loading-dots loading-md"></span>
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         {comments.map((c) => (
           <Comment key={c.id} comment={c} />
