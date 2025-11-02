@@ -10,7 +10,6 @@ import VerifyRequest from "./pages/AuthPages/VerifyRequest";
 import Contact from "./pages/Contact";
 import AboutPage from "./pages/About";
 import Courses from "./pages/CoursePages/Courses";
-import ExamsDashboard from "./pages/CoursePages/ExamsDashboard";
 import CourseQuestions from "./pages/CoursePages/CourseQuestions";
 import PageWrapper from "./components/PageWrapper";
 
@@ -41,7 +40,6 @@ function App() {
 
             {/* Courses */}
             <Route path="/courses" element={<Courses isAdminMode={isAdminMode} />} />
-            <Route path="/courses/:courseId/exams" element={<ExamsDashboard />} />
             <Route path="/courses/:courseId/questions" element={<CourseQuestions />} />
 
             {/* Dashboard */}
