@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 import QuestionCard from "../../components/QuestionCard";
-import Pagination from "../../components/Pagination";
+import Pagination from "../../components/Pagination.jsx";
 
 // Daisy UI skeleton for question cards
 const SkeletonCard = () => (
