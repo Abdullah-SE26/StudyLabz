@@ -14,8 +14,8 @@ export default function Navbar() {
     [
       "block px-4 py-2 rounded-md font-medium transition-all duration-200",
       isActive
-        ? "bg-blue-500 text-white shadow-md"
-        : "text-gray-700 hover:text-blue-500 hover:bg-blue-50",
+        ? "bg-[#FFFDF9] text-black shadow-md"
+        : "text-gray-700 hover:text-black hover:bg-[#FFFDF9]",
     ].join(" ");
 
   const loginClasses = ({ isActive }) =>
@@ -27,14 +27,14 @@ export default function Navbar() {
     ].join(" ");
 
   return (
-    <nav className="sticky top-0 z-50 bg-white shadow-sm mt-5">
-      <div className="px-6 sm:px-8 py-4 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 rounded-lg border border-black mt-5">
+      <div className="px-3 sm:px-8 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img
             src="/studylabz-logo.png"
             alt="logo"
-            className="hidden sm:block w-40"
+            className="hidden sm:block w-50"
           />
           <img
             src="/logo_placeholder.jpg"

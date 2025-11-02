@@ -14,7 +14,7 @@ export const getQuestions = async (req, res, next) => {
       prisma.question.findMany({
         where: { text: { contains: search, mode: "insensitive" } },
         include: {
-          createdBy: { select: { id: true, studentId: true } }, // ✅ use studentId
+          createdBy: { select: { id: true, studentId: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
           course: { select: { id: true, name: true } },
@@ -25,7 +25,9 @@ export const getQuestions = async (req, res, next) => {
         skip,
         take: limit,
       }),
-      prisma.question.count({ where: { text: { contains: search, mode: "insensitive" } } }),
+      prisma.question.count({
+        where: { text: { contains: search, mode: "insensitive" } },
+      }),
     ]);
 
     const formatted = questions.map((q) => ({
@@ -46,24 +48,32 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
-// GET /courses/:courseId/questions?examTypes=final,midterm&page=1&limit=10
+// GET /courses/:courseId/questions?examIds=1,2,3&page=1&limit=10
 export const getQuestionsByCourse = async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
-    const examTypes = req.query.examTypes ? req.query.examTypes.split(",") : [];
+    const examIds = req.query.examIds
+      ? req.query.examIds.split(",").map(Number)
+      : [];
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Validate course exists
     const course = await prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) return res.status(404).json({ success: false, error: "Course not found" });
+    if (!course)
+      return res.status(404).json({ success: false, error: "Course not found" });
 
     // Build filter
     const where = { courseId };
-    if (examTypes.length > 0) {
-      where.exam = { type: { in: examTypes } };
+
+    if (examIds.length > 0) {
+      where.examId = { in: examIds };
     }
+
+    const orderBy = req.query.sort === "oldest" ? { createdAt: "asc" } : { createdAt: "desc" };
+
+    console.log("Fetching questions:", examIds, orderBy, page);
 
     const [questions, total] = await Promise.all([
       prisma.question.findMany({
@@ -72,15 +82,17 @@ export const getQuestionsByCourse = async (req, res, next) => {
           createdBy: { select: { id: true, studentId: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          exam: { select: { id: true, title: true, type: true } },
+          exam: { select: { id: true, title: true } },
           _count: { select: { comments: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: limit,
       }),
       prisma.question.count({ where }),
     ]);
+
+    console.log("Fetched questions:", questions.map(q => q.id));
 
     const formatted = questions.map((q) => ({
       ...q,
@@ -97,10 +109,10 @@ export const getQuestionsByCourse = async (req, res, next) => {
       data: formatted,
     });
   } catch (err) {
+    console.error(err);
     next(err);
   }
 };
-
 
 // GET /questions/exam/:id
 export const getQuestionsByExam = async (req, res, next) => {
@@ -139,24 +151,50 @@ export const createQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const { text, type, options, marks, courseId, examId, image } = req.body;
 
-    if (!text?.trim()) return res.status(400).json({ success: false, error: "Question text is required" });
-    if (!["MCQ", "Essay"].includes(type)) return res.status(400).json({ success: false, error: "Invalid question type" });
-    if (!marks || isNaN(marks) || marks <= 0) return res.status(400).json({ success: false, error: "Marks must be positive" });
-    if (!courseId) return res.status(400).json({ success: false, error: "Course ID is required" });
+    if (!text?.trim())
+      return res
+        .status(400)
+        .json({ success: false, error: "Question text is required" });
+    if (!["MCQ", "Essay"].includes(type))
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid question type" });
+    if (!marks || isNaN(marks) || marks <= 0)
+      return res
+        .status(400)
+        .json({ success: false, error: "Marks must be positive" });
+    if (!courseId)
+      return res
+        .status(400)
+        .json({ success: false, error: "Course ID is required" });
 
-    const course = await prisma.course.findUnique({ where: { id: Number(courseId) } });
-    if (!course) return res.status(404).json({ success: false, error: "Course not found" });
+    const course = await prisma.course.findUnique({
+      where: { id: Number(courseId) },
+    });
+    if (!course)
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
 
     if (examId) {
-      const exam = await prisma.exam.findUnique({ where: { id: Number(examId) } });
-      if (!exam) return res.status(404).json({ success: false, error: "Exam not found" });
+      const exam = await prisma.exam.findUnique({
+        where: { id: Number(examId) },
+      });
+      if (!exam)
+        return res
+          .status(404)
+          .json({ success: false, error: "Exam not found" });
     }
 
     const cleanText = sanitize(text);
 
     let parsedOptions = null;
     if (type === "MCQ") {
-      if (!options?.length || options.length < 2) return res.status(400).json({ success: false, error: "MCQ must have at least two options" });
+      if (!options?.length || options.length < 2)
+        return res.status(400).json({
+          success: false,
+          error: "MCQ must have at least two options",
+        });
       parsedOptions = options.map(sanitize);
     }
 
@@ -181,7 +219,10 @@ export const createQuestion = async (req, res, next) => {
     res.status(201).json({
       success: true,
       message: "Question created successfully",
-      data: { ...question, creatorName: question.createdBy?.studentId || "Unknown" },
+      data: {
+        ...question,
+        creatorName: question.createdBy?.studentId || "Unknown",
+      },
     });
   } catch (err) {
     next(err);
@@ -194,14 +235,22 @@ export const toggleLikeQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, include: { likedBy: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { likedBy: true },
+    });
+    if (!question)
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
 
     const hasLiked = question.likedBy.some((user) => user.id === userId);
 
     await prisma.question.update({
       where: { id: questionId },
-      data: hasLiked ? { likedBy: { disconnect: { id: userId } } } : { likedBy: { connect: { id: userId } } },
+      data: hasLiked
+        ? { likedBy: { disconnect: { id: userId } } }
+        : { likedBy: { connect: { id: userId } } },
     });
 
     const updated = await prisma.question.findUnique({
@@ -218,7 +267,10 @@ export const toggleLikeQuestion = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: hasLiked ? "Like removed" : "Question liked",
-      data: { ...updated, creatorName: updated.createdBy?.studentId || "Unknown" },
+      data: {
+        ...updated,
+        creatorName: updated.createdBy?.studentId || "Unknown",
+      },
     });
   } catch (err) {
     next(err);
@@ -231,14 +283,24 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, include: { bookmarkedBy: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { bookmarkedBy: true },
+    });
+    if (!question)
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
 
-    const hasBookmarked = question.bookmarkedBy.some((user) => user.id === userId);
+    const hasBookmarked = question.bookmarkedBy.some(
+      (user) => user.id === userId
+    );
 
     await prisma.question.update({
       where: { id: questionId },
-      data: hasBookmarked ? { bookmarkedBy: { disconnect: { id: userId } } } : { bookmarkedBy: { connect: { id: userId } } },
+      data: hasBookmarked
+        ? { bookmarkedBy: { disconnect: { id: userId } } }
+        : { bookmarkedBy: { connect: { id: userId } } },
     });
 
     const updated = await prisma.question.findUnique({
@@ -255,7 +317,10 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: hasBookmarked ? "Bookmark removed" : "Question bookmarked",
-      data: { ...updated, creatorName: updated.createdBy?.studentId || "Unknown" },
+      data: {
+        ...updated,
+        creatorName: updated.createdBy?.studentId || "Unknown",
+      },
     });
   } catch (err) {
     next(err);
@@ -269,11 +334,20 @@ export const reportQuestion = async (req, res, next) => {
     const questionId = Number(req.params.id);
     const { reason } = req.body;
 
-    if (!reason?.trim()) return res.status(400).json({ success: false, error: "Reason is required" });
+    if (!reason?.trim())
+      return res
+        .status(400)
+        .json({ success: false, error: "Reason is required" });
 
-    const report = await prisma.report.create({ data: { userId, questionId, reason: reason.trim() } });
+    const report = await prisma.report.create({
+      data: { userId, questionId, reason: reason.trim() },
+    });
 
-    res.status(201).json({ success: true, message: "Question reported successfully", data: report });
+    res.status(201).json({
+      success: true,
+      message: "Question reported successfully",
+      data: report,
+    });
   } catch (err) {
     next(err);
   }
@@ -285,13 +359,25 @@ export const deleteQuestion = async (req, res, next) => {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, select: { id: true, createdById: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
-    if (question.createdById !== userId) return res.status(403).json({ success: false, error: "Unauthorized to delete this question" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      select: { id: true, createdById: true },
+    });
+    if (!question)
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
+    if (question.createdById !== userId)
+      return res.status(403).json({
+        success: false,
+        error: "Unauthorized to delete this question",
+      });
 
     await prisma.question.delete({ where: { id: questionId } });
 
-    res.status(200).json({ success: true, message: "Question deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Question deleted successfully" });
   } catch (err) {
     next(err);
   }

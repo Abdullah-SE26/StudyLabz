@@ -2,7 +2,7 @@ TODOs:
 
 FRONTEND:
 navabar responsiveness
-delete modal add x button
+filters for tags in courses
 
 fix chatgpt solving bug
 fix copy link in html
