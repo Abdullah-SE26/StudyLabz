@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import SignOutButton from "../../components/sign-out-button";
+import SignOutButton from "../../components/SignOutButton";
 import { toast } from "react-hot-toast";
 
 // Read from .env, split by comma in case of multiple domains
