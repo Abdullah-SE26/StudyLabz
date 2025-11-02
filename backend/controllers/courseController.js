@@ -72,6 +72,30 @@ export const getCourses = async (req, res, next) => {
   }
 };
 
+// GET /courses/:id - fetch single course by ID
+export const getCourseById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const course = await prisma.course.findUnique({
+      where: { id: Number(id) },
+      include: {
+        exams: true,
+        createdBy: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    res.json(course);
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 // POST /courses - create a course (admin only)
 export const createCourse = async (req, res, next) => {
   try {

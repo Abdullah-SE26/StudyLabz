@@ -3,7 +3,8 @@ import {
   getCourses,
   createCourse,
   deleteCourse,
-  updateCourse, // 👈 add this
+  updateCourse,
+  getCourseById,
 } from "../controllers/courseController.js";
 import { authMiddleware, isAdmin } from "../middleware/authMiddleware.js";
 
@@ -11,6 +12,9 @@ const router = express.Router();
 
 // GET all courses — public
 router.get("/", getCourses);
+
+//GET specific course by id
+router.get("/:id", getCourseById);
 
 // POST new course — admin only
 router.post("/", authMiddleware, isAdmin, createCourse);
