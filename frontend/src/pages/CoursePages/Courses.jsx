@@ -3,7 +3,7 @@ import CourseCard from "../../components/course-card";
 import PageFilters from "../../components/PageFilters";
 import EditCourseModal from "../../components/UpdateCourseModal";
 import DeleteCourseModal from "../../components/DeleteCourseModal";
-import Pagination from "../../components/Pagination"
+import Pagination from "../../components/Pagination.jsx"
 
 // Debounce hook
 function useDebounce(callback, delay) {
