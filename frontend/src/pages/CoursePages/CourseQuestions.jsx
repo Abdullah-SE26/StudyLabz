@@ -19,20 +19,32 @@ const SkeletonCard = () => (
   </div>
 );
 
-// Small loading bar
-const LoadingBar = () => <span className="loading loading-bars loading-sm text-[#D2B48C]" />;
+const LoadingBar = () => (
+  <span className="loading loading-bars loading-sm text-[#D2B48C]" />
+);
 
-// Sort options
-const SORT_OPTIONS = ["newest", "oldest"];
+const SORT_OPTIONS = [
+  { label: "Newest", value: "newest" },
+  { label: "Oldest", value: "oldest" },
+];
+
+// Fixed assessment types
+const ASSESSMENT_TYPES = [
+  "Midterm",
+  "Final",
+  "Quiz 1",
+  "Quiz 2",
+  "Additional Quizzes",
+];
 
 const CourseQuestions = () => {
   const { courseId } = useParams();
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
 
+  const [courseName, setCourseName] = useState("");
   const [questions, setQuestions] = useState([]);
-  const [exams, setExams] = useState([]);
-  const [selectedExams, setSelectedExams] = useState([]);
+  const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortOrder, setSortOrder] = useState("newest");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -40,19 +52,19 @@ const CourseQuestions = () => {
   const [firstLoad, setFirstLoad] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch exams for filter
-  const fetchExams = useCallback(async () => {
+  // Fetch course info
+  const fetchCourse = useCallback(async () => {
     if (!authToken || !courseId) return;
-
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/exams`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch exams");
+      if (!res.ok) throw new Error("Failed to fetch course info");
       const data = await res.json();
-      setExams(data || []);
+      setCourseName(data.name || "Course");
     } catch (err) {
       console.error(err);
+      setCourseName("Course");
     }
   }, [authToken, courseId]);
 
@@ -73,16 +85,17 @@ const CourseQuestions = () => {
         limit: 10,
         sort: sortOrder,
       });
-      if (selectedExams.length) query.append("examIds", selectedExams.join(","));
 
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/questions/courses/${courseId}/questions?${query.toString()}`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
       );
 
       if (!res.ok) throw new Error(`Failed to fetch questions (${res.status})`);
-
       const data = await res.json();
+
       setQuestions(data.data || []);
       setTotalPages(data.totalPages || 1);
       setFirstLoad(false);
@@ -92,23 +105,20 @@ const CourseQuestions = () => {
     } finally {
       setLoading(false);
     }
-  }, [authToken, courseId, page, selectedExams, sortOrder]);
+  }, [authToken, courseId, page, sortOrder]);
 
   useEffect(() => {
-    fetchExams();
-  }, [fetchExams]);
-
-  useEffect(() => {
+    fetchCourse();
     fetchQuestions();
-  }, [fetchQuestions]);
+  }, [fetchCourse, fetchQuestions]);
 
   // Toggle like
   const toggleLike = async (qId) => {
     if (!user?.id) return toast.error("You must be logged in to like questions.");
 
-    const prevQuestions = [...questions];
-    setQuestions((prev) =>
-      prev.map((q) =>
+    const prev = [...questions];
+    setQuestions((prevQs) =>
+      prevQs.map((q) =>
         q.id === qId
           ? {
               ...q,
@@ -121,26 +131,32 @@ const CourseQuestions = () => {
     );
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error("Failed to sync like.");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to sync like with server");
       const updated = await res.json();
-      setQuestions((prev) => prev.map((q) => (q.id === qId ? updated.data : q)));
+      setQuestions((prevQs) =>
+        prevQs.map((q) => (q.id === qId ? updated.data : q))
+      );
     } catch {
-      setQuestions(prevQuestions);
+      setQuestions(prev);
       toast.error("Failed to sync like with server.");
     }
   };
 
   // Toggle bookmark
   const toggleBookmark = async (qId) => {
-    if (!user?.id) return toast.error("You must be logged in to bookmark questions.");
+    if (!user?.id)
+      return toast.error("You must be logged in to bookmark questions.");
 
-    const prevQuestions = [...questions];
-    setQuestions((prev) =>
-      prev.map((q) =>
+    const prev = [...questions];
+    setQuestions((prevQs) =>
+      prevQs.map((q) =>
         q.id === qId
           ? {
               ...q,
@@ -153,74 +169,103 @@ const CourseQuestions = () => {
     );
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error("Failed to sync bookmark.");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to sync bookmark with server");
       const updated = await res.json();
-      setQuestions((prev) => prev.map((q) => (q.id === qId ? updated.data : q)));
+      setQuestions((prevQs) =>
+        prevQs.map((q) => (q.id === qId ? updated.data : q))
+      );
       toast.success(
         updated.data.bookmarkedBy.some((u) => u.id === user.id)
           ? "Question added to bookmarks."
           : "Question removed from bookmarks."
       );
     } catch {
-      setQuestions(prevQuestions);
+      setQuestions(prev);
       toast.error("Failed to sync bookmark with server.");
     }
   };
 
-  // Handle exam filter toggle
-  const handleExamFilter = (examId) => {
+  // Handle filter toggling
+  const handleTypeToggle = (type) => {
     setPage(1);
-    setSelectedExams((prev) =>
-      prev.includes(examId) ? prev.filter((id) => id !== examId) : [...prev, examId]
+    setSelectedTypes((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type]
     );
   };
 
-  // Render
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedTypes([]);
+    setPage(1);
+  };
+
+  // Apply type filters locally
+  const filteredQuestions =
+    selectedTypes.length > 0
+      ? questions.filter((q) =>
+          selectedTypes.some((t) =>
+            q.exam?.title?.toLowerCase().includes(t.toLowerCase())
+          )
+        )
+      : questions;
+
+  // UI
   if (firstLoad && loading) {
     return (
       <div className="p-6 space-y-6">
-        {[...Array(3)].map((i) => (
+        {[...Array(3)].map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
     );
   }
 
-  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
+  if (error)
+    return <p className="text-center text-red-500 mt-10">{error}</p>;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h2 className="text-2xl font-semibold mb-4 text-center sm:text-left text-theme">
-        Course Questions
+      <h2 className="text-2xl font-semibold mb-4 text-center text-theme">
+        {courseName} Questions
       </h2>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row justify-between flex-wrap gap-2 sm:gap-4 items-center mb-6">
-        <div className="flex gap-2 sm:gap-4 flex-wrap w-full sm:w-auto">
-          {exams.map((exam) => (
-            <label
-              key={exam.id}
-              className={`flex items-center gap-1 cursor-pointer text-sm px-2 py-1 rounded transition ${
-                selectedExams.includes(exam.id)
-                  ? "bg-[#D2B48C] text-white"
+      <div className="flex flex-col sm:flex-row justify-between flex-wrap gap-3 items-center mb-6">
+        {/* Assessment Type Filters */}
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-start">
+          {ASSESSMENT_TYPES.map((type) => (
+            <button
+              key={type}
+              onClick={() => handleTypeToggle(type)}
+              className={`px-3 py-1.5 rounded-lg border text-sm transition-all duration-200 ${
+                selectedTypes.includes(type)
+                  ? "bg-[#D2B48C] text-white border-[#D2B48C]"
                   : "bg-[#FFF8E0] text-[#5C4A3D] border border-[#E0CFA6]"
               }`}
             >
-              <input
-                type="checkbox"
-                checked={selectedExams.includes(exam.id)}
-                onChange={() => handleExamFilter(exam.id)}
-                className="checkbox checkbox-xs"
-              />
-              {exam.title}
-            </label>
+              {type}
+            </button>
           ))}
+          {selectedTypes.length > 0 && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E0CFA6] bg-white text-[#5C4A3D] hover:bg-[#F8EFD4] transition text-sm"
+            >
+              ✕ Clear
+            </button>
+          )}
         </div>
 
+        {/* Sorting */}
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <label className="text-sm font-medium text-theme">Sort:</label>
           <select
@@ -232,25 +277,27 @@ const CourseQuestions = () => {
             }}
           >
             {SORT_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt.charAt(0).toUpperCase() + opt.slice(1)}
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
         </div>
       </div>
 
+      {/* Loading */}
       {loading && !firstLoad && (
         <div className="flex justify-center py-10">
           <LoadingBar />
         </div>
       )}
 
-      {questions.length > 0 ? (
+      {/* Question List */}
+      {filteredQuestions.length > 0 ? (
         <div className="space-y-6">
-          {questions.map((q) => (
+          {filteredQuestions.map((q) => (
             <QuestionCard
-              key={q.id}
+              key={q.id || q._id}
               question={q}
               onToggleLike={() => toggleLike(q.id)}
               onToggleBookmark={() => toggleBookmark(q.id)}
@@ -263,7 +310,11 @@ const CourseQuestions = () => {
 
       {totalPages > 1 && (
         <div className="flex justify-center mt-6">
-          <Pagination totalPages={totalPages} currentPage={page} handlePageChange={setPage} />
+          <Pagination
+            totalPages={totalPages}
+            currentPage={page}
+            handlePageChange={setPage}
+          />
         </div>
       )}
     </div>

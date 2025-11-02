@@ -10,48 +10,63 @@ export const getCourses = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 12;
     const offset = (page - 1) * limit;
 
-    const baseWhere = {};
+    // Build WHERE clause
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { tags: { has: search.toLowerCase() } },
+      ];
+    }
+
     if (tags) {
       const tagsArray = tags
         .split(",")
-        .map((t) => t.trim())
+        .map((t) => t.trim().toLowerCase())
         .filter(Boolean);
       if (tagsArray.length) {
-        baseWhere.AND = tagsArray.map((tag) => ({ tags: { has: tag } }));
+        // All tags must exist (AND)
+        where.AND = tagsArray.map((tag) => ({ tags: { has: tag } }));
       }
     }
 
+    // Sorting
     let orderBy;
-    if (sort === "latest") orderBy = { createdAt: "desc" };
-    else if (sort === "oldest") orderBy = { createdAt: "asc" };
-    else if (sort === "name_asc") orderBy = { name: "asc" };
-    else if (sort === "name_desc") orderBy = { name: "desc" };
+    switch (sort) {
+      case "oldest":
+        orderBy = { createdAt: "asc" };
+        break;
+      case "name_asc":
+        orderBy = { name: "asc" };
+        break;
+      case "name_desc":
+        orderBy = { name: "desc" };
+        break;
+      default:
+        orderBy = { createdAt: "desc" };
+    }
 
-    const candidates = await prisma.course.findMany({
-      where: baseWhere,
+    // Get total count
+    const totalCount = await prisma.course.count({ where });
+
+    // Fetch paginated courses
+    const courses = await prisma.course.findMany({
+      where,
       orderBy,
+      skip: offset,
+      take: limit,
       include: {
         createdBy: { select: { id: true, name: true, email: true } },
       },
     });
 
-    const filtered = (() => {
-      if (!search) return candidates;
-      const lower = search.toLowerCase();
-      return candidates.filter((course) => {
-        const nameMatch =
-          course.name && course.name.toLowerCase().includes(lower);
-        const tagsMatch =
-          Array.isArray(course.tags) &&
-          course.tags.some((t) => t && t.toLowerCase().includes(lower));
-        return nameMatch || tagsMatch;
-      });
-    })();
-
-    const totalCount = filtered.length;
-    const paginated = filtered.slice(offset, offset + limit);
-
-    res.json({ courses: paginated, totalCount });
+    res.json({
+      courses,
+      totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+    });
   } catch (err) {
     next(err);
   }
@@ -105,15 +120,6 @@ export const createCourse = async (req, res, next) => {
         description,
         tags: tagsArray,
         createdById: userId,
-        exams: {
-          create: [
-            { title: "Quiz 1", type: "quiz" },
-            { title: "Quiz 2", type: "quiz" },
-            { title: "Additional Quiz", type: "quiz" },
-            { title: "Midterm", type: "midterm" },
-            { title: "Final", type: "final" },
-          ],
-        },
       },
       include: { exams: true },
     });
