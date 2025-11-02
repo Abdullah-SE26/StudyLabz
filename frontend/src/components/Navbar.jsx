@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, Link } from "react-router-dom";
 import { IconMenu2, IconX } from "@tabler/icons-react";
-import UserMenu from "../components/user-menu.jsx";
+import UserMenu from "../components/UserMenu.jsx";
 import { useStore } from "../store/authStore.js";
 
 
