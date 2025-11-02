@@ -1,14 +1,22 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import UserMenu from "../components/UserMenu.jsx";
 import { useStore } from "../store/authStore.js";
 
-
 export default function Navbar() {
   const menuOpen = useStore((state) => state.menuOpen);
   const toggleMenu = useStore((state) => state.toggleMenu);
   const user = useStore((state) => state.user);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinkClasses = ({ isActive }) =>
     [
@@ -27,8 +35,14 @@ export default function Navbar() {
     ].join(" ");
 
   return (
-    <nav className="sticky top-0 z-50 rounded-lg border border-black mt-5">
-      <div className="px-3 sm:px-8 py-3 flex items-center justify-between">
+    <nav
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        isScrolled
+          ? "py-2 bg-white/80 backdrop-blur-lg shadow-lg rounded-full mt-5 mx-4"
+          : "py-3"
+      }`}
+    >
+      <div className="px-3 sm:px-8 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img
@@ -91,7 +105,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <ul className="lg:hidden flex flex-col gap-2 font-medium text-gray-700 bg-white border-t border-gray-200 shadow-md p-4 mx-6 rounded-b-md">
+        <ul className="lg:hidden flex flex-col gap-2 font-medium text-gray-700 bg-white/80 backdrop-blur-lg shadow-md p-4 mx-4 rounded-b-2xl">
           <li>
             <NavLink to="/" onClick={toggleMenu} className={navLinkClasses}>
               Home

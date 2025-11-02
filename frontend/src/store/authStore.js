@@ -7,6 +7,9 @@ const savedToken = localStorage.getItem("authToken");
 export const useStore = create((set) => ({
   authToken: savedToken || null,
   user: savedUser ? JSON.parse(savedUser) : null,
+  menuOpen: false,
+
+  toggleMenu: () => set((state) => ({ menuOpen: !state.menuOpen })),
 
   setAuth: (token, user) => {
     localStorage.setItem("authToken", token);
