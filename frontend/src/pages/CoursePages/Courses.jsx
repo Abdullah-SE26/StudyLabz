@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import CourseCard from "../../components/course-card";
+import CourseCard from "../../components/CourseCard.jsx";
 import PageFilters from "../../components/PageFilters";
 import EditCourseModal from "../../components/UpdateCourseModal";
 import DeleteCourseModal from "../../components/DeleteCourseModal";
-import Pagination from "../../components/Pagination"
+import Pagination from "../../components/Pagination.jsx"
 
 // Debounce hook
 function useDebounce(callback, delay) {
