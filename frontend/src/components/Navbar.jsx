@@ -36,10 +36,10 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-4 z-50 transition-all duration-300 ${
         isScrolled
-          ? "py-2 bg-white/80 backdrop-blur-lg shadow-lg rounded-full mt-5 mx-4"
-          : "py-3"
+          ? "py-2 bg-gradient-to-r from-[#E0F7FA]/80 via-[#FFFDE7]/70 to-[#E1F5FE]/80 backdrop-blur-lg shadow-xl rounded-3xl mx-6"
+          : "py-4 bg-transparent"
       }`}
     >
       <div className="px-3 sm:px-8 flex items-center justify-between">
@@ -53,7 +53,7 @@ export default function Navbar() {
           <img
             src="/logo_placeholder.jpg"
             alt="logo"
-            className="sm:hidden w-5"
+            className="sm:hidden w-6"
           />
         </Link>
 
@@ -83,21 +83,12 @@ export default function Navbar() {
 
         {/* Right side: Login or UserMenu */}
         <div className="hidden lg:block">
-          {user ? (
-            <UserMenu user={user} />
-          ) : (
-            <NavLink to="/login" className={loginClasses}>
-              Login
-            </NavLink>
-          )}
+          {user ? <UserMenu user={user} /> : <NavLink to="/login" className={loginClasses}>Login</NavLink>}
         </div>
 
         {/* Mobile Toggle */}
         <div className="lg:hidden flex items-center gap-4">
-          <button
-            onClick={toggleMenu}
-            className="text-gray-700 focus:outline-none"
-          >
+          <button onClick={toggleMenu} className="text-gray-700 focus:outline-none">
             {menuOpen ? <IconX size={28} /> : <IconMenu2 size={28} />}
           </button>
         </div>
@@ -105,51 +96,34 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <ul className="lg:hidden flex flex-col gap-2 font-medium text-gray-700 bg-white/80 backdrop-blur-lg shadow-md p-4 mx-4 rounded-b-2xl">
+        <ul className="lg:hidden flex flex-col gap-2 font-medium text-gray-700 bg-white/80 backdrop-blur-lg shadow-md p-4 mx-4 rounded-b-2xl mt-2">
           <li>
             <NavLink to="/" onClick={toggleMenu} className={navLinkClasses}>
               Home
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/courses"
-              onClick={toggleMenu}
-              className={navLinkClasses}
-            >
+            <NavLink to="/courses" onClick={toggleMenu} className={navLinkClasses}>
               Courses
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/about"
-              onClick={toggleMenu}
-              className={navLinkClasses}
-            >
+            <NavLink to="/about" onClick={toggleMenu} className={navLinkClasses}>
               About
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/Contact"
-              onClick={toggleMenu}
-              className={navLinkClasses}
-            >
+            <NavLink to="/Contact" onClick={toggleMenu} className={navLinkClasses}>
               Contact
             </NavLink>
           </li>
-
           {user ? (
             <li className="mt-2">
               <UserMenu closeMenu={toggleMenu} />
             </li>
           ) : (
             <li>
-              <Link
-                to="/login"
-                onClick={toggleMenu}
-                className={loginClasses(false)}
-              >
+              <Link to="/login" onClick={toggleMenu} className={loginClasses(false)}>
                 Login
               </Link>
             </li>

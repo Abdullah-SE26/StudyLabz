@@ -23,7 +23,7 @@ export const getCourses = async (req, res, next) => {
     if (tags) {
       const tagsArray = tags
         .split(",")
-        .map((t) => t.trim().toLowerCase())
+        .map((t) => t.trim())
         .filter(Boolean);
       if (tagsArray.length) {
         // All tags must exist (AND)
@@ -188,6 +188,26 @@ export const updateCourse = async (req, res, next) => {
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /courses/tags - get all unique tags
+export const getCourseTags = async (req, res, next) => {
+  try {
+    const courses = await prisma.course.findMany({
+      select: { tags: true },
+    });
+
+    const tagsSet = new Set();
+    courses.forEach((course) => {
+      course.tags?.forEach((tag) => tagsSet.add(tag));
+    });
+
+    const sortedTags = [...tagsSet].sort();
+
+    res.json(sortedTags);
   } catch (err) {
     next(err);
   }

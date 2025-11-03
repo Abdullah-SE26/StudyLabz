@@ -37,6 +37,21 @@ const Courses = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [modalType, setModalType] = useState(null); // "edit" or "delete"
 
+  // Fetch all unique tags
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/tags`);
+        if (!res.ok) throw new Error("Failed to fetch tags");
+        const tagsData = await res.json();
+        setAllTags(tagsData || []);
+      } catch (err) {
+        console.error("Error fetching tags:", err);
+      }
+    };
+    fetchTags();
+  }, []);
+
   // Fetch courses
   const fetchCourses = useCallback(async () => {
     try {
@@ -57,12 +72,6 @@ const Courses = () => {
 
       setCourses(data.courses || []);
       setTotalPages(Math.ceil((data.totalCount || 0) / itemsPerPage));
-
-      const tagsSet = new Set();
-      (data.courses || []).forEach((course) =>
-        course.tags?.forEach((tag) => tagsSet.add(tag))
-      );
-      setAllTags([...tagsSet]);
 
       setError(null);
     } catch (err) {

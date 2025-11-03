@@ -5,6 +5,7 @@ import {
   deleteCourse,
   updateCourse,
   getCourseById,
+  getCourseTags,
 } from "../controllers/courseController.js";
 import { authMiddleware, isAdmin } from "../middleware/authMiddleware.js";
 
@@ -12,6 +13,9 @@ const router = express.Router();
 
 // GET all courses — public
 router.get("/", getCourses);
+
+// GET all unique tags
+router.get("/tags", getCourseTags);
 
 //GET specific course by id
 router.get("/:id", getCourseById);

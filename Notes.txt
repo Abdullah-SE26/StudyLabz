@@ -1,7 +1,7 @@
 TODOs:
 
 FRONTEND:
-navabar responsiveness
+
 filters for tags in courses
 
 fix chatgpt solving bug
