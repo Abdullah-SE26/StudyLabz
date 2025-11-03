@@ -244,6 +244,9 @@ At the end, please solve the following problem:
           <span className="font-semibold text-theme">
             Author: {question.creatorName || "Unknown User"}
           </span>
+          <span className="text-gray-500 text-xs sm:text-sm">
+            Created at: {new Date(question.createdAt).toLocaleDateString()}
+          </span>
           <div className="flex gap-2 mt-1 sm:mt-0">
             <span className="px-3 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
               {question.exam?.title || "No Exam"}
@@ -277,7 +280,7 @@ At the end, please solve the following problem:
           <img
             src={question.image}
             alt="Question"
-            className="my-4 rounded-lg max-w-full object-contain"
+            className="my-4 rounded-lg max-w-full object-contain max-h-100"
           />
         )}
 
