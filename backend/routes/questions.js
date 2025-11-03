@@ -7,6 +7,7 @@ import {
   deleteQuestion,
   getQuestionsByCourse,
   toggleBookmarkQuestion,
+  getQuestionById,
 } from "../controllers/questionController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
@@ -18,6 +19,7 @@ router.post("/", authMiddleware, createQuestion);
 router.post("/:id/like", authMiddleware, toggleLikeQuestion);
 router.post("/:id/bookmark", authMiddleware, toggleBookmarkQuestion); 
 router.post("/:id/report", authMiddleware, reportQuestion);
+router.get("/:id", getQuestionById);
 router.delete("/:id", authMiddleware, deleteQuestion);
 
 export default router;

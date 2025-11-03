@@ -4,8 +4,7 @@ FRONTEND:
 
 filters for tags in courses
 
-fix chatgpt solving bug
-fix copy link in html
+
 
 
 BACKEND:

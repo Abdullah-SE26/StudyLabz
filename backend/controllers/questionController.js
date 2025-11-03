@@ -353,6 +353,39 @@ export const reportQuestion = async (req, res, next) => {
   }
 };
 
+// GET /questions/:id
+export const getQuestionById = async (req, res, next) => {
+  try {
+    const questionId = Number(req.params.id);
+
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        createdBy: { select: { id: true, studentId: true } },
+        likedBy: { select: { id: true } },
+        bookmarkedBy: { select: { id: true } },
+        course: { select: { id: true, name: true } },
+        exam: { select: { id: true, title: true } },
+        _count: { select: { comments: true } },
+      },
+    });
+
+    if (!question) {
+      return res.status(404).json({ success: false, error: "Question not found" });
+    }
+
+    const formatted = {
+      ...question,
+      commentsCount: question._count.comments,
+      creatorName: question.createdBy?.studentId || "Unknown",
+    };
+
+    res.status(200).json(formatted);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /questions/:id
 export const deleteQuestion = async (req, res, next) => {
   try {

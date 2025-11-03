@@ -12,6 +12,7 @@ import AboutPage from "./pages/About";
 import Courses from "./pages/CoursePages/Courses";
 import CourseQuestions from "./pages/CoursePages/CourseQuestions";
 import PageWrapper from "./components/PageWrapper";
+import QuestionPage from "./pages/QuestionPage";
 
 // Dashboard
 import DashboardLayout from "./pages/DashboardPages/DashboardLayout";
@@ -41,6 +42,7 @@ function App() {
             {/* Courses */}
             <Route path="/courses" element={<Courses isAdminMode={isAdminMode} />} />
             <Route path="/courses/:courseId/questions" element={<CourseQuestions />} />
+            <Route path="/questions/:questionId" element={<QuestionPage />} />
 
             {/* Dashboard */}
             <Route path="/dashboard" element={<DashboardLayout />}>

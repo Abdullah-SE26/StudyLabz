@@ -39,7 +39,7 @@ router.delete("/:commentId", authMiddleware, deleteComment);
 // Get all top-level comments for a question
 // GET /api/comments/question/:questionId
 // -----------------------------
-router.get("/question/:questionId", authMiddleware, getCommentsByQuestion);
+router.get("/question/:questionId", getCommentsByQuestion);
 
 // -----------------------------
 // Get direct replies for a comment (lazy load)
