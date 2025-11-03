@@ -7,7 +7,7 @@ import {
   Activity,
   GraduationCap,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { useStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
 import {
@@ -57,7 +57,7 @@ export default function DashboardHome() {
     fetchDashboardStats();
   }, [authToken]);
 
-  if (loading) return <LoadingSkeleton />;
+  if (loading) return <LoadingSkeleton />; 
   if (error) return <ErrorMessage error={error} />;
 
   const isAdmin = user?.role === "admin";
@@ -66,14 +66,18 @@ export default function DashboardHome() {
     <div className="space-y-6">
       <WelcomeBanner isAdmin={isAdmin} />
       <QuickStats stats={stats} isAdmin={isAdmin} />
-      {isAdmin ? <AdminCharts stats={stats} /> : <UserCharts stats={stats} />}
+      {isAdmin ? (
+        <AdminCharts stats={stats} />
+      ) : (
+        <UserCharts stats={stats} />
+      )}
     </div>
   );
 }
 
 /* ---------- COMPONENTS ---------- */
 
-function LoadingSkeleton() {
+const LoadingSkeleton = memo(() => {
   return (
     <div className="space-y-6">
       {/* Banner skeleton */}
@@ -94,9 +98,9 @@ function LoadingSkeleton() {
       </div>
     </div>
   );
-}
+});
 
-function ErrorMessage({ error }) {
+const ErrorMessage = memo(({ error }) => {
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-4 text-white shadow-xl" />
@@ -105,9 +109,9 @@ function ErrorMessage({ error }) {
       </div>
     </div>
   );
-}
+});
 
-function WelcomeBanner({ isAdmin }) {
+const WelcomeBanner = memo(({ isAdmin }) => {
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-4">
       <div className="flex items-center gap-4 justify-center">
@@ -120,9 +124,9 @@ function WelcomeBanner({ isAdmin }) {
       </div>
     </div>
   );
-}
+});
 
-function QuickStats({ stats, isAdmin }) {
+const QuickStats = memo(({ stats, isAdmin }) => {
   const statCards = isAdmin
     ? [
         {
@@ -211,10 +215,10 @@ function QuickStats({ stats, isAdmin }) {
       ))}
     </div>
   );
-}
+});
 
 /* ---------- ADMIN CHARTS ---------- */
-function AdminCharts({ stats }) {
+const AdminCharts = memo(({ stats }) => {
   const usersData = stats?.dailyUsers || [];
   const questionsData = stats?.dailyQuestions || [];
 
@@ -262,10 +266,10 @@ function AdminCharts({ stats }) {
       )}
     </div>
   );
-}
+});
 
 /* ---------- USER CHARTS ---------- */
-function UserCharts({ stats }) {
+const UserCharts = memo(({ stats }) => {
   const userQuestionsData = stats?.dailyUserQuestions || [];
   const bookmarksData = stats?.dailyBookmarks || [];
 
@@ -313,4 +317,4 @@ function UserCharts({ stats }) {
       )}
     </div>
   );
-}
+});

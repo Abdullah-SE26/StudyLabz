@@ -1,13 +1,14 @@
-import React, { useRef } from "react";
+import React, { useRef, memo } from "react";
 import JoditEditor from "jodit-react";
 
-export default function RichTextEditor({ value, onChange }) {
+const RichTextEditor = ({ value, onChange }) => {
   const editor = useRef(null);
 
   const config = {
     readonly: false,
     height: 500,
     iframe: false, // ✅ KEY FIX — disable iframe sandbox
+    toolbarSticky: false, // Disable floating toolbar
     toolbarButtonSize: "middle",
     buttons: [
       "bold",
@@ -44,4 +45,6 @@ export default function RichTextEditor({ value, onChange }) {
       onBlur={(newContent) => onChange(newContent)}
     />
   );
-}
+};
+
+export default memo(RichTextEditor);

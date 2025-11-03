@@ -118,3 +118,9 @@
 .fadein-delay {
   animation: fadein 0.7s ease-in-out 0.1s both;
 }
+
+/* Remove focus rings */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

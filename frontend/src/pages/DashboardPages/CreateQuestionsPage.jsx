@@ -25,6 +25,7 @@ export default function CreateQuestionPage() {
   const [exams, setExams] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
+  const [activeOption, setActiveOption] = useState(0); // -1 for no active option, or 0,1,2,3
 
   const safeFetchJSON = useCallback(
     async (url) => {
@@ -165,10 +166,12 @@ export default function CreateQuestionPage() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Course & Exam */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="font-medium">Course</label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Course</span>
+            </div>
             <select
-              className="select select-bordered w-full mt-2 bg-white"
+              className="select select-bordered dropdown-bottom"
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
             >
@@ -179,77 +182,95 @@ export default function CreateQuestionPage() {
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="font-medium">Exam</label>
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Exam</span>
+            </div>
             <select
-              className="select select-bordered w-full mt-2 bg-white"
+              className="select select-bordered dropdown-bottom"
               value={examId}
               onChange={(e) => setExamId(e.target.value)}
               disabled={!exams.length}
             >
               <option value="">Select Exam</option>
               {exams.map((ex) => (
-                <option key={ex.id} value={ex.id} className="bg-white">
+                <option key={ex.id} value={ex.id}>
                   {ex.title}
                 </option>
               ))}
             </select>
-          </div>
+          </label>
         </div>
 
         {/* Marks & Type */}
         <div className="grid grid-cols-2 gap-4 items-end">
-          <div>
-            <label className="font-medium">Marks</label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Marks</span>
+            </div>
             <input
               type="number"
-              className="input input-bordered w-full mt-2 bg-white"
+              className="input input-bordered w-full"
               placeholder="Marks"
               value={marks}
               onChange={(e) => setMarks(e.target.value)}
               min={1}
             />
-          </div>
-          <div>
-            <label className="font-medium">Question Type</label>
+          </label>
+          <label className="form-control w-full">
+            <div className="label">
+              <span className="label-text">Question Type</span>
+            </div>
             <select
-              className="select select-bordered w-full mt-2 bg-white"
+              className="select select-bordered dropdown-bottom"
               value={type}
               onChange={(e) => setType(e.target.value)}
             >
               <option value="MCQ">MCQ</option>
               <option value="Essay">Essay</option>
             </select>
-          </div>
+          </label>
         </div>
 
         {/* Question Text */}
         <div>
-          <label className="font-medium">Question Text</label>
-          <div>
-            <RichTextEditor value={text} onChange={setText} />
-          </div>
+          <label className="label">
+            <span className="label-text">Question Text</span>
+          </label>
+          <RichTextEditor value={text} onChange={setText} />
         </div>
 
         {/* MCQ Options */}
         {type === "MCQ" && (
-          <div className="space-y-4">
-            <label className="font-medium">Options</label>
+          <div className="space-y-2">
+            <label className="label">
+              <span className="label-text">Options</span>
+            </label>
             {options.map((opt, idx) => (
-              <div key={idx} className="border rounded-md p-2">
-                <label className="font-medium block mb-1">
+              <div
+                key={idx}
+                className={`collapse collapse-arrow border border-base-300 bg-base-100 rounded-box ${
+                  activeOption === idx ? "collapse-open" : ""
+                }`}
+                onClick={() => setActiveOption(activeOption === idx ? -1 : idx)}
+              >
+                <div className="collapse-title text-xl font-medium">
                   Option {idx + 1}
-                </label>
-                <RichTextEditor
-                  value={opt}
-                  onChange={(val) => {
-                    const newOptions = [...options];
-                    newOptions[idx] = val;
-                    setOptions(newOptions);
-                  }}
-                  height={100} // smaller editor for options
-                />
+                </div>
+                {activeOption === idx && (
+                  <div className="collapse-content">
+                    <RichTextEditor
+                      value={opt}
+                      onChange={(val) => {
+                        const newOptions = [...options];
+                        newOptions[idx] = val;
+                        setOptions(newOptions);
+                      }}
+                      height={100}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
