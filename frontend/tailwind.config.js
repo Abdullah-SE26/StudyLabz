@@ -6,14 +6,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Lab colors (keep for versatility)
+        // Lab colors (optional)
         "lab-blue": "#2563eb",
         "lab-cyan": "#06b6d4",
         "lab-emerald": "#10b981",
         "lab-purple": "#8b5cf6",
         "lab-orange": "#f59e0b",
 
-        // StudyFlow core palette (Wispr-inspired)
+        // StudyFlow core palette
         "sf-green": "#034F46",   // Calm accent
         "sf-dark": "#1A1A1A",    // Neutral dark text
         "sf-cream": "#FFFFEB",   // Warm background base
@@ -44,22 +44,27 @@ export default {
     },
   },
   plugins: [daisyui],
-
   daisyui: {
     themes: [
       {
         studyflow: {
-          primary: "#034F46",
-          secondary: "#FEF3C7",
-          accent: "#FFFFEB",
-          neutral: "#1A1A1A",
-          "base-100": "#FFFFEB",
+          primary: "#034F46",       // Buttons, links
+          secondary: "#FFFBEB",     // Secondary highlights
+          accent: "#FEF3C7",        // Borders, subtle accents
+          neutral: "#1A1A1A",       // Default text
+          "base-100": "#FFFFEB",    // Page backgrounds
+          "base-200": "#FFFBEB",    // Slightly lighter panels
+          "base-300": "#FEF3C7",    // Cards, borders
           info: "#2563eb",
           success: "#10b981",
           warning: "#f59e0b",
           error: "#ef4444",
+          "--rounded-btn": "0.5rem",
+          "--rounded-box": "1rem",
         },
       },
+      "light",
+      "dark",
     ],
   },
 };
