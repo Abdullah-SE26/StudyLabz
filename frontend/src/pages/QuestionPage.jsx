@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import QuestionCard from "../components/QuestionCard";
+import QuestionCardSkeleton from "../components/QuestionCardSkeleton";
 
 const QuestionPage = () => {
   const { questionId } = useParams();
@@ -30,7 +31,7 @@ const QuestionPage = () => {
     }
   }, [questionId]);
 
-  if (loading) return <div className="text-center p-10">Loading...</div>;
+  if (loading) return <QuestionCardSkeleton />;
   if (error) return <div className="text-center p-10 text-red-500">{error}</div>;
   if (!question) return <div className="text-center p-10">Question not found.</div>;
 

@@ -6,21 +6,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Lab colors (keep for versatility)
         "lab-blue": "#2563eb",
         "lab-cyan": "#06b6d4",
         "lab-emerald": "#10b981",
         "lab-purple": "#8b5cf6",
         "lab-orange": "#f59e0b",
 
-        // Global beige-white theme
-        "theme-light": "#FFFBEB",    // amber-50
-        "theme-base": "#FFFFFF",      // white
-        "theme-dark": "#FEF3C7",      // amber-100
-        "theme-border": "#FEF3C7",    // amber-100
-        "theme-text": "#5C4A3D",      // optional: soft brown text
+        // StudyFlow core palette (Wispr-inspired)
+        "sf-green": "#034F46",   // Calm accent
+        "sf-dark": "#1A1A1A",    // Neutral dark text
+        "sf-cream": "#FFFFEB",   // Warm background base
+        "sf-light": "#FFFBEB",   // Slightly lighter cream
+        "sf-border": "#FEF3C7",  // Soft amber border
+        "sf-text": "#5C4A3D",    // Soft brown for warmth
       },
       backgroundImage: {
-        "theme-gradient": "linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7)",
+        "sf-gradient": "linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7)",
       },
       animation: {
         float: "float 3s ease-in-out infinite",
@@ -42,4 +44,22 @@ export default {
     },
   },
   plugins: [daisyui],
+
+  daisyui: {
+    themes: [
+      {
+        studyflow: {
+          primary: "#034F46",
+          secondary: "#FEF3C7",
+          accent: "#FFFFEB",
+          neutral: "#1A1A1A",
+          "base-100": "#FFFFEB",
+          info: "#2563eb",
+          success: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444",
+        },
+      },
+    ],
+  },
 };

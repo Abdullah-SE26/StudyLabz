@@ -1,7 +1,8 @@
 @import "tailwindcss";
-@import 'tippy.js/dist/tippy.css';
+@import "tippy.js/dist/tippy.css";
 @plugin "daisyui";
 
+/* StudyFlow custom utilities */
 @layer utilities {
   .bg-theme {
     background-image: linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7);
@@ -14,8 +15,30 @@
   .text-theme {
     color: #5C4A3D;
   }
+
+  /* StudyFlow accent utilities */
+  .bg-sf-primary {
+    background-color: #034F46;
+  }
+
+  .text-sf-primary {
+    color: #034F46;
+  }
+
+  .bg-sf-soft {
+    background-color: #FFFFEB;
+  }
+
+  .text-sf-dark {
+    color: #1A1A1A;
+  }
+
+  .border-sf-primary {
+    border-color: #034F46;
+  }
 }
 
+/* Rich text editor list styling */
 .jodit-wysiwyg ul {
   list-style-type: disc;
   margin-left: 1.5rem;
