@@ -21,6 +21,7 @@ import CreateCoursesPage from "./pages/DashboardPages/CreateCoursesPage";
 import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
 import CreateQuestionsPage from "./pages/DashboardPages/CreateQuestionsPage";
+import ManageQuestions from "./pages/DashboardPages/ManageQuestions";
 
 function App() {
   const isAdminMode = true;
@@ -49,6 +50,7 @@ function App() {
               <Route index element={<DashboardHome />} />
               <Route path="create-course" element={<CreateCoursesPage />} />
               <Route path="questions" element={<CourseQuestions />} />
+              <Route path="manage-questions" element={<ManageQuestions />} />
               <Route path="users" element={<ManageUsers />} />
               <Route path="reports" element={<ManageReports />} />
               <Route path="create-question" element={<CreateQuestionsPage />} />

@@ -18,12 +18,13 @@ import {
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import { useStore } from "../../store/authStore";
+import { shallow } from "zustand/shallow";
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [adminOpen, setAdminOpen] = useState(false);
   const location = useLocation();
-  const user = useStore((state) => state.user);
+  const user = useStore((state) => state.user, shallow);
   const clearAuth = useStore((state) => state.clearAuth);
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
@@ -41,8 +42,8 @@ export default function DashboardLayout() {
   const baseLinks = [
     { to: "/dashboard", label: "Home", icon: <Home className="w-5 h-5" /> },
     {
-      to: "/dashboard/my-questions",
-      label: "My Questions",
+      to: "/dashboard/manage-questions",
+      label: "Manage Questions",
       icon: <HelpCircle className="w-5 h-5" />,
     },
     {
@@ -94,7 +95,7 @@ export default function DashboardLayout() {
       );
       setAdminOpen(isAdminPage);
     }
-  }, [location.pathname]);
+  }, [location.pathname, user]);
 
   return (
     <div className="flex min-h-[600px] max-h-[90vh] bg-slate-50 text-slate-800">
