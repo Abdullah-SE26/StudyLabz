@@ -1,37 +1,37 @@
 import prisma from "../prismaClient.js";
 
-// GET /courses
+// ===== Utility: Parse tags from string or array =====
+const parseTags = (tags) => {
+  if (Array.isArray(tags)) return tags.map((t) => t.trim()).filter(Boolean);
+  if (typeof tags === "string")
+    return tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  return [];
+};
+
+// ===== GET /courses =====
 export const getCourses = async (req, res, next) => {
   try {
     const search = (req.query.search || "").trim();
-    const tags = (req.query.tags || "").trim();
+    const tags = parseTags(req.query.tags || "");
     const sort = req.query.sort || "latest";
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 12;
     const offset = (page - 1) * limit;
 
-    // Build WHERE clause
     const where = {};
-
     if (search) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { tags: { has: search.toLowerCase() } },
       ];
     }
-
-    if (tags) {
-      const tagsArray = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      if (tagsArray.length) {
-        // All tags must exist (AND)
-        where.AND = tagsArray.map((tag) => ({ tags: { has: tag } }));
-      }
+    if (tags.length) {
+      where.AND = tags.map((tag) => ({ tags: { has: tag } }));
     }
 
-    // Sorting
     let orderBy;
     switch (sort) {
       case "oldest":
@@ -47,21 +47,21 @@ export const getCourses = async (req, res, next) => {
         orderBy = { createdAt: "desc" };
     }
 
-    // Get total count
-    const totalCount = await prisma.course.count({ where });
-
-    // Fetch paginated courses
-    const courses = await prisma.course.findMany({
-      where,
-      orderBy,
-      skip: offset,
-      take: limit,
-      include: {
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
-    });
+    const [totalCount, courses] = await Promise.all([
+      prisma.course.count({ where }),
+      prisma.course.findMany({
+        where,
+        orderBy,
+        skip: offset,
+        take: limit,
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+        },
+      }),
+    ]);
 
     res.json({
+      success: true,
       courses,
       totalCount,
       page,
@@ -72,42 +72,37 @@ export const getCourses = async (req, res, next) => {
   }
 };
 
-// GET /courses/:id - fetch single course by ID
+// ===== GET /courses/:id =====
 export const getCourseById = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
     const course = await prisma.course.findUnique({
-      where: { id: Number(id) },
+      where: { id },
       include: {
         exams: true,
         createdBy: { select: { id: true, name: true, email: true } },
       },
     });
 
-    if (!course) {
-      return res.status(404).json({ error: "Course not found" });
-    }
+    if (!course) return res.status(404).json({ error: "Course not found" });
 
-    res.json(course);
+    res.json({ success: true, course });
   } catch (err) {
     next(err);
   }
 };
 
-
-// POST /courses - create a course (admin only)
+// ===== POST /courses =====
 export const createCourse = async (req, res, next) => {
   try {
     const { name, code: frontendCode, description, tags } = req.body;
-    const userId = req.user.id;
-    const role = req.user.role;
+    const { id: userId, role } = req.user;
 
-    if (role !== "admin")
-      return res.status(403).json({ error: "Only admins can create courses" });
-    if (!name) return res.status(400).json({ error: "Name is required" });
+    if (role !== "admin") return res.status(403).json({ error: "Only admins can create courses" });
+    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required" });
 
-    // Generate code from title
     let code =
       frontendCode ||
       name
@@ -115,6 +110,8 @@ export const createCourse = async (req, res, next) => {
         .trim()
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
+
+    // Ensure code is unique
     let uniqueCode = code;
     let suffix = 1;
     while (await prisma.course.findUnique({ where: { code: uniqueCode } })) {
@@ -123,113 +120,81 @@ export const createCourse = async (req, res, next) => {
     }
     code = uniqueCode;
 
-    const existingName = await prisma.course.findUnique({ where: { name } });
-    if (existingName)
+    if (await prisma.course.findUnique({ where: { name } }))
       return res.status(400).json({ error: "Course name already exists" });
 
-    // Parse tags
-    let tagsArray = [];
-    if (Array.isArray(tags)) tagsArray = tags;
-    else if (typeof tags === "string")
-      tagsArray = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-
-    // Create course + default exams in **one atomic query**
     const course = await prisma.course.create({
       data: {
-        name,
+        name: name.trim(),
         code,
-        description,
-        tags: tagsArray,
+        description: description?.trim() || null,
+        tags: parseTags(tags),
         createdById: userId,
       },
       include: { exams: true },
     });
 
-    res.status(201).json(course);
+    res.status(201).json({ success: true, course });
   } catch (err) {
     next(err);
   }
 };
 
-// PATCH /courses/:id - update course (admin only)
+// ===== PATCH /courses/:id =====
 export const updateCourse = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const role = req.user.role;
+    const id = Number(req.params.id);
+    const { role } = req.user;
+    const { name, description, tags } = req.body;
 
-    if (role !== "admin")
-      return res.status(403).json({ error: "Only admins can update courses" });
+    if (role !== "admin") return res.status(403).json({ error: "Only admins can update courses" });
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
-    const { name, tags, description } = req.body;
-
-    const existing = await prisma.course.findUnique({
-      where: { id: Number(id) },
-    });
+    const existing = await prisma.course.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Course not found" });
 
-    let tagsArray = [];
-    if (Array.isArray(tags)) tagsArray = tags;
-    else if (typeof tags === "string")
-      tagsArray = tags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-
     const updated = await prisma.course.update({
-      where: { id: Number(id) },
+      where: { id },
       data: {
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(tagsArray.length && { tags: tagsArray }),
+        ...(name && { name: name.trim() }),
+        ...(description && { description: description.trim() }),
+        ...(tags && parseTags(tags).length && { tags: parseTags(tags) }),
       },
     });
 
-    res.json(updated);
+    res.json({ success: true, course: updated });
   } catch (err) {
     next(err);
   }
 };
 
-// GET /courses/tags - get all unique tags
-export const getCourseTags = async (req, res, next) => {
-  try {
-    const courses = await prisma.course.findMany({
-      select: { tags: true },
-    });
-
-    const tagsSet = new Set();
-    courses.forEach((course) => {
-      course.tags?.forEach((tag) => tagsSet.add(tag));
-    });
-
-    const sortedTags = [...tagsSet].sort();
-
-    res.json(sortedTags);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// DELETE /courses/:id - admin only
+// ===== DELETE /courses/:id =====
 export const deleteCourse = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const role = req.user.role;
+    const id = Number(req.params.id);
+    const { role } = req.user;
 
-    if (role !== "admin")
-      return res.status(403).json({ error: "Only admins can delete courses" });
+    if (role !== "admin") return res.status(403).json({ error: "Only admins can delete courses" });
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
-    const existing = await prisma.course.findUnique({
-      where: { id: Number(id) },
-    });
+    const existing = await prisma.course.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Course not found" });
 
-    await prisma.course.delete({ where: { id: Number(id) } });
+    await prisma.course.delete({ where: { id } });
+    res.json({ success: true, message: "Course deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+};
 
-    res.json({ message: "Course deleted successfully" });
+// ===== GET /courses/tags =====
+export const getCourseTags = async (req, res, next) => {
+  try {
+    const courses = await prisma.course.findMany({ select: { tags: true } });
+    const tagsSet = new Set();
+    courses.forEach((course) => course.tags?.forEach((tag) => tagsSet.add(tag)));
+
+    res.json({ success: true, tags: [...tagsSet].sort() });
   } catch (err) {
     next(err);
   }

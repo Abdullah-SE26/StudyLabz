@@ -3,7 +3,7 @@ import CourseCard from "../../components/CourseCard.jsx";
 import PageFilters from "../../components/PageFilters";
 import EditCourseModal from "../../components/UpdateCourseModal";
 import DeleteCourseModal from "../../components/DeleteCourseModal";
-import Pagination from "../../components/Pagination.jsx"
+import Pagination from "../../components/Pagination.jsx";
 
 // Debounce hook
 function useDebounce(callback, delay) {
@@ -41,12 +41,15 @@ const Courses = () => {
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/tags`);
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/courses/tags`
+        );
         if (!res.ok) throw new Error("Failed to fetch tags");
-        const tagsData = await res.json();
-        setAllTags(tagsData || []);
+        const data = await res.json();
+        setAllTags(data.tags || []); // <- use data.tags
       } catch (err) {
         console.error("Error fetching tags:", err);
+        setAllTags([]); // fallback
       }
     };
     fetchTags();

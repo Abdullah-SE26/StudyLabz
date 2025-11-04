@@ -2,7 +2,7 @@ TODOs:
 
 FRONTEND:
 
-filters for tags in courses
+
 
 
 

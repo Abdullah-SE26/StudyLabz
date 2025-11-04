@@ -186,7 +186,7 @@ const PageFilters = ({
               </div>
 
               {/* Scrollable list */}
-              <ul className="space-y-1 max-h-[192px] overflow-y-auto">
+              <ul className="space-y-1 max-h-48 overflow-y-auto">
                 {filteredTags.length ? (
                   filteredTags.map((tag, idx) => (
                     <li key={idx}>
