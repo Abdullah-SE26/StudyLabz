@@ -14,7 +14,7 @@ const QuestionPage = () => {
     const fetchQuestion = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(`/api/questions/${questionId}`);
+        const { data } = await axios.get(`/questions/${questionId}`);
         setQuestion(data);
       } catch (err) {
         console.error(err);

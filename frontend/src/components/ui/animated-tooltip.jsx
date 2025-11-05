@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useRef } from "react";
 import {
@@ -6,6 +5,7 @@ import {
   AnimatePresence,
   useMotionValue,
   useSpring,
+  motion,
 } from "motion/react";
 
 export const AnimatedTooltip = ({

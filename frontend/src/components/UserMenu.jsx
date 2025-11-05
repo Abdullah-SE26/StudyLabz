@@ -8,18 +8,14 @@ export default function UserMenu({ closeMenu }) {
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
-  // Reactive store slices
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
   const logout = useStore((state) => state.logout);
 
-  // Auto clear store if token is missing (expired or removed)
+  // Auto clear if token missing
   useEffect(() => {
-    if (!authToken && user) {
-      logout();
-      navigate("/login");
-    }
-  }, [authToken, user, logout, navigate]);
+    if (!authToken && user) logout();
+  }, [authToken, user, logout]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -30,8 +26,18 @@ export default function UserMenu({ closeMenu }) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Hide menu if no user
-  if (!user) return null;
+  // Show Login button if no user
+  if (!user) {
+    return (
+      <button
+        onClick={() => navigate("/login")}
+        className="flex items-center gap-1 px-3 py-1 border border-primary rounded-md text-neutral hover:bg-base-200 text-sm"
+      >
+        <IconUser className="w-4 h-4" />
+        Login
+      </button>
+    );
+  }
 
   const displayName = user.studentId || user.name || "User";
 
@@ -39,27 +45,29 @@ export default function UserMenu({ closeMenu }) {
     <div className="relative w-max" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="btn btn-outline btn-sm flex items-center gap-2"
+        className="flex items-center gap-2 px-3 py-1 border border-primary rounded-md text-neutral hover:bg-base-200 text-sm"
       >
         {user.avatar ? (
-          <img src={user.avatar} alt="avatar" className="w-7 h-7 rounded-full" />
+          <img src={user.avatar} alt="avatar" className="w-5 h-5 rounded-full" />
         ) : (
-          <IconUser className="w-5 h-5" />
+          <IconUser className="w-4 h-4" />
         )}
-        {displayName}
-        <IconChevronDown className="w-4 h-4" />
+        <span className="truncate max-w-[100px]">{displayName}</span>
+        <IconChevronDown className="w-3 h-3" />
       </button>
 
       {open && (
-        <ul className="menu dropdown-content absolute right-0 mt-2 shadow-lg bg-base-100 rounded-lg border w-48 p-2 z-50">
+        <ul className="absolute right-0 mt-1 shadow-md bg-base-100 py-1 z-50 w-44 rounded-md border border-primary text-sm">
           <li
             onClick={() => {
               setOpen(false);
               navigate("/dashboard");
               if (closeMenu) closeMenu();
             }}
+            className="flex items-center px-3 py-2 gap-2 hover:bg-primary/20 cursor-pointer text-neutral"
           >
-            <IconLayoutDashboard className="w-5 h-5 mr-2" /> Dashboard
+            <IconLayoutDashboard className="w-4 h-4" />
+            Dashboard
           </li>
           <li
             onClick={() => {
@@ -68,8 +76,10 @@ export default function UserMenu({ closeMenu }) {
               if (closeMenu) closeMenu();
               navigate("/login");
             }}
+            className="flex items-center px-3 py-2 gap-2 hover:bg-primary/20 cursor-pointer text-neutral"
           >
-            <IconLogout className="w-5 h-5 mr-2" /> Logout
+            <IconLogout className="w-4 h-4" />
+            Logout
           </li>
         </ul>
       )}

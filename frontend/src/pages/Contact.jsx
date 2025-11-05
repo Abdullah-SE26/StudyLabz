@@ -28,7 +28,7 @@ export default function Contact() {
     const toastId = toast.loading("Sending message...");
 
     try {
-      await axios.post("/api/contact", formData);
+      await axios.post("/contact", formData);
       toast.dismiss(toastId);
       toast.success("Message sent successfully!");
       setFormData({

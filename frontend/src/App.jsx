@@ -37,47 +37,32 @@ function App() {
     navigate("/login");
   }, [logout, navigate]);
 
-  // Effect 1: Handle token validation and expiration
+  // Unified token check + login redirect
   useEffect(() => {
-    if (!authToken) return; // No token, nothing to do
+    if (!authToken) return;
 
     try {
       const decodedToken = jwtDecode(authToken);
-      if (decodedToken.exp * 1000 < Date.now()) {
+      const isExpired = decodedToken.exp * 1000 < Date.now();
+
+      if (isExpired) {
         handleAuthExpired();
+      } else if (location.pathname === "/login") {
+        // If valid token, redirect from login to dashboard
+        navigate("/dashboard");
       }
     } catch (error) {
       console.error("Failed to decode token:", error);
       handleAuthExpired();
     }
-  }, [authToken, handleAuthExpired]);
+  }, [authToken, location.pathname, navigate, handleAuthExpired]);
 
-  // Effect 2: Redirect authenticated users from the login page
+  // Global listener for API-triggered auth expiration
   useEffect(() => {
-    if (authToken && location.pathname === "/login") {
-      try {
-        const decodedToken = jwtDecode(authToken);
-        if (decodedToken.exp * 1000 > Date.now()) {
-          navigate("/dashboard");
-        }
-      } catch (error) {
-        // If token is invalid, Effect 1 will handle the logout.
-      }
-    }
-  }, [authToken, location, navigate]);
-
-  // Effect 3: Listen for global auth-expired event from API calls
-  useEffect(() => {
-    const handleAuthExpired = () => {
-      logout();
-      navigate("/login");
-    };
-
-    window.addEventListener("auth-expired", handleAuthExpired);
-    return () => {
-      window.removeEventListener("auth-expired", handleAuthExpired);
-    };
-  }, [logout, navigate]);
+    const onAuthExpired = () => handleAuthExpired();
+    window.addEventListener("auth-expired", onAuthExpired);
+    return () => window.removeEventListener("auth-expired", onAuthExpired);
+  }, [handleAuthExpired]);
 
   return (
     <>

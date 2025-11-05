@@ -38,7 +38,7 @@ export default function DashboardHome() {
 
       try {
         const API_URL = import.meta.env.VITE_API_URL;
-        const { data } = await axios.get(`${API_URL}/api/dashboard/stats`, {
+        const { data } = await axios.get(`${API_URL}/dashboard/stats`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 

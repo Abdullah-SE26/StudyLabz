@@ -66,7 +66,7 @@ export default function CreateCoursesPage() {
       const courseCode = generateCourseCode(name);
 
       await axios.post(
-        "/api/courses",
+        "/courses",
         {
           name: name.trim(),
           code: courseCode,

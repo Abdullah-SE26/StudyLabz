@@ -8,7 +8,7 @@ import RichTextEditor from "../../components/RichTextEditor";
 import axios from "axios";
 
 const uploader = genUploader({
-  url: `${import.meta.env.VITE_API_URL}/api/uploadthing`,
+  url: `${import.meta.env.VITE_API_URL}/uploadthing`,
 });
 const uploadFiles = uploader.uploadFiles;
 
@@ -46,7 +46,7 @@ export default function CreateQuestionPage() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/api/courses`);
+      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses`);
       if (!data) return;
       const normalized = Array.isArray(data) ? data : data.courses || [];
       setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
@@ -61,7 +61,7 @@ export default function CreateQuestionPage() {
       return;
     }
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/api/exams?courseId=${courseId}`);
+      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/exams?courseId=${courseId}`);
       if (!data) return;
       const examsArray = Array.isArray(data) ? data : data.exams || [];
       setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
@@ -103,7 +103,7 @@ export default function CreateQuestionPage() {
       };
 
       await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/questions`,
+        `${import.meta.env.VITE_API_URL}/questions`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
