@@ -1,126 +1,43 @@
-/* ---------------------------- */
-/* Tailwind 4.1 + DaisyUI setup */
-/* ---------------------------- */
+
 @import "tailwindcss";
-@import "tippy.js/dist/tippy.css";
 @plugin "daisyui";
+@import "tippy.js/dist/tippy.css";
 
-/* ---------------------------- */
-/* StudyFlow custom utilities   */
-/* ---------------------------- */
 
-/* Background classes */
-.bg-sf-soft {
-  background-color: #ffffeb; /* sf-cream */
+:root {
+  --page-bg: #FFFFEB;
 }
 
-.bg-sf-primary {
-  background-color: #034f46; /* sf-green */
-}
 
-.bg-theme {
-  background-image: linear-gradient(to bottom right, #fffbeb, #ffffff, #fef3c7);
-}
-
-/* Text classes */
-.text-sf-primary {
-  color: #034f46;
-}
-
-.text-sf-dark {
-  color: #1a1a1a;
-}
-
-.text-theme {
-  color: #5c4a3d;
-}
-
-/* Border classes */
-.border-sf-primary {
-  border-color: #034f46;
-}
-
-.border-theme {
-  border: 1px solid #fef3c7;
-}
-
-/* Rounded & spacing utilities (optional extras) */
-.rounded-theme {
-  border-radius: 1rem;
-}
-
-.padding-theme {
-  padding: 1rem;
-}
-
-/* ---------------------------- */
-/* Rich text editor styling     */
-/* ---------------------------- */
-.jodit-wysiwyg ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
-}
-
-.jodit-wysiwyg ol {
-  list-style-type: decimal;
-  margin-left: 1.5rem;
-}
-
-.jodit-wysiwyg ol[type="A"] {
-  list-style-type: upper-alpha;
-}
-.jodit-wysiwyg ol[type="a"] {
-  list-style-type: lower-alpha;
-}
-.jodit-wysiwyg ol[type="I"] {
-  list-style-type: upper-roman;
-}
-.jodit-wysiwyg ol[type="i"] {
-  list-style-type: lower-roman;
-}
 
 /* ---------------------------- */
 /* Animations                    */
 /* ---------------------------- */
 @keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 
-.float {
-  animation: float 3s ease-in-out infinite;
-}
+.float { animation: float 3s ease-in-out infinite; }
 
 @keyframes fadein {
-  0% {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
-.fadein {
-  animation: fadein 0.4s ease-in-out;
-}
+.fadein { animation: fadein 0.4s ease-in-out; }
+.fadein-slow { animation: fadein 0.6s ease-in-out; }
+.fadein-delay { animation: fadein 0.7s ease-in-out 0.1s both; }
 
-.fadein-slow {
-  animation: fadein 0.6s ease-in-out;
-}
-
-.fadein-delay {
-  animation: fadein 0.7s ease-in-out 0.1s both;
-}
+/* ---------------------------- */
+/* Rich text editor styling     */
+/* ---------------------------- */
+.jodit-wysiwyg ul { list-style-type: disc; margin-left: 1.5rem; }
+.jodit-wysiwyg ol { list-style-type: decimal; margin-left: 1.5rem; }
+.jodit-wysiwyg ol[type="A"] { list-style-type: upper-alpha; }
+.jodit-wysiwyg ol[type="a"] { list-style-type: lower-alpha; }
+.jodit-wysiwyg ol[type="I"] { list-style-type: upper-roman; }
+.jodit-wysiwyg ol[type="i"] { list-style-type: lower-roman; }
 
 /* Remove focus rings */
-*:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
+*:focus { outline: none !important; box-shadow: none !important; }
