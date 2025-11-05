@@ -4,8 +4,9 @@ import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 import QuestionCard from "../../components/QuestionCard";
 import Pagination from "../../components/Pagination";
+import axios from "../../../lib/axios.js";
 
-// Skeleton card for loading state
+// Skeleton for loading
 const SkeletonCard = () => (
   <div className="card bg-[#FFF8E0] shadow-md border border-[#E0CFA6] p-4 space-y-3 max-w-full sm:max-w-lg mx-auto animate-pulse">
     <div className="h-4 bg-[#E0CFA6] rounded w-3/4"></div>
@@ -19,16 +20,13 @@ const SkeletonCard = () => (
   </div>
 );
 
-const LoadingBar = () => (
-  <span className="loading loading-bars loading-sm text-[#D2B48C]" />
-);
+const LoadingBar = () => <span className="loading loading-bars loading-sm text-[#D2B48C]" />;
 
 const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
   { label: "Oldest", value: "oldest" },
 ];
 
-// Fixed assessment types
 const ASSESSMENT_TYPES = [
   "Midterm",
   "Final",
@@ -56,133 +54,98 @@ const CourseQuestions = () => {
   const fetchCourse = useCallback(async () => {
     if (!authToken || !courseId) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch course info");
-      const data = await res.json();
-      setCourseName(data.name || "Course");
+      const { data } = await axios.get(`/courses/${courseId}`);
+      setCourseName(data?.name || "Course");
     } catch (err) {
       console.error(err);
       setCourseName("Course");
     }
   }, [authToken, courseId]);
 
-  // Fetch questions
-  const fetchQuestions = useCallback(async () => {
+  // Fetch questions with abort handling
+  const fetchQuestions = useCallback(() => {
     if (!authToken || !courseId) {
       setError("You must be logged in to view questions.");
       setLoading(false);
       return;
     }
 
+    const controller = new AbortController();
     setLoading(true);
     setError("");
 
-    try {
-      const query = new URLSearchParams({
-        page,
-        limit: 10,
-        sort: sortOrder,
-      });
+    const query = new URLSearchParams({ page, limit: 10, sort: sortOrder }).toString();
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/questions/courses/${courseId}/questions?${query.toString()}`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
+    axios
+      .get(`/questions/courses/${courseId}/questions?${query}`, { signal: controller.signal })
+      .then(({ data }) => {
+        setQuestions(data?.data || []);
+        setTotalPages(data?.totalPages || 1);
+        setFirstLoad(false);
+      })
+      .catch((err) => {
+        if (err.name !== "CanceledError") {
+          console.error(err);
+          setError(err?.response?.data?.error || "Failed to load questions.");
         }
-      );
+      })
+      .finally(() => setLoading(false));
 
-      if (!res.ok) throw new Error(`Failed to fetch questions (${res.status})`);
-      const data = await res.json();
-
-      setQuestions(data.data || []);
-      setTotalPages(data.totalPages || 1);
-      setFirstLoad(false);
-    } catch (err) {
-      console.error(err);
-      setError(err.message || "Failed to load questions.");
-    } finally {
-      setLoading(false);
-    }
+    return () => controller.abort();
   }, [authToken, courseId, page, sortOrder]);
 
   useEffect(() => {
     fetchCourse();
-    fetchQuestions();
+    const abortFetch = fetchQuestions();
+    return () => abortFetch && abortFetch();
   }, [fetchCourse, fetchQuestions]);
 
-  // Toggle like
   const toggleLike = async (qId) => {
     if (!user?.id) return toast.error("You must be logged in to like questions.");
 
     const prev = [...questions];
-    setQuestions((prevQs) =>
-      prevQs.map((q) =>
-        q.id === qId
-          ? {
-              ...q,
-              likedBy: q.likedBy.some((u) => u.id === user.id)
-                ? q.likedBy.filter((u) => u.id !== user.id)
-                : [...q.likedBy, { id: user.id }],
-            }
-          : q
-      )
+    const updatedQs = questions.map((q) =>
+      q.id === qId
+        ? {
+            ...q,
+            likedBy: q.likedBy.some((u) => u.id === user.id)
+              ? q.likedBy.filter((u) => u.id !== user.id)
+              : [...q.likedBy, { id: user.id }],
+          }
+        : q
     );
+    setQuestions(updatedQs);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/like`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to sync like with server");
-      const updated = await res.json();
-      setQuestions((prevQs) =>
-        prevQs.map((q) => (q.id === qId ? updated.data : q))
-      );
+      const { data } = await axios.post(`/questions/${qId}/like`);
+      setQuestions((qs) => qs.map((q) => (q.id === qId ? data.data : q)));
     } catch {
       setQuestions(prev);
       toast.error("Failed to sync like with server.");
     }
   };
 
-  // Toggle bookmark
   const toggleBookmark = async (qId) => {
-    if (!user?.id)
-      return toast.error("You must be logged in to bookmark questions.");
+    if (!user?.id) return toast.error("You must be logged in to bookmark questions.");
 
     const prev = [...questions];
-    setQuestions((prevQs) =>
-      prevQs.map((q) =>
-        q.id === qId
-          ? {
-              ...q,
-              bookmarkedBy: q.bookmarkedBy.some((u) => u.id === user.id)
-                ? q.bookmarkedBy.filter((u) => u.id !== user.id)
-                : [...q.bookmarkedBy, { id: user.id }],
-            }
-          : q
-      )
+    const updatedQs = questions.map((q) =>
+      q.id === qId
+        ? {
+            ...q,
+            bookmarkedBy: q.bookmarkedBy.some((u) => u.id === user.id)
+              ? q.bookmarkedBy.filter((u) => u.id !== user.id)
+              : [...q.bookmarkedBy, { id: user.id }],
+          }
+        : q
     );
+    setQuestions(updatedQs);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/questions/${qId}/bookmark`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${authToken}` },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to sync bookmark with server");
-      const updated = await res.json();
-      setQuestions((prevQs) =>
-        prevQs.map((q) => (q.id === qId ? updated.data : q))
-      );
+      const { data } = await axios.post(`/questions/${qId}/bookmark`);
+      setQuestions((qs) => qs.map((q) => (q.id === qId ? data.data : q)));
       toast.success(
-        updated.data.bookmarkedBy.some((u) => u.id === user.id)
+        data.data.bookmarkedBy.some((u) => u.id === user.id)
           ? "Question added to bookmarks."
           : "Question removed from bookmarks."
       );
@@ -192,23 +155,18 @@ const CourseQuestions = () => {
     }
   };
 
-  // Handle filter toggling
   const handleTypeToggle = (type) => {
     setPage(1);
     setSelectedTypes((prev) =>
-      prev.includes(type)
-        ? prev.filter((t) => t !== type)
-        : [...prev, type]
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
-  // Clear all filters
   const clearFilters = () => {
     setSelectedTypes([]);
     setPage(1);
   };
 
-  // Apply type filters locally
   const filteredQuestions =
     selectedTypes.length > 0
       ? questions.filter((q) =>
@@ -218,7 +176,6 @@ const CourseQuestions = () => {
         )
       : questions;
 
-  // UI
   if (firstLoad && loading) {
     return (
       <div className="p-6 space-y-6">
@@ -229,8 +186,7 @@ const CourseQuestions = () => {
     );
   }
 
-  if (error)
-    return <p className="text-center text-red-500 mt-10">{error}</p>;
+  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -238,9 +194,7 @@ const CourseQuestions = () => {
         {courseName} Questions
       </h2>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row justify-between flex-wrap gap-3 items-center mb-6">
-        {/* Assessment Type Filters */}
         <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-start">
           {ASSESSMENT_TYPES.map((type) => (
             <button
@@ -265,7 +219,6 @@ const CourseQuestions = () => {
           )}
         </div>
 
-        {/* Sorting */}
         <div className="flex items-center gap-2 mt-2 sm:mt-0">
           <label className="text-sm font-medium text-theme">Sort:</label>
           <select
@@ -285,14 +238,12 @@ const CourseQuestions = () => {
         </div>
       </div>
 
-      {/* Loading */}
       {loading && !firstLoad && (
         <div className="flex justify-center py-10">
           <LoadingBar />
         </div>
       )}
 
-      {/* Question List */}
       {filteredQuestions.length > 0 ? (
         <div className="space-y-6">
           {filteredQuestions.map((q) => (

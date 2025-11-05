@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useStore } from "../store/authStore";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
+import axios from "../../lib/axios"; // assuming you have an axios instance
 
 export default function DeleteCourseModal({ course, onClose, onDeleted }) {
   const authToken = useStore((state) => state.authToken);
@@ -11,30 +12,18 @@ export default function DeleteCourseModal({ course, onClose, onDeleted }) {
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/courses/${course.id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
+      await axios.delete(`/courses/${course.id}`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
-      if (res.ok) {
-        toast.success(
-          `Course "${course.title || course.name}" deleted successfully!`
-        );
-        onDeleted();
-        onClose();
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.message || "Failed to delete course");
-      }
+      toast.success(
+        `Course "${course.title || course.name}" deleted successfully!`
+      );
+      onDeleted?.();
+      onClose?.();
     } catch (err) {
       console.error(err);
-      toast.error("Error deleting course");
+      toast.error(err?.response?.data?.message || "Failed to delete course");
     } finally {
       setLoading(false);
     }
@@ -46,7 +35,7 @@ export default function DeleteCourseModal({ course, onClose, onDeleted }) {
       <div
         className="fixed inset-0 backdrop-blur-sm bg-black/20 z-40"
         onClick={!loading ? onClose : undefined}
-      ></div>
+      />
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -62,11 +51,13 @@ export default function DeleteCourseModal({ course, onClose, onDeleted }) {
             <button
               onClick={handleConfirm}
               disabled={loading}
-              className={`flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition cursor-pointer ${
+              className={`flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition ${
                 loading ? "opacity-70 cursor-not-allowed" : ""
               }`}
             >
-              {loading && <span className="loading loading-spinner loading-sm"></span>}
+              {loading && (
+                <span className="loading loading-spinner loading-sm"></span>
+              )}
               {loading ? "Deleting..." : "Yes, Delete"}
             </button>
 

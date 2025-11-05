@@ -10,6 +10,7 @@ import {
 import { useState, useEffect, memo } from "react";
 import { useStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
+import axios from "../../../lib/axios";
 import {
   LineChart,
   Line,
@@ -37,18 +38,17 @@ export default function DashboardHome() {
 
       try {
         const API_URL = import.meta.env.VITE_API_URL;
-        const response = await fetch(`${API_URL}/api/dashboard/stats`, {
+        const { data } = await axios.get(`${API_URL}/api/dashboard/stats`, {
           headers: { Authorization: `Bearer ${authToken}` },
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-
-        const data = await response.json();
         setStats(data.data);
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
-        setError(err.message);
-        toast.error("Failed to load dashboard data");
+        const msg =
+          err.response?.data?.error || err.message || "Failed to load dashboard data";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -57,7 +57,7 @@ export default function DashboardHome() {
     fetchDashboardStats();
   }, [authToken]);
 
-  if (loading) return <LoadingSkeleton />; 
+  if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorMessage error={error} />;
 
   const isAdmin = user?.role === "admin";
@@ -66,146 +66,76 @@ export default function DashboardHome() {
     <div className="space-y-6">
       <WelcomeBanner isAdmin={isAdmin} />
       <QuickStats stats={stats} isAdmin={isAdmin} />
-      {isAdmin ? (
-        <AdminCharts stats={stats} />
-      ) : (
-        <UserCharts stats={stats} />
-      )}
+      {isAdmin ? <AdminCharts stats={stats} /> : <UserCharts stats={stats} />}
     </div>
   );
 }
 
 /* ---------- COMPONENTS ---------- */
 
-const LoadingSkeleton = memo(() => {
-  return (
-    <div className="space-y-6">
-      {/* Banner skeleton */}
-      <div className="skeleton h-28 rounded-xl w-full" />
-
-      {/* Quick stats skeletons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="skeleton h-28 rounded-xl w-full" />
-        ))}
-      </div>
-
-      {/* Charts skeletons */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {[...Array(2)].map((_, i) => (
-          <div key={i} className="skeleton h-64 rounded-xl w-full" />
-        ))}
-      </div>
+const LoadingSkeleton = memo(() => (
+  <div className="space-y-6">
+    <div className="skeleton h-28 rounded-xl w-full" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="skeleton h-28 rounded-xl w-full" />
+      ))}
     </div>
-  );
-});
-
-const ErrorMessage = memo(({ error }) => {
-  return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-4 text-white shadow-xl" />
-      <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-        <p className="text-red-600">Error loading dashboard data: {error}</p>
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      {[...Array(2)].map((_, i) => (
+        <div key={i} className="skeleton h-64 rounded-xl w-full" />
+      ))}
     </div>
-  );
-});
+  </div>
+));
 
-const WelcomeBanner = memo(({ isAdmin }) => {
-  return (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-4">
-      <div className="flex items-center gap-4 justify-center">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <GraduationCap className="w-6 h-6 text-blue-600" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-800 ">
-          {isAdmin ? "Admin Dashboard" : "User Dashboard"}
-        </h1>
-      </div>
+const ErrorMessage = memo(({ error }) => (
+  <div className="space-y-6">
+    <div className="bg-linear-to-r from-blue-600 to-cyan-600 rounded-xl p-4 text-white shadow-xl" />
+    <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+      <p className="text-red-600">Error loading dashboard data: {error}</p>
     </div>
-  );
-});
+  </div>
+));
+
+const WelcomeBanner = memo(({ isAdmin }) => (
+  <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 mb-4">
+    <div className="flex items-center gap-4 justify-center">
+      <div className="p-2 bg-blue-100 rounded-lg">
+        <GraduationCap className="w-6 h-6 text-blue-600" />
+      </div>
+      <h1 className="text-xl font-bold text-slate-800">
+        {isAdmin ? "Admin Dashboard" : "User Dashboard"}
+      </h1>
+    </div>
+  </div>
+));
 
 const QuickStats = memo(({ stats, isAdmin }) => {
   const statCards = isAdmin
     ? [
-        {
-          label: "Total Users",
-          value: stats?.totalUsers || 0,
-          icon: <Users className="w-5 h-5 text-blue-600" />,
-          color: "blue",
-          subtitle: "Registered users",
-        },
-        {
-          label: "Total Courses",
-          value: stats?.totalCourses || 0,
-          icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
-          color: "emerald",
-          subtitle: "Available courses",
-        },
-        {
-          label: "Total Questions",
-          value: stats?.totalQuestions || 0,
-          icon: <HelpCircle className="w-5 h-5 text-purple-600" />,
-          color: "purple",
-          subtitle: "All questions",
-        },
-        {
-          label: "Total Reports",
-          value: stats?.totalReports || 0,
-          icon: <ClipboardList className="w-5 h-5 text-orange-600" />,
-          color: "orange",
-          subtitle: "Reported content",
-        },
+        { label: "Total Users", value: stats?.totalUsers || 0, icon: <Users className="w-5 h-5 text-blue-600" />, color: "blue", subtitle: "Registered users" },
+        { label: "Total Courses", value: stats?.totalCourses || 0, icon: <BookOpen className="w-5 h-5 text-emerald-600" />, color: "emerald", subtitle: "Available courses" },
+        { label: "Total Questions", value: stats?.totalQuestions || 0, icon: <HelpCircle className="w-5 h-5 text-purple-600" />, color: "purple", subtitle: "All questions" },
+        { label: "Total Reports", value: stats?.totalReports || 0, icon: <ClipboardList className="w-5 h-5 text-orange-600" />, color: "orange", subtitle: "Reported content" },
       ]
     : [
-        {
-          label: "My Questions",
-          value: stats?.userQuestions || 0,
-          icon: <HelpCircle className="w-5 h-5 text-blue-600" />,
-          color: "blue",
-          subtitle: "Questions created",
-        },
-        {
-          label: "My Bookmarks",
-          value: stats?.userBookmarks || 0,
-          icon: <Bookmark className="w-5 h-5 text-emerald-600" />,
-          color: "emerald",
-          subtitle: "Saved questions",
-        },
-        {
-          label: "Total Courses",
-          value: stats?.totalCourses || 0,
-          icon: <BookOpen className="w-5 h-5 text-purple-600" />,
-          color: "purple",
-          subtitle: "Available courses",
-        },
-        {
-          label: "Recent Activity",
-          value: stats?.recentQuestions?.length || 0,
-          icon: <Activity className="w-5 h-5 text-orange-600" />,
-          color: "orange",
-          subtitle: "Recent questions",
-        },
+        { label: "My Questions", value: stats?.userQuestions || 0, icon: <HelpCircle className="w-5 h-5 text-blue-600" />, color: "blue", subtitle: "Questions created" },
+        { label: "My Bookmarks", value: stats?.userBookmarks || 0, icon: <Bookmark className="w-5 h-5 text-emerald-600" />, color: "emerald", subtitle: "Saved questions" },
+        { label: "Total Courses", value: stats?.totalCourses || 0, icon: <BookOpen className="w-5 h-5 text-purple-600" />, color: "purple", subtitle: "Available courses" },
+        { label: "Recent Activity", value: stats?.recentQuestions?.length || 0, icon: <Activity className="w-5 h-5 text-orange-600" />, color: "orange", subtitle: "Recent questions" },
       ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       {statCards.map((card, idx) => (
-        <div
-          key={idx}
-          className={`bg-white rounded-xl p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-200 hover:scale-105`}
-        >
+        <div key={idx} className={`bg-white rounded-xl p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-200 hover:scale-105`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-slate-600 text-sm font-medium">{card.label}</p>
-              <p className={`text-3xl font-bold text-${card.color}-600`}>
-                {card.value}
-              </p>
+              <p className={`text-3xl font-bold text-${card.color}-600`}>{card.value}</p>
             </div>
-            <div className={`p-2 bg-${card.color}-100 rounded-lg`}>
-              {card.icon}
-            </div>
+            <div className={`p-2 bg-${card.color}-100 rounded-lg`}>{card.icon}</div>
           </div>
           <div className="mt-2 flex items-center text-sm text-green-600">
             <Activity className="w-4 h-4 mr-1" />
@@ -230,20 +160,12 @@ const AdminCharts = memo(({ stats }) => {
       </div>
       <div style={{ width: "100%", height: 250 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
-          >
+          <LineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="count"
-              stroke={color === "blue" ? "#3b82f6" : "#a855f7"}
-              strokeWidth={2}
-            />
+            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#a855f7"} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -252,18 +174,8 @@ const AdminCharts = memo(({ stats }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      {chartCard(
-        "Daily Users",
-        <Users className="w-5 h-5 text-blue-600" />,
-        usersData,
-        "blue"
-      )}
-      {chartCard(
-        "Daily Questions",
-        <HelpCircle className="w-5 h-5 text-purple-600" />,
-        questionsData,
-        "purple"
-      )}
+      {chartCard("Daily Users", <Users className="w-5 h-5 text-blue-600" />, usersData, "blue")}
+      {chartCard("Daily Questions", <HelpCircle className="w-5 h-5 text-purple-600" />, questionsData, "purple")}
     </div>
   );
 });
@@ -281,20 +193,12 @@ const UserCharts = memo(({ stats }) => {
       </div>
       <div style={{ width: "100%", height: 250 }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
-          >
+          <LineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line
-              type="monotone"
-              dataKey="count"
-              stroke={color === "blue" ? "#3b82f6" : "#10b981"}
-              strokeWidth={2}
-            />
+            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#10b981"} strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -303,18 +207,8 @@ const UserCharts = memo(({ stats }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      {chartCard(
-        "My Questions Over Time",
-        <HelpCircle className="w-5 h-5 text-blue-600" />,
-        userQuestionsData,
-        "blue"
-      )}
-      {chartCard(
-        "My Bookmarks Over Time",
-        <Bookmark className="w-5 h-5 text-green-600" />,
-        bookmarksData,
-        "green"
-      )}
+      {chartCard("My Questions Over Time", <HelpCircle className="w-5 h-5 text-blue-600" />, userQuestionsData, "blue")}
+      {chartCard("My Bookmarks Over Time", <Bookmark className="w-5 h-5 text-green-600" />, bookmarksData, "green")}
     </div>
   );
 });

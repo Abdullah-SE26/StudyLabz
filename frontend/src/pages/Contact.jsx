@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Mail, Phone, MapPin, User, Send } from "lucide-react";
-import { IconBrandLinkedin, IconBrandInstagram, IconBrandGithub } from "@tabler/icons-react";
+import { IconBrandLinkedin, IconBrandGithub } from "@tabler/icons-react";
 import toast, { Toaster } from "react-hot-toast";
+import axios from "../../lib/axios"; 
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -15,7 +16,7 @@ export default function Contact() {
     subject: "General Inquiry",
   });
 
-  const backendURL = import.meta.env.VITE_API_URL;
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,33 +24,27 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.loading("Sending message...");
+    setLoading(true);
+    const toastId = toast.loading("Sending message...");
 
     try {
-      const res = await fetch(`${backendURL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      await axios.post("/api/contact", formData);
+      toast.dismiss(toastId);
+      toast.success("Message sent successfully!");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        email: "",
+        message: "",
+        subject: "General Inquiry",
       });
-
-      if (res.ok) {
-        toast.dismiss();
-        toast.success("Message sent successfully!");
-        setFormData({
-          firstName: "",
-          lastName: "",
-          phone: "",
-          email: "",
-          message: "",
-          subject: "General Inquiry",
-        });
-      } else {
-        toast.dismiss();
-        toast.error("Failed to send message.");
-      }
-    } catch {
-      toast.dismiss();
-      toast.error("Error sending message.");
+    } catch (err) {
+      toast.dismiss(toastId);
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Error sending message");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,31 +57,26 @@ export default function Contact() {
         <img
           src="/scientist_owl_512.png"
           alt="Mascot"
-          className="absolute top-[-40px] right-[-40px] w-32 h-32 opacity-20 rotate-12 pointer-events-none"
+          className="absolute -top-10 -right-10 w-32 h-32 opacity-20 rotate-12 pointer-events-none"
         />
 
         {/* Left Side - Contact Info */}
         <div className="relative bg-[url('/contact-bg.jpg')] bg-cover bg-center text-white p-10 flex flex-col justify-between">
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-black/50 "></div>
-
+          <div className="absolute inset-0 bg-black/50"></div>
           <div className="relative z-10">
             <h2 className="text-3xl font-bold mb-4">Contact Information</h2>
-            <p className="mb-8 text-blue-100">
-              Have a big idea or any inquiries? Get in touch!
-            </p>
+            <p className="mb-8 text-blue-100">Have a big idea or any inquiries? Get in touch!</p>
             <ul className="space-y-4">
               <li className="flex items-center gap-3">
                 <Mail className="w-6 h-6" />
                 <span>studylabz2025@gmail.com</span>
               </li>
               <li className="flex items-center gap-3">
-                <MapPin className="w-6 h-6 " />
+                <MapPin className="w-6 h-6" />
                 <span>Al Ain University of Science and Technology</span>
               </li>
             </ul>
           </div>
-
           <div className="relative z-10 flex gap-4 mt-8">
             <a href="#" className="hover:text-yellow-300 transition">
               <IconBrandLinkedin size={28} />
@@ -113,6 +103,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="First Name"
                   className="w-full border-b-2 border-gray-300 p-2 pl-10 rounded-md bg-transparent focus:outline-none focus:border-indigo-500 transition"
+                  disabled={loading}
                 />
               </div>
               <div className="relative">
@@ -124,6 +115,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="Last Name"
                   className="w-full border-b-2 border-gray-300 p-2 pl-10 rounded-md bg-transparent focus:outline-none focus:border-indigo-500 transition"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -139,6 +131,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="Phone No."
                   className="w-full border-b-2 border-gray-300 p-2 pl-10 rounded-md bg-transparent focus:outline-none focus:border-indigo-500 transition"
+                  disabled={loading}
                 />
               </div>
               <div className="relative">
@@ -150,6 +143,7 @@ export default function Contact() {
                   onChange={handleChange}
                   placeholder="Email"
                   className="w-full border-b-2 border-gray-300 p-2 pl-10 rounded-md bg-transparent focus:outline-none focus:border-indigo-500 transition"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -164,6 +158,7 @@ export default function Contact() {
                 placeholder="Write your message..."
                 rows="4"
                 className="w-full border-b-2 border-gray-300 p-2 pl-10 rounded-md bg-transparent focus:outline-none focus:border-indigo-500 transition resize-none"
+                disabled={loading}
               />
             </div>
 
@@ -179,6 +174,7 @@ export default function Contact() {
                       value={sub}
                       checked={formData.subject === sub}
                       onChange={handleChange}
+                      disabled={loading}
                     />
                     {sub}
                   </label>
@@ -189,10 +185,11 @@ export default function Contact() {
             {/* Submit */}
             <button
               type="submit"
-              className="cursor-pointer flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform font-semibold shadow-lg"
+              disabled={loading}
+              className="cursor-pointer flex items-center justify-center gap-2 bg-linear-to-r from-indigo-500 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform font-semibold shadow-lg"
             >
               <Send className="w-5 h-5" />
-              Send Message
+              {loading ? "Sending..." : "Send Message"}
             </button>
           </form>
         </div>

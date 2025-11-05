@@ -3,6 +3,7 @@ import DOMPurify from "dompurify";
 import { Heart, Trash2, AlertTriangle, CornerDownRight } from "lucide-react";
 import { useStore } from "../store/authStore";
 import toast from "react-hot-toast";
+import axios from "../../lib/axios";
 
 const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
   const authToken = useStore((state) => state.authToken);
@@ -21,21 +22,24 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
   const fetchComments = useCallback(async () => {
     if (!authToken) return;
     setIsCommentsLoading(true);
+    const controller = new AbortController();
+
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/comments/question/${questionId}`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
+      const res = await axios.get(
+        `/comments/question/${questionId}`,
+        { headers: { Authorization: `Bearer ${authToken}` }, signal: controller.signal }
       );
-      if (!res.ok) throw new Error("Failed to fetch comments");
-      const data = await res.json();
-      // Add empty replies array for each comment
-      setComments(data.map((c) => ({ ...c, replies: [] })));
+      setComments(res.data.map((c) => ({ ...c, replies: [] })));
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch comments");
+      if (err.name !== "CanceledError") {
+        console.error(err);
+        toast.error("Failed to fetch comments");
+      }
     } finally {
       setIsCommentsLoading(false);
     }
+
+    return () => controller.abort();
   }, [questionId, authToken]);
 
   useEffect(() => {
@@ -50,8 +54,8 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
     }
 
     const tempComment = {
-      id: Date.now(),
-      text: newComment,
+      id: crypto.randomUUID(),
+      text: newComment.trim(),
       user,
       likedBy: [],
       reportedBy: [],
@@ -64,13 +68,11 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
     onNewComment?.();
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ questionId, text: tempComment.text }),
-      });
-      if (!res.ok) throw new Error("Failed to post comment");
-      const data = await res.json();
+      const { data } = await axios.post(
+        `/comments`,
+        { questionId, text: tempComment.text },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
       setComments((prev) =>
         prev.map((c) => (c.id === tempComment.id ? { ...c, id: data.id } : c))
       );
@@ -80,7 +82,6 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
     }
   };
 
-  // Author label with badge
   const getAuthorLabel = (commentUser) => (
     <span className="flex items-center gap-2">
       {commentUser?.name || commentUser?.studentId || "Unknown"}
@@ -112,12 +113,11 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       setLikesCount(prevLiked ? prevCount - 1 : prevCount + 1);
 
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/like`,
-          { method: "PATCH", headers: { Authorization: `Bearer ${authToken}` } }
+        const { data } = await axios.patch(
+          `/comments/${comment.id}/like`,
+          {},
+          { headers: { Authorization: `Bearer ${authToken}` } }
         );
-        if (!res.ok) throw new Error("Failed to like comment");
-        const data = await res.json();
         if (typeof data.likesCount === "number") setLikesCount(data.likesCount);
       } catch {
         setLiked(prevLiked);
@@ -130,11 +130,7 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       if (!authToken) return toast.error("You must be logged in");
       setIsDeleting(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment.id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-        if (!res.ok) throw new Error("Failed to delete comment");
+        await axios.delete(`/comments/${comment.id}`, { headers: { Authorization: `Bearer ${authToken}` } });
         setComments((prev) => removeCommentRecursively(prev, comment.id));
         toast.success("Comment deleted");
         setShowModal(false);
@@ -148,11 +144,11 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
     const handleReport = async () => {
       if (!authToken) return toast.error("You must be logged in");
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments/${comment.id}/report`, {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-        if (!res.ok) throw new Error("Failed to report comment");
+        await axios.patch(
+          `/comments/${comment.id}/report`,
+          {},
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
         toast.success("Reported comment");
       } catch {
         toast.error("Failed to report comment");
@@ -163,8 +159,8 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       if (!replyText.trim() || !authToken) return;
 
       const tempReply = {
-        id: Date.now(),
-        text: replyText,
+        id: crypto.randomUUID(),
+        text: replyText.trim(),
         user,
         likedBy: [],
         reportedBy: [],
@@ -179,13 +175,11 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       setShowReplyInput(false);
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/comments`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-          body: JSON.stringify({ questionId, parentCommentId: comment.id, text: tempReply.text }),
-        });
-        if (!res.ok) throw new Error("Failed to post reply");
-        const data = await res.json();
+        const { data } = await axios.post(
+          `/comments`,
+          { questionId, parentCommentId: comment.id, text: tempReply.text },
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
         setReplies((prev) => prev.map((r) => (r.id === tempReply.id ? { ...r, id: data.id } : r)));
       } catch {
         toast.error("Failed to post reply");
@@ -199,12 +193,9 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       if (!authToken || isRepliesLoading) return;
       setIsRepliesLoading(true);
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/comments/replies?parentCommentId=${comment.id}`,
-          { headers: { Authorization: `Bearer ${authToken}` } }
-        );
-        if (!res.ok) throw new Error("Failed to fetch replies");
-        const data = await res.json();
+        const { data } = await axios.get(`/comments/replies?parentCommentId=${comment.id}`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
         setReplies(data);
         setShowReplies(true);
       } catch {
@@ -220,30 +211,25 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-500">{getAuthorLabel(comment.user)}</p>
             <div
-              className="text-gray-700 text-sm break-words mt-1"
+              className="text-gray-700 text-sm wrap-break-word mt-1"
               dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.text) }}
             />
-
             <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
               <button onClick={handleLike} className="flex items-center gap-1">
                 <Heart size={14} className={liked ? "text-red-500" : ""} /> <span>{likesCount}</span>
               </button>
-
               <button onClick={() => setShowReplyInput((prev) => !prev)} className="flex items-center gap-1">
                 <CornerDownRight size={14} /> Reply
               </button>
-
               {comment.user?.studentId === user?.studentId && (
-                <label htmlFor={`delete-modal-${comment.id}`} className="flex items-center gap-1 text-red-500 cursor-pointer">
+                <button onClick={() => setShowModal(true)} className="flex items-center gap-1 text-red-500">
                   <Trash2 size={14} /> Delete
-                </label>
+                </button>
               )}
-
               <button onClick={handleReport} className="flex items-center gap-1 text-yellow-600">
                 <AlertTriangle size={14} /> Report
               </button>
             </div>
-
             {showReplyInput && (
               <div className="mt-1">
                 <textarea
@@ -279,27 +265,20 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
           </div>
         )}
 
-        <input
-          type="checkbox"
-          id={`delete-modal-${comment.id}`}
-          className="modal-toggle"
-          checked={showModal}
-          onChange={() => setShowModal(!showModal)}
-        />
-        <div className="modal">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">Delete Comment</h3>
-            <p className="py-4">Are you sure you want to delete this comment and all its replies?</p>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button className={`btn btn-error ${isDeleting ? "loading" : ""}`} onClick={handleDelete}>
-                Delete
-              </button>
+        {showModal && (
+          <div className="modal modal-open">
+            <div className="modal-box">
+              <h3 className="font-bold text-lg">Delete Comment</h3>
+              <p className="py-4">Are you sure you want to delete this comment and all its replies?</p>
+              <div className="modal-action">
+                <button className="btn" onClick={() => setShowModal(false)}>Cancel</button>
+                <button className={`btn btn-error ${isDeleting ? "loading" : ""}`} onClick={handleDelete}>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     );
   };

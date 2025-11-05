@@ -28,8 +28,10 @@ const PageFilters = ({
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
-        (sortRef.current && !sortRef.current.contains(e.target)) &&
-        (tagRef.current && !tagRef.current.contains(e.target))
+        sortRef.current &&
+        !sortRef.current.contains(e.target) &&
+        tagRef.current &&
+        !tagRef.current.contains(e.target)
       ) {
         setSortDropdownOpen(false);
         setTagDropdownOpen(false);
@@ -51,6 +53,7 @@ const PageFilters = ({
 
   // ✅ Filter tags for search
   const filteredTags = useMemo(() => {
+    if (!Array.isArray(allTags)) return [];
     return allTags.filter((tag) =>
       tag.toLowerCase().includes(tagSearch.toLowerCase())
     );

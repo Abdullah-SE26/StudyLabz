@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import QuestionCard from "../components/QuestionCard";
 import QuestionCardSkeleton from "../components/QuestionCardSkeleton";
+import axios from "../../lib/axios"; // your axios instance
 
 const QuestionPage = () => {
   const { questionId } = useParams();
@@ -13,22 +14,17 @@ const QuestionPage = () => {
     const fetchQuestion = async () => {
       try {
         setLoading(true);
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/questions/${questionId}`
-        );
-        if (!res.ok) throw new Error("Failed to fetch question");
-        const data = await res.json();
+        const { data } = await axios.get(`/api/questions/${questionId}`);
         setQuestion(data);
       } catch (err) {
-        setError(err.message);
+        console.error(err);
+        setError(err?.response?.data?.message || "Failed to fetch question");
       } finally {
         setLoading(false);
       }
     };
 
-    if (questionId) {
-      fetchQuestion();
-    }
+    if (questionId) fetchQuestion();
   }, [questionId]);
 
   if (loading) return <QuestionCardSkeleton />;

@@ -1,8 +1,8 @@
+// src/store/authStore.js
 import { create } from "zustand";
 
 const savedUser = localStorage.getItem("user");
 const savedToken = localStorage.getItem("authToken");
-
 
 export const useStore = create((set) => ({
   authToken: savedToken || null,
@@ -17,7 +17,7 @@ export const useStore = create((set) => ({
     set({ authToken: token, user });
   },
 
-  clearAuth: () => {
+  logout: () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
     set({ authToken: null, user: null });

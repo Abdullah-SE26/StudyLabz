@@ -1,31 +1,37 @@
 import React, { useState, useRef, useEffect } from "react";
-import {
-  IconUser,
-  IconLayoutDashboard,
-  IconLogout,
-  IconChevronDown,
-} from "@tabler/icons-react";
+import { IconUser, IconLayoutDashboard, IconLogout, IconChevronDown } from "@tabler/icons-react";
 import { useStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 
 export default function UserMenu({ closeMenu }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
-  const user = useStore((state) => state.user);
-  const clearAuth = useStore((state) => state.clearAuth);
   const navigate = useNavigate();
 
+  // Reactive store slices
+  const authToken = useStore((state) => state.authToken);
+  const user = useStore((state) => state.user);
+  const logout = useStore((state) => state.logout);
+
+  // Auto clear store if token is missing (expired or removed)
+  useEffect(() => {
+    if (!authToken && user) {
+      logout();
+      navigate("/login");
+    }
+  }, [authToken, user, logout, navigate]);
+
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  if (!user) return null; // hide menu if not logged in
+  // Hide menu if no user
+  if (!user) return null;
 
   const displayName = user.studentId || user.name || "User";
 
@@ -33,41 +39,37 @@ export default function UserMenu({ closeMenu }) {
     <div className="relative w-max" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="px-4 py-2 flex items-center rounded-lg border border-slate-300 text-slate-900 hover:bg-slate-100"
+        className="btn btn-outline btn-sm flex items-center gap-2"
       >
         {user.avatar ? (
-          <img src={user.avatar} alt="avatar" className="w-7 h-7 mr-3 rounded-full" />
+          <img src={user.avatar} alt="avatar" className="w-7 h-7 rounded-full" />
         ) : (
-          <IconUser className="w-5 h-6 mr-3 text-slate-500" />
+          <IconUser className="w-5 h-5" />
         )}
         {displayName}
-        <IconChevronDown size={16} className="ml-2 text-slate-400" />
+        <IconChevronDown className="w-4 h-4" />
       </button>
 
       {open && (
-        <ul className="absolute right-0 mt-2 shadow-lg bg-white py-2 z-50 min-w-full w-max rounded-lg border border-gray-100">
+        <ul className="menu dropdown-content absolute right-0 mt-2 shadow-lg bg-base-100 rounded-lg border w-48 p-2 z-50">
           <li
             onClick={() => {
               setOpen(false);
               navigate("/dashboard");
               if (closeMenu) closeMenu();
             }}
-            className="flex items-center py-2.5 px-5 hover:bg-slate-100 text-slate-600 cursor-pointer"
           >
-            <IconLayoutDashboard size={18} className="mr-3 text-slate-500" />
-            Dashboard
+            <IconLayoutDashboard className="w-5 h-5 mr-2" /> Dashboard
           </li>
           <li
             onClick={() => {
-              clearAuth();
+              logout();
               setOpen(false);
               if (closeMenu) closeMenu();
               navigate("/login");
             }}
-            className="flex items-center py-2.5 px-5 hover:bg-slate-100 text-slate-600 cursor-pointer"
           >
-            <IconLogout size={18} className="mr-3 text-slate-500" />
-            Logout
+            <IconLogout className="w-5 h-5 mr-2" /> Logout
           </li>
         </ul>
       )}

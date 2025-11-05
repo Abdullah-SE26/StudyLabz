@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useStore } from "../store/authStore";
 import { toast } from "react-hot-toast";
-import { BookOpen, X, Tag, Plus, Pickaxe } from "lucide-react";
+import { BookOpen, X, Plus, Pickaxe } from "lucide-react";
+import axios from "../../lib/axios";
 
 export default function UpdateCourseModal({ course, onClose, onUpdated }) {
   const authToken = useStore((state) => state.authToken);
@@ -48,27 +49,19 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
 
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${course.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ name: name.trim(), tags }),
-      });
+      const response = await axios.patch(
+        `/courses/${course.id}`,
+        { name: name.trim(), tags },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
 
-      if (res.ok) {
-        const updated = await res.json();
-        toast.success(`Course "${updated.name}" updated successfully!`);
-        onUpdated(updated);
-        onClose();
-      } else {
-        const errorData = await res.json();
-        toast.error(errorData.message || "Failed to update course");
-      }
+      const updated = response.data;
+      toast.success(`Course "${updated.name}" updated successfully!`);
+      onUpdated(updated);
+      onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Error updating course");
+      toast.error(err?.response?.data?.message || "Error updating course");
     } finally {
       setLoading(false);
     }
@@ -80,7 +73,7 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
       <div
         className="fixed inset-0 backdrop-blur-sm bg-black/20 z-40"
         onClick={onClose}
-      ></div>
+      />
 
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -151,11 +144,7 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
 
           {/* Actions */}
           <div className="flex justify-end gap-3 mt-4">
-            <button
-              onClick={onClose}
-              disabled={loading}
-              className="btn btn-ghost"
-            >
+            <button onClick={onClose} disabled={loading} className="btn btn-ghost">
               Cancel
             </button>
             <button
@@ -163,7 +152,11 @@ export default function UpdateCourseModal({ course, onClose, onUpdated }) {
               disabled={loading}
               className="btn btn-primary flex items-center gap-2 disabled:opacity-50"
             >
-              {loading ? <span className="loading loading-spinner loading-sm"></span> : <Pickaxe className="w-4 h-4" />}
+              {loading ? (
+                <span className="loading loading-spinner loading-sm" />
+              ) : (
+                <Pickaxe className="w-4 h-4" />
+              )}
               {loading ? "Saving..." : "Save"}
             </button>
           </div>

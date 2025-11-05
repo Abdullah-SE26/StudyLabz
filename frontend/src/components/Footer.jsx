@@ -9,9 +9,9 @@ export default function Footer() {
   const navigate = useNavigate();
 
   return (
-    <footer className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-gray-100 py-12 mt-20 overflow-hidden">
+    <footer className="relative bg-linear-to-t from-blue-900 via-blue-800 to-indigo-900 text-gray-100 py-12 mt-20 overflow-hidden">
       {/* Subtle top wave / divider */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-t from-cyan-400 via-blue-500 to-indigo-600" />
 
       <div className="container mx-auto px-6 flex flex-col items-center text-center space-y-8 relative z-10">
         {/* Heading */}
@@ -46,7 +46,7 @@ export default function Footer() {
         </button>
 
         {/* Divider */}
-        <div className="w-24 h-[2px] bg-gradient-to-r from-cyan-400 to-indigo-500 rounded-full"></div>
+        <div className="w-24 h-0.5 bg-linear-to-t from-cyan-400 to-indigo-500 rounded-full"></div>
 
         {/* Social Icons */}
         <div className="flex space-x-6">
@@ -73,7 +73,7 @@ export default function Footer() {
       </div>
 
       {/* Soft gradient glow at the bottom */}
-      <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-blue-950/60 to-transparent pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-full h-24 bg-linear-to-t from-blue-950/60 to-transparent pointer-events-none"></div>
     </footer>
   );
 }

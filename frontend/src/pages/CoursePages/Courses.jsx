@@ -4,10 +4,16 @@ import PageFilters from "../../components/PageFilters";
 import EditCourseModal from "../../components/UpdateCourseModal";
 import DeleteCourseModal from "../../components/DeleteCourseModal";
 import Pagination from "../../components/Pagination.jsx";
+import axios from "../../../lib/axios.js";
 
 // Debounce hook
 function useDebounce(callback, delay) {
   const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, []);
+
   return useCallback(
     (...args) => {
       clearTimeout(timeoutRef.current);
@@ -22,67 +28,65 @@ const Courses = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState("latest");
   const [selectedTags, setSelectedTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
 
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
   const [totalPages, setTotalPages] = useState(1);
 
-  // Admin modals
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [modalType, setModalType] = useState(null); // "edit" or "delete"
 
-  // Fetch all unique tags
+  // Fetch all tags
   useEffect(() => {
+    const controller = new AbortController();
     const fetchTags = async () => {
       try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/courses/tags`
-        );
-        if (!res.ok) throw new Error("Failed to fetch tags");
-        const data = await res.json();
-        setAllTags(data.tags || []); // <- use data.tags
+        const res = await axios.get("/courses/tags", { signal: controller.signal });
+        setAllTags(res.data.tags || []);
       } catch (err) {
-        console.error("Error fetching tags:", err);
-        setAllTags([]); // fallback
+        if (err.name !== "CanceledError") {
+          console.error("Error fetching tags:", err);
+          setAllTags([]);
+        }
       }
     };
     fetchTags();
+    return () => controller.abort();
   }, []);
 
   // Fetch courses
   const fetchCourses = useCallback(async () => {
+    const controller = new AbortController();
     try {
       setLoading(true);
+      setError(null);
+
       const params = new URLSearchParams();
       if (search) params.append("search", search);
-      if (selectedTags.length > 0)
-        params.append("tags", selectedTags.join(","));
+      if (selectedTags.length > 0) params.append("tags", selectedTags.join(","));
       if (sortOrder) params.append("sort", sortOrder);
       params.append("page", currentPage);
       params.append("limit", itemsPerPage);
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/courses?${params.toString()}`
-      );
-      if (!res.ok) throw new Error("Failed to fetch courses");
-      const data = await res.json();
+      const res = await axios.get(`/courses?${params.toString()}`, { signal: controller.signal });
+      const data = res.data;
 
       setCourses(data.courses || []);
       setTotalPages(Math.ceil((data.totalCount || 0) / itemsPerPage));
-
-      setError(null);
     } catch (err) {
-      console.error(err);
-      setError(err.message);
+      if (err.name !== "CanceledError") {
+        console.error(err);
+        setError(err?.response?.data?.error || err.message || "Failed to load courses.");
+        setCourses([]);
+      }
     } finally {
       setLoading(false);
     }
+    return () => controller.abort();
   }, [search, sortOrder, selectedTags, currentPage]);
 
   const debouncedFetch = useDebounce(fetchCourses, 400);
@@ -99,6 +103,7 @@ const Courses = () => {
   const handleTagClickFromCard = (tag) => {
     setSelectedTags((prev) => (prev.includes(tag) ? prev : [...prev, tag]));
     setSearch("");
+    setCurrentPage(1);
   };
 
   const handleCourseSaved = (updatedCourse) => {
@@ -154,7 +159,7 @@ const Courses = () => {
 
       {error && <p className="text-center text-red-500 mt-10">{error}</p>}
 
-      {!loading && (
+      {!loading && !error && (
         <>
           {courses.length === 0 ? (
             <p className="text-gray-600 mt-6">No courses match your filters.</p>
@@ -181,7 +186,6 @@ const Courses = () => {
         handlePageChange={handlePageChange}
       />
 
-      {/* Modals */}
       {modalType === "edit" && selectedCourse && (
         <EditCourseModal
           course={selectedCourse}

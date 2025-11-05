@@ -10,9 +10,8 @@ import {
   Hash,
   ArrowLeft,
   PencilLine,
-  FileText,
-  Image,
 } from "lucide-react";
+import axios from "../../../lib/axios";
 
 export default function CreateCoursesPage() {
   const user = useStore((state) => state.user);
@@ -20,29 +19,19 @@ export default function CreateCoursesPage() {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleAddTag = () => {
     const trimmed = tagInput.trim();
+    if (tags.length >= 4) return toast.error("Maximum of 4 tags allowed!");
+    if (!trimmed) return toast.error("Please enter a valid tag!");
+    if (tags.includes(trimmed)) return toast.error("Tag already exists!");
 
-    if (tags.length >= 4) {
-      toast.error("Maximum of 4 tags allowed!");
-      return;
-    }
-
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
-      setTagInput("");
-      toast.success(`Tag "${trimmed}" added!`);
-    } else if (tags.includes(trimmed)) {
-      toast.error("Tag already exists!");
-    } else {
-      toast.error("Please enter a valid tag!");
-    }
+    setTags([...tags, trimmed]);
+    setTagInput("");
+    toast.success(`Tag "${trimmed}" added!`);
   };
 
   const handleRemoveTag = (tagToRemove) => {
@@ -59,76 +48,45 @@ export default function CreateCoursesPage() {
 
   const generateCourseCode = (courseName) => {
     const words = courseName.trim().split(" ");
-    if (words.length >= 2) {
-      return words.map((word) => word.charAt(0).toUpperCase()).join("") + "101";
-    }
+    if (words.length >= 2)
+      return words.map((w) => w.charAt(0).toUpperCase()).join("") + "101";
     return courseName.substring(0, 3).toUpperCase() + "101";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name.trim()) return toast.error("Course name is required!");
+    if (tags.length === 0) return toast.error("At least one tag is required!");
+    if (!authToken) return toast.error("You must be logged in to create a course!");
+
     setLoading(true);
-
-    if (!name.trim()) {
-      toast.error("Course name is required!");
-      setLoading(false);
-      return;
-    }
-
-    if (tags.length === 0) {
-      toast.error("At least one tag is required!");
-      setLoading(false);
-      return;
-    }
-
-    if (!authToken) {
-      toast.error("You must be logged in to create a course!");
-      setLoading(false);
-      return;
-    }
-
     const loadingToast = toast.loading("Creating course...");
 
     try {
       const courseCode = generateCourseCode(name);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/courses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
+      await axios.post(
+        "/api/courses",
+        {
           name: name.trim(),
           code: courseCode,
-          description: description || null,
-          image: image || null,
           tags,
-        }),
-      });
+        },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || "Failed to create course");
-      }
-
-      const data = await res.json();
       toast.dismiss(loadingToast);
       toast.success("Course created successfully! 🎉");
 
       setName("");
-      setDescription("");
-      setImage("");
       setTags([]);
       setTagInput("");
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
       console.error(err);
       toast.dismiss(loadingToast);
-      toast.error(err.message || "Something went wrong. Please try again.");
+      toast.error(err?.response?.data?.error || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -155,6 +113,7 @@ export default function CreateCoursesPage() {
           </div>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3 mt-6">
           {/* Course Name */}
           <div className="space-y-1">
@@ -168,21 +127,6 @@ export default function CreateCoursesPage() {
               placeholder="Introduction to Computer Science"
               className="w-full px-5 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               required
-            />
-          </div>
-
-          {/* Course Code */}
-          <div className="space-y-1">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-              <Hash className="w-4 h-4 text-slate-500" />
-              Course Code
-            </label>
-            <input
-              type="text"
-              value={name ? generateCourseCode(name) : ""}
-              placeholder="Auto Generated"
-              className="w-full px-5 py-3 border border-slate-300 rounded-lg bg-slate-50 text-slate-500 cursor-not-allowed"
-              disabled
             />
           </div>
 
@@ -232,11 +176,6 @@ export default function CreateCoursesPage() {
                 ))}
               </div>
             )}
-
-            {/* Max tags info */}
-            {tags.length >= 4 && (
-              <p className="text-xs text-red-500 mt-1">Maximum of 4 tags reached</p>
-            )}
           </div>
 
           {/* Submit */}
@@ -246,16 +185,11 @@ export default function CreateCoursesPage() {
             className="w-full px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-semibold"
           >
             {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Creating...
-              </>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <>
-                <PencilLine className="w-5 h-5" />
-                Create Course
-              </>
+              <PencilLine className="w-5 h-5" />
             )}
+            {loading ? "Creating..." : "Create Course"}
           </button>
         </form>
       </div>

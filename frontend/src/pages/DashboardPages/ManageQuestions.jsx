@@ -7,11 +7,21 @@ import { useStore } from "../../store/authStore";
 import Pagination from "../../components/Pagination";
 import PageFilters from "../../components/PageFilters";
 import { useNavigate } from "react-router-dom";
+import axios from "../../../lib/axios.js";
+
+const SkeletonRow = ({ columns = 6 }) => (
+  <tr className="animate-pulse">
+    {Array.from({ length: columns }).map((_, i) => (
+      <td key={i} className="px-3 py-3">
+        <div className="h-4 bg-gray-300 rounded w-full"></div>
+      </td>
+    ))}
+  </tr>
+);
 
 const ManageQuestions = () => {
   const user = useStore((s) => s.user);
   const authToken = useStore((s) => s.authToken);
-  const API_BASE = import.meta.env.VITE_API_URL + "/api";
   const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
@@ -24,35 +34,40 @@ const ManageQuestions = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // AbortController references
+  const coursesControllerRef = React.useRef(null);
+  const questionsControllerRef = React.useRef(null);
+
   // Fetch courses
   useEffect(() => {
     if (!authToken) return;
-    let mounted = true;
+    coursesControllerRef.current = new AbortController();
+    const signal = coursesControllerRef.current.signal;
 
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/courses`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-        if (!res.ok) throw new Error("Failed to load courses");
-        const data = await res.json();
-        if (!mounted) return;
-        setCourses(data.data || data.courses || []);
+        const res = await axios.get(`/courses`, { signal });
+        const data = res.data;
+        const courseList = Array.isArray(data) ? data : data.data || data.courses || [];
+        setCourses(courseList);
       } catch (err) {
-        console.error(err);
-        toast.error("Failed to load courses");
+        if (err.name !== "AbortError") {
+          console.error(err);
+          toast.error("Failed to load courses");
+        }
       }
     })();
 
     return () => {
-      mounted = false;
+      coursesControllerRef.current.abort();
     };
-  }, [authToken, API_BASE]);
+  }, [authToken]);
 
   // Fetch questions
   useEffect(() => {
     if (!authToken) return;
-    const controller = new AbortController();
+    questionsControllerRef.current = new AbortController();
+    const signal = questionsControllerRef.current.signal;
 
     const fetchQuestions = async () => {
       try {
@@ -63,18 +78,11 @@ const ManageQuestions = () => {
           search,
           sort: sortOrder,
         });
-        if (selectedTags.length > 0) {
-          params.append("tags", selectedTags.join(","));
-        }
+        if (selectedTags.length > 0) params.append("tags", selectedTags.join(","));
 
-        const url = `${API_BASE}/questions?${params}`;
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${authToken}` },
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Failed to fetch questions");
-        const data = await res.json();
-        setQuestions(data.data || []);
+        const res = await axios.get(`/questions?${params.toString()}`, { signal });
+        const data = res.data;
+        setQuestions(Array.isArray(data.data) ? data.data : []);
         setTotalPages(data.totalPages || 1);
       } catch (err) {
         if (err.name !== "AbortError") {
@@ -87,29 +95,27 @@ const ManageQuestions = () => {
     };
 
     fetchQuestions();
-    return () => controller.abort();
-  }, [page, search, sortOrder, limit, API_BASE, authToken, selectedTags]);
+    return () => questionsControllerRef.current.abort();
+  }, [page, search, sortOrder, limit, authToken, selectedTags]);
 
+  // Map for course lookup
   const courseMap = useMemo(() => {
     const map = new Map();
     courses.forEach((c) => map.set(c.id, c));
     return map;
   }, [courses]);
 
+  // All tags
   const allTags = useMemo(() => {
     const s = new Set();
-    courses.forEach((c) => c.tags?.forEach((t) => s.add(t)));
+    courses.forEach((c) => Array.isArray(c.tags) && c.tags.forEach((t) => s.add(t)));
     return Array.from(s).sort();
   }, [courses]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this question?")) return;
     try {
-      const res = await fetch(`${API_BASE}/questions/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error("Failed to delete question");
+      await axios.delete(`/questions/${id}`);
       setQuestions((prev) => prev.filter((q) => q.id !== id));
       toast.success("Question deleted");
     } catch (err) {
@@ -169,9 +175,25 @@ const ManageQuestions = () => {
 
       <div className="bg-white rounded-theme p-4 shadow-sm border-theme border">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <Loader2 className="w-8 h-8 animate-spin mb-3 text-sf-primary" />
-            <p>Loading questions...</p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y">
+              <thead>
+                <tr className="text-left text-sm text-gray-600">
+                  {["#", "Question", "Course", "Creator", "Interactions", "Actions"].map(
+                    (h) => (
+                      <th key={h} className="px-3 py-2">
+                        {h}
+                      </th>
+                    )
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonRow key={i} />
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-500">
@@ -192,9 +214,9 @@ const ManageQuestions = () => {
               </thead>
               <tbody className="divide-y">
                 {questions.map((q, idx) => {
-                  const sanitized = DOMPurify.sanitize(q.text || "");
                   const excerpt =
-                    sanitized.length > 200 ? sanitized.slice(0, 200) + "..." : sanitized;
+                    q.text?.length > 200 ? q.text.slice(0, 200) + "..." : q.text || "";
+                  const sanitized = DOMPurify.sanitize(excerpt);
                   const course = courseMap.get(q.course?.id) || q.course || {};
                   const tags = Array.isArray(course.tags) ? course.tags : [];
 
@@ -210,7 +232,7 @@ const ManageQuestions = () => {
                       <td className="px-3 py-3 align-top max-w-xl">
                         <div
                           className="text-sm font-medium text-sf-dark line-clamp-3"
-                          dangerouslySetInnerHTML={{ __html: excerpt }}
+                          dangerouslySetInnerHTML={{ __html: sanitized }}
                         />
                         <div className="text-xs text-gray-500 mt-1">
                           Created on {new Date(q.createdAt).toLocaleDateString()}
@@ -241,46 +263,49 @@ const ManageQuestions = () => {
                       <td className="px-3 py-3 align-top text-sm text-gray-700">
                         <div className="flex gap-4 items-center">
                           <div className="flex items-center gap-1">
-                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-4 h-4 text-red-500"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                             </svg>
                             <span>{q.likesCount || 0}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-4 h-4 text-blue-500"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <path d="M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
                             </svg>
                             <span>{q.bookmarksCount || 0}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-4 h-4 text-green-500"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <path d="M12 2C6.48 2 2 5.58 2 10c0 4.42 4.48 8 10 8s10-3.58 10-8c0-4.42-4.48-8-10-8zm0 14c-3.31 0-6-2.69-6-6 0-3.31 2.69-6 6-6s6 2.69 6 6c0 3.31-2.69 6-6 6z" />
                             </svg>
                             <span>{q.commentsCount || 0}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 align-top flex gap-2">
+                      <td className="px-3 py-3 align-top">
                         {(user.role === "admin" || user.id === q.createdBy?.id) && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(q.id);
                             }}
-                            className="px-3 py-1 rounded bg-red-50 text-red-600 border hover:bg-red-500 hover:text-white transition flex items-center gap-2 md:flex"
+                            className="px-3 py-1 rounded bg-red-50 text-red-600 border hover:bg-red-500 hover:text-white transition flex items-center gap-2 md:gap-1"
+                            disabled={loading}
                           >
-                            <Trash2 className="w-4 h-4" /> <span className="text-sm">Delete</span>
-                          </button>
-                        )}
-                        {(user.role === "admin" || user.id === q.createdBy?.id) && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(q.id);
-                            }}
-                            className="md:hidden px-2 py-1 rounded bg-red-50 text-red-600 border hover:bg-red-500 hover:text-white transition"
-                          >
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                            <span className="hidden md:inline text-sm">Delete</span>
                           </button>
                         )}
                       </td>
@@ -293,11 +318,7 @@ const ManageQuestions = () => {
         )}
       </div>
 
-      <Pagination
-        totalPages={totalPages}
-        currentPage={page}
-        handlePageChange={(p) => setPage(p)}
-      />
+      <Pagination totalPages={totalPages} currentPage={page} handlePageChange={(p) => setPage(p)} />
     </div>
   );
 };
