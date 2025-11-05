@@ -31,7 +31,7 @@ export default function Navbar() {
       "block px-4 py-2 rounded-md font-semibold border border-gray-300 text-center transition-all duration-200",
       isActive
         ? "bg-blue-500 text-white shadow-md"
-        : "bg-white text-gray-700 hover:bg-blue-500 hover:text-white",
+        : "bg-white text-gray-700 hover:bg-sf-light text-sf-text",
     ].join(" ");
 
   return (
