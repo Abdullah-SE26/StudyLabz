@@ -31,7 +31,7 @@ export default function UserMenu({ closeMenu }) {
     return (
       <button
         onClick={() => navigate("/login")}
-        className="flex items-center gap-1 px-3 py-1 border border-primary rounded-md text-neutral hover:bg-base-200 text-sm"
+        className="flex items-center gap-1 px-3 py-1 border border-sf-green rounded-md text-sf-text hover:bg-sf-light text-sm"
       >
         <IconUser className="w-4 h-4" />
         Login
@@ -45,7 +45,7 @@ export default function UserMenu({ closeMenu }) {
     <div className="relative w-max" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-1 border border-primary rounded-md text-neutral hover:bg-base-200 text-sm"
+        className="flex items-center gap-2 px-3 py-1 border border-sf-green rounded-md text-sf-text hover:bg-sf-light text-sm"
       >
         {user.avatar ? (
           <img src={user.avatar} alt="avatar" className="w-5 h-5 rounded-full" />
@@ -57,14 +57,14 @@ export default function UserMenu({ closeMenu }) {
       </button>
 
       {open && (
-        <ul className="absolute right-0 mt-1 shadow-md bg-base-100 py-1 z-50 w-44 rounded-md border border-primary text-sm">
+        <ul className="absolute right-0 mt-1 shadow-md bg-sf-cream py-1 z-50 w-44 rounded-md border border-sf-green text-sm">
           <li
             onClick={() => {
               setOpen(false);
               navigate("/dashboard");
               if (closeMenu) closeMenu();
             }}
-            className="flex items-center px-3 py-2 gap-2 hover:bg-primary/20 cursor-pointer text-neutral"
+            className="flex items-center px-3 py-2 gap-2 hover:bg-sf-green/30 cursor-pointer text-sf-text"
           >
             <IconLayoutDashboard className="w-4 h-4" />
             Dashboard
@@ -76,7 +76,7 @@ export default function UserMenu({ closeMenu }) {
               if (closeMenu) closeMenu();
               navigate("/login");
             }}
-            className="flex items-center px-3 py-2 gap-2 hover:bg-primary/20 cursor-pointer text-neutral"
+            className="flex items-center px-3 py-2 gap-2 hover:bg-sf-green/30 cursor-pointer text-sf-text"
           >
             <IconLogout className="w-4 h-4" />
             Logout

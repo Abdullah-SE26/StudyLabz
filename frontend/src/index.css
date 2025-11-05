@@ -1,30 +1,46 @@
-
 @import "tailwindcss";
 @plugin "daisyui";
 @import "tippy.js/dist/tippy.css";
 
+@theme {
+  /* Colors */
+  --color-sf-green: #034F46;
+  --color-sf-text: #1A1A1A;
+  --color-sf-cream: #FFFFEB;
+  --color-sf-light: #FFFBEB;
+  --color-sf-border: #FEF3C7;
 
-:root {
-  --page-bg: #FFFFEB;
+  /* Gradient */
+  --bg-sf-gradient: linear-gradient(to bottom right, #FFFBEB, #FFFFFF, #FEF3C7);
+
+  /* Optional hover variants */
+  --color-sf-green-hover: #023936;
 }
 
-
+/* ---------------------------- */
+/* Custom utilities using theme variables */
+/* ---------------------------- */
+.bg-sf-cream { background-color: var(--color-sf-cream); }
+.bg-sf-green { background-color: var(--color-sf-green); }
+.bg-sf-light { background-color: var(--color-sf-light); }
+.bg-sf-border { background-color: var(--color-sf-border); }
+.text-sf-text { color: var(--color-sf-text); }
+.hover\:bg-sf-green:hover { background-color: var(--color-sf-green-hover); }
+.bg-sf-gradient { background-image: var(--bg-sf-gradient); }
 
 /* ---------------------------- */
 /* Animations                    */
 /* ---------------------------- */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
-
 .float { animation: float 3s ease-in-out infinite; }
 
 @keyframes fadein {
   0% { opacity: 0; transform: translateY(4px); }
   100% { opacity: 1; transform: translateY(0); }
 }
-
 .fadein { animation: fadein 0.4s ease-in-out; }
 .fadein-slow { animation: fadein 0.6s ease-in-out; }
 .fadein-delay { animation: fadein 0.7s ease-in-out 0.1s both; }
@@ -34,10 +50,6 @@
 /* ---------------------------- */
 .jodit-wysiwyg ul { list-style-type: disc; margin-left: 1.5rem; }
 .jodit-wysiwyg ol { list-style-type: decimal; margin-left: 1.5rem; }
-.jodit-wysiwyg ol[type="A"] { list-style-type: upper-alpha; }
-.jodit-wysiwyg ol[type="a"] { list-style-type: lower-alpha; }
-.jodit-wysiwyg ol[type="I"] { list-style-type: upper-roman; }
-.jodit-wysiwyg ol[type="i"] { list-style-type: lower-roman; }
 
 /* Remove focus rings */
 *:focus { outline: none !important; box-shadow: none !important; }
