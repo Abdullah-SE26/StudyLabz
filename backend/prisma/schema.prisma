@@ -23,6 +23,10 @@ model User {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
 
+  blockedUntil      DateTime?  // <-- new for blocking/ban
+  lastLogin         DateTime?  // <-- optional for last login
+  sessionVersion    Int        @default(0)  // optional forced logout
+
   comments          Comment[]
   createdCourses    Course[]
   createdQuestions  Question[] @relation("CreatedBy")
@@ -32,6 +36,7 @@ model User {
   reportedQuestions Question[] @relation("QuestionReports")
   bookmarks         Question[] @relation("UserBookmarks")
 }
+
 
 model Question {
   id           Int       @id @default(autoincrement())
