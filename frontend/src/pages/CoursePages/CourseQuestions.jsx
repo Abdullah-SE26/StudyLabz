@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
@@ -6,7 +6,6 @@ import QuestionCard from "../../components/QuestionCard";
 import Pagination from "../../components/Pagination";
 import axios from "../../../lib/axios.js";
 
-// Skeleton for loading with gradient
 const SkeletonCard = () => (
   <div
     className="card shadow-md border border-[#E0CFA6] p-4 space-y-3 max-w-full sm:max-w-lg mx-auto animate-pulse"
@@ -21,10 +20,6 @@ const SkeletonCard = () => (
       ))}
     </div>
   </div>
-);
-
-const LoadingBar = () => (
-  <span className="loading loading-bars loading-sm text-[#D2B48C]" />
 );
 
 const SORT_OPTIONS = [
@@ -45,76 +40,69 @@ const CourseQuestions = () => {
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
 
-  const [courseName, setCourseName] = useState("");
-  const [questions, setQuestions] = useState([]);
+  const [courseName, setCourseName] = useState("Loading...");
+  const [questions, setQuestions] = useState(null);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortOrder, setSortOrder] = useState("newest");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [firstLoad, setFirstLoad] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch course info
-  const fetchCourse = useCallback(async () => {
-    if (!authToken || !courseId) return;
-    try {
-      const { data } = await axios.get(`/courses/${courseId}`);
-      setCourseName(data?.name || "Course");
-    } catch (err) {
-      console.error(err);
-      setCourseName("Course");
-    }
-  }, [authToken, courseId]);
-
-  // Fetch questions with abort handling
-  const fetchQuestions = useCallback(() => {
-    if (!authToken || !courseId) {
-      setError("You must be logged in to view questions.");
-      setLoading(false);
-      return;
-    }
-
+  useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    setError("");
+    const { signal } = controller;
 
-    const query = new URLSearchParams({
-      page,
-      limit: 10,
-      sort: sortOrder,
-    }).toString();
-
-    axios
-      .get(`/questions/courses/${courseId}/questions?${query}`, {
-        signal: controller.signal,
-      })
-      .then(({ data }) => {
-        setQuestions(data?.data || []);
-        setTotalPages(data?.totalPages || 1);
-        setFirstLoad(false);
-      })
-      .catch((err) => {
-        if (err.name !== "CanceledError") {
-          console.error(err);
-          setError(err?.response?.data?.error || "Failed to load questions.");
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        if (!authToken) {
+          throw new Error("You must be logged in to view questions.");
         }
-      })
-      .finally(() => setLoading(false));
 
+        setError("");
+
+        const coursePromise = axios.get(`/courses/${courseId}`, { signal });
+        const query = new URLSearchParams({
+          page,
+          limit: 10,
+          sort: sortOrder,
+        }).toString();
+        const questionsPromise = axios.get(
+          `/questions/courses/${courseId}/questions?${query}`,
+          { signal }
+        );
+
+        const [courseResponse, questionsResponse] = await Promise.all([
+          coursePromise,
+          questionsPromise,
+        ]);
+
+        setCourseName(courseResponse.data?.name || "Course");
+        setQuestions(questionsResponse.data?.data || []);
+        setTotalPages(questionsResponse.data?.totalPages || 1);
+      } catch (err) {
+        if (err.name !== "CanceledError") {
+          setError(
+            err.message ||
+              err?.response?.data?.error ||
+              "Failed to load course data."
+          );
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
     return () => controller.abort();
   }, [authToken, courseId, page, sortOrder]);
 
-  useEffect(() => {
-    fetchCourse();
-    const abortFetch = fetchQuestions();
-    return () => abortFetch && abortFetch();
-  }, [fetchCourse, fetchQuestions]);
-
-  // Like / Bookmark handlers
+  // Like / Bookmark Handlers
   const toggleLike = async (qId) => {
-    if (!user?.id) return toast.error("You must be logged in to like questions.");
-
+    if (!user?.id)
+      return toast.error("You must be logged in to like questions.");
+    if (!questions) return;
     const prev = [...questions];
     const updatedQs = questions.map((q) =>
       q.id === qId
@@ -127,10 +115,11 @@ const CourseQuestions = () => {
         : q
     );
     setQuestions(updatedQs);
-
     try {
       const { data } = await axios.post(`/questions/${qId}/like`);
-      setQuestions((qs) => qs.map((q) => (q.id === qId ? data.data : q)));
+      setQuestions((qs) =>
+        qs.map((q) => (q.id === qId ? data.data : q))
+      );
     } catch {
       setQuestions(prev);
       toast.error("Failed to sync like with server.");
@@ -140,7 +129,7 @@ const CourseQuestions = () => {
   const toggleBookmark = async (qId) => {
     if (!user?.id)
       return toast.error("You must be logged in to bookmark questions.");
-
+    if (!questions) return;
     const prev = [...questions];
     const updatedQs = questions.map((q) =>
       q.id === qId
@@ -153,10 +142,11 @@ const CourseQuestions = () => {
         : q
     );
     setQuestions(updatedQs);
-
     try {
       const { data } = await axios.post(`/questions/${qId}/bookmark`);
-      setQuestions((qs) => qs.map((q) => (q.id === qId ? data.data : q)));
+      setQuestions((qs) =>
+        qs.map((q) => (q.id === qId ? data.data : q))
+      );
       toast.success(
         data.data.bookmarkedBy.some((u) => u.id === user.id)
           ? "Question added to bookmarks."
@@ -181,15 +171,22 @@ const CourseQuestions = () => {
   };
 
   const filteredQuestions =
-    selectedTypes.length > 0
+    questions && selectedTypes.length > 0
       ? questions.filter((q) => selectedTypes.includes(q.examType))
       : questions;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h2 className="text-2xl font-semibold mb-4 text-center text-theme">
-        {courseName ? `${courseName} Questions` : "Loading course..."}
-      </h2>
+      {/* Course Title */}
+      <div className="text-center">
+        {courseName === "Loading..." ? (
+          <div className="h-6 w-48 bg-gray-200 rounded mx-auto animate-pulse" />
+        ) : (
+          <h2 className="text-2xl font-semibold mb-4 text-theme">
+            {courseName} Questions
+          </h2>
+        )}
+      </div>
 
       {/* Filters & Sorting */}
       <div className="flex flex-col sm:flex-row justify-between flex-wrap gap-3 items-center mb-6">
@@ -236,25 +233,38 @@ const CourseQuestions = () => {
         </div>
       </div>
 
-      {/* Questions / Skeleton / No Questions */}
+      {/* Questions Section */}
       <div className="space-y-6">
-        {loading && firstLoad ? (
-          [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
-        ) : filteredQuestions.length > 0 ? (
-          filteredQuestions.map((q) => (
-            <QuestionCard
-              key={q.id || q._id}
-              question={q}
-              onToggleLike={() => toggleLike(q.id)}
-              onToggleBookmark={() => toggleBookmark(q.id)}
-            />
-          ))
-        ) : (
-          <p className="text-center mt-10 text-gray-500">No questions found.</p>
+        {error && <p className="text-center text-red-500 mt-4">{error}</p>}
+
+        {(loading || questions === null) && !error && (
+          <>
+            {[...Array(3)].map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </>
+        )}
+
+        {!loading && !error && questions !== null && (
+          <>
+            {filteredQuestions.length > 0 ? (
+              filteredQuestions.map((q) => (
+                <QuestionCard
+                  key={q.id || q._id}
+                  question={q}
+                  onToggleLike={() => toggleLike(q.id)}
+                  onToggleBookmark={() => toggleBookmark(q.id)}
+                />
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10">
+                <p className="text-gray-500">No questions found.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && !loading && (
         <div className="flex justify-center mt-6">
           <Pagination
@@ -264,16 +274,6 @@ const CourseQuestions = () => {
           />
         </div>
       )}
-
-      {/* Loading Bar for subsequent loads */}
-      {loading && !firstLoad && (
-        <div className="flex justify-center py-10">
-          <LoadingBar />
-        </div>
-      )}
-
-      {/* Error */}
-      {error && <p className="text-center text-red-500 mt-4">{error}</p>}
     </div>
   );
 };
