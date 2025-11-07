@@ -223,7 +223,7 @@ export const createQuestion = async (req, res, next) => {
     if (!examType)
       return res.status(400).json({ success: false, error: "Exam type is required" });
 
-    const validExamTypes = ["quiz", "midterm", "final", "assignment"];
+    const validExamTypes = ["Quiz 1","Quiz 2","Midterm","Additional Quiz","Final"];
     if (!validExamTypes.includes(examType))
       return res.status(400).json({ success: false, error: "Invalid exam type" });
 

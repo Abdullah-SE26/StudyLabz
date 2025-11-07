@@ -95,7 +95,12 @@ export const getCourseById = async (req, res, next) => {
       distinct: ["examType"],
     });
 
-    const examTypes = examTypesData.map((q) => q.examType).filter(Boolean);
+    let examTypes = examTypesData.map((q) => q.examType).filter(Boolean);
+
+    // ===== If no exam types exist, return default 5 =====
+    if (!examTypes.length) {
+      examTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
+    }
 
     res.json({ success: true, course, examTypes });
   } catch (err) {
@@ -133,6 +138,7 @@ export const createCourse = async (req, res, next) => {
     if (await prisma.course.findUnique({ where: { name } }))
       return res.status(400).json({ error: "Course name already exists" });
 
+    // Create the course
     const course = await prisma.course.create({
       data: {
         name: name.trim(),
@@ -146,11 +152,15 @@ export const createCourse = async (req, res, next) => {
       },
     });
 
-    res.status(201).json({ success: true, course });
+    // ===== Return 5 default exam types in the response =====
+    const defaultExamTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
+
+    res.status(201).json({ success: true, course, examTypes: defaultExamTypes });
   } catch (err) {
     next(err);
   }
 };
+
 
 // ===== PATCH /courses/:id =====
 export const updateCourse = async (req, res, next) => {

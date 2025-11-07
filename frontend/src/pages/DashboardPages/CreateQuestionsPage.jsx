@@ -22,7 +22,7 @@ export default function CreateQuestionPage() {
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
-  const [exams, setExams] = useState([]);
+  const [examTypes, setExamTypes] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
   const [activeOption, setActiveOption] = useState(-1);
@@ -35,7 +35,12 @@ export default function CreateQuestionPage() {
         });
         return data;
       } catch (err) {
-        toast.error(err.response?.data?.error || err.message || "Fetch failed", { duration: 4000 });
+        toast.error(
+          err.response?.data?.error || err.message || "Fetch failed",
+          {
+            duration: 4000,
+          }
+        );
         return null;
       }
     },
@@ -46,30 +51,34 @@ export default function CreateQuestionPage() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses`);
+      const data = await safeFetchJSON(
+        `${import.meta.env.VITE_API_URL}/courses`
+      );
       if (!data) return;
       const normalized = Array.isArray(data) ? data : data.courses || [];
       setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
     })();
   }, [token, safeFetchJSON]);
 
-  // Fetch exams
+  // Fetch examTypes for selected course
   useEffect(() => {
     if (!courseId) {
-      setExams([]);
+      setExamTypes([]);
       setExamId("");
       return;
     }
+
     (async () => {
-  const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/exams?courseId=${courseId}`);
-  console.log("Exams API response:", data);
+      const data = await safeFetchJSON(
+        `${import.meta.env.VITE_API_URL}/courses/${courseId}`
+      );
 
-  if (!data) return;
-  const examsArray = data.exams || data.data || data || [];
-  setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
-  setExamId("");
-})();
+      if (!data) return;
 
+      const types = data.examTypes || []; // <-- use top-level data.examTypes
+      setExamTypes(types); // array of strings
+      setExamId(types[0] || ""); // auto-select first exam type
+    })();
   }, [courseId, safeFetchJSON]);
 
   const handleOptionChange = (idx, val) => {
@@ -91,7 +100,9 @@ export default function CreateQuestionPage() {
 
     try {
       if (attachmentFile) {
-        const uploaded = await uploadFiles("imageUploader", { files: [attachmentFile] });
+        const uploaded = await uploadFiles("imageUploader", {
+          files: [attachmentFile],
+        });
         uploadedFileUrl = uploaded[0]?.ufsUrl || null;
       }
 
@@ -99,17 +110,15 @@ export default function CreateQuestionPage() {
         text,
         type,
         marks: Number(marks),
-        courseId,
-        examId,
+        courseId: Number(courseId),
+        examType: examId, // now sending the actual string
         image: uploadedFileUrl,
         options: type === "MCQ" ? options : undefined,
       };
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/questions`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.post(`${import.meta.env.VITE_API_URL}/questions`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       toast.success("Question created successfully!");
       setText("");
@@ -121,7 +130,9 @@ export default function CreateQuestionPage() {
       setType("MCQ");
       setActiveOption(-1);
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message || "Failed to create question");
+      toast.error(
+        err.response?.data?.error || err.message || "Failed to create question"
+      );
     } finally {
       setLoading(false);
     }
@@ -145,7 +156,9 @@ export default function CreateQuestionPage() {
             >
               <option value="">Select Course</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </label>
@@ -156,11 +169,13 @@ export default function CreateQuestionPage() {
               className="select select-bordered dropdown-bottom"
               value={examId}
               onChange={(e) => setExamId(e.target.value)}
-              disabled={!exams.length}
+              disabled={examTypes.length === 0} // enable only if array has elements
             >
               <option value="">Select Exam</option>
-              {exams.map((ex) => (
-                <option key={ex.id} value={ex.id}>{ex.title}</option>
+              {examTypes.map((ex, idx) => (
+                <option key={idx} value={ex}>
+                  {ex}
+                </option>
               ))}
             </select>
           </label>
@@ -199,7 +214,9 @@ export default function CreateQuestionPage() {
               }`}
               onClick={() => setActiveOption(activeOption === idx ? -1 : idx)}
             >
-              <div className="collapse-title text-xl font-medium">Option {idx + 1}</div>
+              <div className="collapse-title text-xl font-medium">
+                Option {idx + 1}
+              </div>
               {activeOption === idx && (
                 <div className="collapse-content">
                   <RichTextEditor
@@ -213,11 +230,23 @@ export default function CreateQuestionPage() {
           ))}
 
         {/* Attachment */}
-        <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />
+        <UploadDropzone
+          file={attachmentFile}
+          onFileSelect={setAttachmentFile}
+          maxFiles={1}
+        />
 
         {/* Submit */}
-        <button type="submit" className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2" disabled={loading}>
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
+        <button
+          type="submit"
+          className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2"
+          disabled={loading}
+        >
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            "Save Question"
+          )}
         </button>
       </form>
     </div>
