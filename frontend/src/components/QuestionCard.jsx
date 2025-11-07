@@ -237,7 +237,7 @@ At the end, please solve the following problem:
   };
 
   return (
-    <div className="bg-theme border-theme shadow-lg rounded-xl max-w-2xl mx-auto mb-6 overflow-hidden transition hover:shadow-xl">
+    <div className=" bg-sf-gradient border-theme shadow-lg rounded-xl max-w-2xl mx-auto mb-6 overflow-hidden transition hover:shadow-xl">
       {/* Header */}
       <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 text-sm">
@@ -249,8 +249,9 @@ At the end, please solve the following problem:
           </span>
           <div className="flex gap-2 mt-1 sm:mt-0">
             <span className="px-3 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
-              {question.exam?.title || "No Exam"}
+              {question.examType || "No Exam Type"}
             </span>
+
             <span className="px-3 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">
               {question.marks} Marks
             </span>
@@ -270,7 +271,7 @@ At the end, please solve the following problem:
       {/* Question Body */}
       <div className="p-6 sm:p-8 flex flex-col gap-4">
         <div
-          className="text-gray-900 font-medium text-sm sm:text-base leading-relaxed break-words jodit-wysiwyg"
+          className="text-gray-900 font-medium text-sm sm:text-base leading-relaxed wrap-break-word jodit-wysiwyg"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(question.text || ""),
           }}
@@ -345,7 +346,7 @@ At the end, please solve the following problem:
             <Tippy content="Solve with ChatGPT" placement="bottom">
               <button
                 onClick={handleSolveWithChatGPT}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
               >
                 <IconBrandOpenai size={20} />
                 Solve with ChatGPT
@@ -374,7 +375,7 @@ At the end, please solve the following problem:
           <div className="mt-4 border-t border-gray-100 pt-4">
             <CommentsSection
               questionId={question.id}
-              questionCreatorId={question.studentId} 
+              questionCreatorId={question.studentId}
               onNewComment={() => setCommentsCount((prev) => prev + 1)}
             />
           </div>

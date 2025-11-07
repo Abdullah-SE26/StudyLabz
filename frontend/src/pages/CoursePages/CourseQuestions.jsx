@@ -20,7 +20,9 @@ const SkeletonCard = () => (
   </div>
 );
 
-const LoadingBar = () => <span className="loading loading-bars loading-sm text-[#D2B48C]" />;
+const LoadingBar = () => (
+  <span className="loading loading-bars loading-sm text-[#D2B48C]" />
+);
 
 const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
@@ -74,10 +76,16 @@ const CourseQuestions = () => {
     setLoading(true);
     setError("");
 
-    const query = new URLSearchParams({ page, limit: 10, sort: sortOrder }).toString();
+    const query = new URLSearchParams({
+      page,
+      limit: 10,
+      sort: sortOrder,
+    }).toString();
 
     axios
-      .get(`/questions/courses/${courseId}/questions?${query}`, { signal: controller.signal })
+      .get(`/questions/courses/${courseId}/questions?${query}`, {
+        signal: controller.signal,
+      })
       .then(({ data }) => {
         setQuestions(data?.data || []);
         setTotalPages(data?.totalPages || 1);
@@ -101,7 +109,8 @@ const CourseQuestions = () => {
   }, [fetchCourse, fetchQuestions]);
 
   const toggleLike = async (qId) => {
-    if (!user?.id) return toast.error("You must be logged in to like questions.");
+    if (!user?.id)
+      return toast.error("You must be logged in to like questions.");
 
     const prev = [...questions];
     const updatedQs = questions.map((q) =>
@@ -126,7 +135,8 @@ const CourseQuestions = () => {
   };
 
   const toggleBookmark = async (qId) => {
-    if (!user?.id) return toast.error("You must be logged in to bookmark questions.");
+    if (!user?.id)
+      return toast.error("You must be logged in to bookmark questions.");
 
     const prev = [...questions];
     const updatedQs = questions.map((q) =>
@@ -169,13 +179,8 @@ const CourseQuestions = () => {
 
   const filteredQuestions =
     selectedTypes.length > 0
-      ? questions.filter((q) =>
-          selectedTypes.some((t) =>
-            q.exam?.title?.toLowerCase().includes(t.toLowerCase())
-          )
-        )
+      ? questions.filter((q) => selectedTypes.includes(q.examType))
       : questions;
-
   if (firstLoad && loading) {
     return (
       <div className="p-6 space-y-6">

@@ -75,8 +75,8 @@ export default function CreateQuestionPage() {
 
       if (!data) return;
 
-      const types = data.examTypes || []; // <-- use top-level data.examTypes
-      setExamTypes(types); // array of strings
+      const types = data.examTypes || []; 
+      setExamTypes(types); 
       setExamId(types[0] || ""); // auto-select first exam type
     })();
   }, [courseId, safeFetchJSON]);
