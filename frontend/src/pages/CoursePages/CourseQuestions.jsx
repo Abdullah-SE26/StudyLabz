@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 import QuestionCard from "../../components/QuestionCard";
@@ -37,10 +37,13 @@ const ASSESSMENT_TYPES = [
 
 const CourseQuestions = () => {
   const { courseId } = useParams();
+  const location = useLocation();
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
 
-  const [courseName, setCourseName] = useState("Loading...");
+  const [courseName, setCourseName] = useState(
+    location.state?.courseName || "Loading..."
+  );
   const [questions, setQuestions] = useState(null);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [sortOrder, setSortOrder] = useState("newest");
@@ -78,7 +81,7 @@ const CourseQuestions = () => {
           questionsPromise,
         ]);
 
-        setCourseName(courseResponse.data?.name || "Course");
+        setCourseName(courseResponse.data?.course?.name || "Course");
         setQuestions(questionsResponse.data?.data || []);
         setTotalPages(questionsResponse.data?.totalPages || 1);
       } catch (err) {
