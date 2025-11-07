@@ -38,7 +38,7 @@ export default function Navbar() {
     <nav
       className={`sticky top-4 z-50 transition-all duration-300 ${
         isScrolled
-          ? "py-2 bg-gradient-to-r from-[#E0F7FA]/80 via-[#FFFDE7]/70 to-[#E1F5FE]/80 backdrop-blur-lg shadow-xl rounded-3xl mx-6"
+          ? "py-2 bg-linear-to-r from-[#E0F7FA]/80 via-[#FFFDE7]/70 to-[#E1F5FE]/80 backdrop-blur-lg shadow-xl rounded-3xl mx-6"
           : "py-4 bg-transparent"
       }`}
     >

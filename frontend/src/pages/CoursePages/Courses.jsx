@@ -39,6 +39,7 @@ const Courses = () => {
 
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [modalType, setModalType] = useState(null); // "edit" or "delete"
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Fetch all tags
   useEffect(() => {
@@ -196,9 +197,24 @@ const Courses = () => {
 
       {modalType === "delete" && selectedCourse && (
         <DeleteCourseModal
-          course={selectedCourse}
+          show={modalType === "delete"}
           onClose={closeModal}
-          onDeleted={() => handleCourseDeleted(selectedCourse.id)}
+          onConfirm={async () => {
+            setDeleteLoading(true);
+            try {
+              await axios.delete(`/courses/${selectedCourse.id}`);
+              handleCourseDeleted(selectedCourse.id);
+            } catch (err) {
+              console.error(err);
+              // Assuming toast is available globally or imported
+              // toast.error(err?.response?.data?.message || "Failed to delete course");
+            } finally {
+              setDeleteLoading(false);
+            }
+          }}
+          title="Delete Course"
+          message={`Are you sure you want to delete "${selectedCourse.title || selectedCourse.name}"? This action cannot be undone.`}
+          loading={deleteLoading}
         />
       )}
     </div>
