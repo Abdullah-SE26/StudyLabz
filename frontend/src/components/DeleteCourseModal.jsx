@@ -1,6 +1,28 @@
-export default function DeleteCourseModal({ show, onClose, onConfirm, title, message, loading }) {
+import React from "react";
+import toast from "react-hot-toast";
 
+export default function DeleteCourseModal({
+  show,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  loading,
+  courseName, // added prop for course name
+}) {
   if (!show) return null;
+
+  // Handle confirm click with course-specific toast
+  const handleConfirm = async () => {
+    try {
+      await onConfirm(); // call the passed onConfirm function (should handle API delete)
+      toast.success(`Course "${courseName}" deleted successfully!`);
+      onClose(); // close modal after successful deletion
+    } catch (err) {
+      console.error(err);
+      toast.error(`Failed to delete course "${courseName}". Try again.`);
+    }
+  };
 
   return (
     <>
@@ -13,14 +35,16 @@ export default function DeleteCourseModal({ show, onClose, onConfirm, title, mes
       {/* Modal */}
       <div className="fixed inset-0 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0 animate-fade-in">
-          <h4 className="font-bold text-lg mb-2">{title || "Confirm Deletion"}</h4>
+          <h4 className="font-bold text-lg mb-2">
+            {title || "Confirm Deletion"}
+          </h4>
           <p className="mb-4">
-            {message || "Are you sure you want to delete this item?"}
+            {message || `Are you sure you want to delete the course "${courseName}"?`}
           </p>
 
           <div className="flex gap-3 justify-end">
             <button
-              onClick={onConfirm}
+              onClick={handleConfirm}
               disabled={loading}
               className={`flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition ${
                 loading ? "opacity-70 cursor-not-allowed" : ""

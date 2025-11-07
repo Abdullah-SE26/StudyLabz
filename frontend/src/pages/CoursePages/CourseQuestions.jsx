@@ -6,9 +6,12 @@ import QuestionCard from "../../components/QuestionCard";
 import Pagination from "../../components/Pagination";
 import axios from "../../../lib/axios.js";
 
-// Skeleton for loading
+// Skeleton for loading with gradient
 const SkeletonCard = () => (
-  <div className="card bg-[#FFF8E0] shadow-md border border-[#E0CFA6] p-4 space-y-3 max-w-full sm:max-w-lg mx-auto animate-pulse">
+  <div
+    className="card shadow-md border border-[#E0CFA6] p-4 space-y-3 max-w-full sm:max-w-lg mx-auto animate-pulse"
+    style={{ background: "var(--bg-sf-gradient)" }}
+  >
     <div className="h-4 bg-[#E0CFA6] rounded w-3/4"></div>
     <div className="h-4 bg-[#E0CFA6] rounded w-full"></div>
     <div className="h-4 bg-[#E0CFA6] rounded w-5/6"></div>
@@ -108,9 +111,9 @@ const CourseQuestions = () => {
     return () => abortFetch && abortFetch();
   }, [fetchCourse, fetchQuestions]);
 
+  // Like / Bookmark handlers
   const toggleLike = async (qId) => {
-    if (!user?.id)
-      return toast.error("You must be logged in to like questions.");
+    if (!user?.id) return toast.error("You must be logged in to like questions.");
 
     const prev = [...questions];
     const updatedQs = questions.map((q) =>
@@ -181,24 +184,14 @@ const CourseQuestions = () => {
     selectedTypes.length > 0
       ? questions.filter((q) => selectedTypes.includes(q.examType))
       : questions;
-  if (firstLoad && loading) {
-    return (
-      <div className="p-6 space-y-6">
-        {[...Array(3)].map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-    );
-  }
-
-  if (error) return <p className="text-center text-red-500 mt-10">{error}</p>;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-theme">
-        {courseName} Questions
+        {courseName ? `${courseName} Questions` : "Loading course..."}
       </h2>
 
+      {/* Filters & Sorting */}
       <div className="flex flex-col sm:flex-row justify-between flex-wrap gap-3 items-center mb-6">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-center sm:justify-start">
           {ASSESSMENT_TYPES.map((type) => (
@@ -243,28 +236,26 @@ const CourseQuestions = () => {
         </div>
       </div>
 
-      {loading && !firstLoad && (
-        <div className="flex justify-center py-10">
-          <LoadingBar />
-        </div>
-      )}
-
-      {filteredQuestions.length > 0 ? (
-        <div className="space-y-6">
-          {filteredQuestions.map((q) => (
+      {/* Questions / Skeleton / No Questions */}
+      <div className="space-y-6">
+        {loading && firstLoad ? (
+          [...Array(3)].map((_, i) => <SkeletonCard key={i} />)
+        ) : filteredQuestions.length > 0 ? (
+          filteredQuestions.map((q) => (
             <QuestionCard
               key={q.id || q._id}
               question={q}
               onToggleLike={() => toggleLike(q.id)}
               onToggleBookmark={() => toggleBookmark(q.id)}
             />
-          ))}
-        </div>
-      ) : (
-        <p className="text-center mt-10 text-gray-500">No questions found.</p>
-      )}
+          ))
+        ) : (
+          <p className="text-center mt-10 text-gray-500">No questions found.</p>
+        )}
+      </div>
 
-      {totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && !loading && (
         <div className="flex justify-center mt-6">
           <Pagination
             totalPages={totalPages}
@@ -273,6 +264,16 @@ const CourseQuestions = () => {
           />
         </div>
       )}
+
+      {/* Loading Bar for subsequent loads */}
+      {loading && !firstLoad && (
+        <div className="flex justify-center py-10">
+          <LoadingBar />
+        </div>
+      )}
+
+      {/* Error */}
+      {error && <p className="text-center text-red-500 mt-4">{error}</p>}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 TODOs:
 
 FRONTEND:
-
+fix Question Pages skeleton and course name
 
 
 
@@ -11,8 +11,34 @@ BACKEND:
 create report schema
 
 
+FOR RENDER TO KEEP IT ACTIVE
+By “ping it periodically,” I mean sending a simple request to your backend at regular intervals so that Render doesn’t put it to sleep. Free-tier servers often “sleep” after a period of inactivity (like 15–30 minutes), and the first request after sleep can fail or take a long time while the server boots up. A ping keeps it awake.
+
+How it usually works:
+
+Use a cron job or scheduler – some service or script that runs every few minutes (e.g., every 5–10 minutes).
+
+Send a lightweight request – like a GET /health or GET /ping endpoint on your backend. It shouldn’t do anything heavy; just return a 200 OK.
+
+Backend stays alive – because Render sees activity, it won’t put your server to sleep.
+
+Example: using node-fetch in a simple Node.js script on your computer or another server:
+
+import fetch from "node-fetch";
+
+setInterval(async () => {
+  try {
+    await fetch("https://studylabz.onrender.com/health");
+    console.log("Pinged backend successfully");
+  } catch (err) {
+    console.error("Ping failed:", err.message);
+  }
+}, 5 * 60 * 1000); // every 5 minutes
 
 
+Or you can use services like UptimeRobot or Cron-job.org to call your endpoint every 5–10 minutes.
+
+This way, your backend stays “warm,” and your users won’t hit the cold-start 404 problem.
 
 
 

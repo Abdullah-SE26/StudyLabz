@@ -41,9 +41,9 @@ export default function CourseCard({
     <div
       onClick={handleNavigate}
       className="group relative flex flex-col justify-between rounded-2xl border border-amber-100
-        bg-gradient-to-br from-amber-50 via-white to-amber-100/50
+        bg-sf-gradient from-amber-50 via-white to-amber-100/50
         shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300
-        cursor-pointer overflow-hidden w-full min-h-[240px] max-h-[280px] p-4"
+        cursor-pointer overflow-hidden w-full min-h-60 max-h-[280px] p-4"
     >
       {/* Title + Date */}
       <div className="text-center">
