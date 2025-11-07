@@ -78,21 +78,31 @@ export const getCourseById = async (req, res, next) => {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
+    // Fetch course
     const course = await prisma.course.findUnique({
       where: { id },
       include: {
-        exams: true,
         createdBy: { select: { id: true, name: true, email: true } },
       },
     });
 
     if (!course) return res.status(404).json({ error: "Course not found" });
 
-    res.json({ success: true, course });
+    // Fetch distinct exam types from questions belonging to this course
+    const examTypesData = await prisma.question.findMany({
+      where: { courseId: id },
+      select: { examType: true },
+      distinct: ["examType"],
+    });
+
+    const examTypes = examTypesData.map((q) => q.examType).filter(Boolean);
+
+    res.json({ success: true, course, examTypes });
   } catch (err) {
     next(err);
   }
 };
+
 
 // ===== POST /courses =====
 export const createCourse = async (req, res, next) => {
@@ -131,7 +141,9 @@ export const createCourse = async (req, res, next) => {
         tags: parseTags(tags),
         createdById: userId,
       },
-      include: { exams: true },
+      include: {
+        createdBy: { select: { id: true, name: true, email: true } },
+      },
     });
 
     res.status(201).json({ success: true, course });

@@ -103,7 +103,7 @@ export default function DashboardLayout() {
       <aside
         className={`${
           sidebarOpen ? "w-64" : "w-16"
-        } flex-shrink-0 z-20 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out`}
+        } shrink-0 z-20 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200 bg-white">

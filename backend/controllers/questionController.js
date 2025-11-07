@@ -14,21 +14,26 @@ export const getQuestions = async (req, res, next) => {
     const skip = (page - 1) * limit;
     const search = req.query.search?.trim() || "";
     const sort = req.query.sort || "latest";
-    const tags = req.query.tags ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+    const tags = req.query.tags
+      ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean)
+      : [];
+    const examType = req.query.examType?.trim() || "";
 
     const where = {
       ...(search && { text: { contains: search, mode: "insensitive" } }),
       ...(tags.length && { course: { tags: { hasSome: tags } } }),
-      ...(userId && !isAdmin && { createdById: userId }), // non-admin sees own questions only
+      ...(examType && { examType }),
+      ...(userId && !isAdmin && { createdById: userId }),
     };
 
-    const orderBy = sort === "oldest"
-      ? { createdAt: "asc" }
-      : sort === "marks_asc"
-      ? { marks: "asc" }
-      : sort === "marks_desc"
-      ? { marks: "desc" }
-      : { createdAt: "desc" }; // default latest
+    const orderBy =
+      sort === "oldest"
+        ? { createdAt: "asc" }
+        : sort === "marks_asc"
+        ? { marks: "asc" }
+        : sort === "marks_desc"
+        ? { marks: "desc" }
+        : { createdAt: "desc" };
 
     const [questions, total] = await Promise.all([
       prisma.question.findMany({
@@ -36,7 +41,6 @@ export const getQuestions = async (req, res, next) => {
         include: {
           createdBy: { select: { id: true, studentId: true, name: true, email: true } },
           course: { select: { id: true, name: true, tags: true } },
-          exam: { select: { id: true, title: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
           _count: { select: { likedBy: true, reportedBy: true, comments: true } },
@@ -70,35 +74,96 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
+
+// ----------------------------- 
+// GET /questions/:id 
 // -----------------------------
-// GET /courses/:courseId/questions?examIds=1,2,3&page=1&limit=10&sort=&tags=tag1
+export const getQuestionById = async (req, res, next) => {
+  try {
+    const questionId = Number(req.params.id);
+
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            studentId: true,
+            name: true,
+            email: true,
+          },
+        },
+        likedBy: { select: { id: true } },
+        bookmarkedBy: { select: { id: true } },
+        course: {
+          select: { id: true, name: true, tags: true },
+        },
+        _count: {
+          select: {
+            likedBy: true,
+            reportedBy: true,
+            comments: true,
+          },
+        },
+      },
+    });
+
+    if (!question)
+      return res.status(404).json({ success: false, error: "Question not found" });
+
+    res.status(200).json({
+      ...question,
+      likesCount: question._count.likedBy,
+      reportsCount: question._count.reportedBy,
+      commentsCount: question._count.comments,
+      bookmarksCount: question.bookmarkedBy.length,
+      creatorName:
+        question.createdBy?.studentId ||
+        question.createdBy?.name ||
+        question.createdBy?.email ||
+        "Unknown",
+      tags: question.course?.tags || [],
+      examType: question.examType || null, // ✅ new field replacing exam.title
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+// -----------------------------
+// GET /courses/:courseId/questions
 // -----------------------------
 export const getQuestionsByCourse = async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
-    const examIds = req.query.examIds ? req.query.examIds.split(",").map(Number) : [];
+    const examType = req.query.examType?.trim() || "";
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const sort = req.query.sort || "latest";
-    const tags = req.query.tags ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean) : [];
+    const tags = req.query.tags
+      ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean)
+      : [];
 
     const course = await prisma.course.findUnique({ where: { id: courseId } });
-    if (!course) return res.status(404).json({ success: false, error: "Course not found" });
+    if (!course)
+      return res.status(404).json({ success: false, error: "Course not found" });
 
     const where = {
       courseId,
-      ...(examIds.length && { examId: { in: examIds } }),
+      ...(examType && { examType }),
       ...(tags.length && { course: { tags: { hasSome: tags } } }),
     };
 
-    const orderBy = sort === "oldest"
-      ? { createdAt: "asc" }
-      : sort === "marks_asc"
-      ? { marks: "asc" }
-      : sort === "marks_desc"
-      ? { marks: "desc" }
-      : { createdAt: "desc" };
+    const orderBy =
+      sort === "oldest"
+        ? { createdAt: "asc" }
+        : sort === "marks_asc"
+        ? { marks: "asc" }
+        : sort === "marks_desc"
+        ? { marks: "desc" }
+        : { createdAt: "desc" };
 
     const [questions, total] = await Promise.all([
       prisma.question.findMany({
@@ -106,7 +171,6 @@ export const getQuestionsByCourse = async (req, res, next) => {
         include: {
           createdBy: { select: { id: true, studentId: true, name: true, email: true } },
           course: { select: { id: true, name: true, tags: true } },
-          exam: { select: { id: true, title: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
           _count: { select: { likedBy: true, reportedBy: true, comments: true } },
@@ -135,43 +199,6 @@ export const getQuestionsByCourse = async (req, res, next) => {
       totalItems: total,
       data: formatted,
     });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// -----------------------------
-// GET /questions/exam/:id
-// -----------------------------
-export const getQuestionsByExam = async (req, res, next) => {
-  try {
-    const examId = Number(req.params.id);
-    const userId = req.user?.id;
-
-    const questions = await prisma.question.findMany({
-      where: { examId },
-      include: {
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
-        course: { select: { id: true, name: true, tags: true } },
-        exam: { select: { id: true, title: true } },
-        likedBy: userId ? { where: { id: userId }, select: { id: true } } : false,
-        bookmarkedBy: userId ? { where: { id: userId }, select: { id: true } } : false,
-        _count: { select: { likedBy: true, reportedBy: true, comments: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-
-    const formatted = questions.map(q => ({
-      ...q,
-      likesCount: q._count.likedBy,
-      reportsCount: q._count.reportedBy,
-      commentsCount: q._count.comments,
-      bookmarksCount: q.bookmarkedBy?.length || 0,
-      creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
-      tags: q.course?.tags || [],
-    }));
-
-    res.status(200).json(formatted);
   } catch (err) {
     next(err);
   }
@@ -183,26 +210,34 @@ export const getQuestionsByExam = async (req, res, next) => {
 export const createQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { text, type, options, marks, courseId, examId, image } = req.body;
+    const { text, type, options, marks, courseId, examType, image } = req.body;
 
-    if (!text?.trim()) return res.status(400).json({ success: false, error: "Question text is required" });
-    if (!["MCQ", "Essay"].includes(type)) return res.status(400).json({ success: false, error: "Invalid question type" });
-    if (!marks || isNaN(marks) || marks <= 0) return res.status(400).json({ success: false, error: "Marks must be positive" });
-    if (!courseId) return res.status(400).json({ success: false, error: "Course ID is required" });
+    if (!text?.trim())
+      return res.status(400).json({ success: false, error: "Question text is required" });
+    if (!["MCQ", "Essay"].includes(type))
+      return res.status(400).json({ success: false, error: "Invalid question type" });
+    if (!marks || isNaN(marks) || marks <= 0)
+      return res.status(400).json({ success: false, error: "Marks must be positive" });
+    if (!courseId)
+      return res.status(400).json({ success: false, error: "Course ID is required" });
+    if (!examType)
+      return res.status(400).json({ success: false, error: "Exam type is required" });
+
+    const validExamTypes = ["quiz", "midterm", "final", "assignment"];
+    if (!validExamTypes.includes(examType))
+      return res.status(400).json({ success: false, error: "Invalid exam type" });
 
     const course = await prisma.course.findUnique({ where: { id: Number(courseId) } });
-    if (!course) return res.status(404).json({ success: false, error: "Course not found" });
-
-    if (examId) {
-      const exam = await prisma.exam.findUnique({ where: { id: Number(examId) } });
-      if (!exam) return res.status(404).json({ success: false, error: "Exam not found" });
-    }
+    if (!course)
+      return res.status(404).json({ success: false, error: "Course not found" });
 
     const cleanText = sanitize(text);
     let parsedOptions = null;
     if (type === "MCQ") {
       if (!options?.length || options.length < 2)
-        return res.status(400).json({ success: false, error: "MCQ must have at least two options" });
+        return res
+          .status(400)
+          .json({ success: false, error: "MCQ must have at least two options" });
       parsedOptions = options.map(sanitize);
     }
 
@@ -213,13 +248,12 @@ export const createQuestion = async (req, res, next) => {
         options: parsedOptions,
         marks: Number(marks),
         image: image?.trim() || null,
+        examType,
         course: { connect: { id: Number(courseId) } },
-        exam: examId ? { connect: { id: Number(examId) } } : undefined,
         createdBy: { connect: { id: userId } },
       },
       include: {
         course: { select: { id: true, name: true, tags: true } },
-        exam: { select: { id: true, title: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
       },
     });
@@ -229,7 +263,11 @@ export const createQuestion = async (req, res, next) => {
       message: "Question created successfully",
       data: {
         ...question,
-        creatorName: question.createdBy?.studentId || question.createdBy?.name || question.createdBy?.email || "Unknown",
+        creatorName:
+          question.createdBy?.studentId ||
+          question.createdBy?.name ||
+          question.createdBy?.email ||
+          "Unknown",
         tags: question.course?.tags || [],
         likesCount: 0,
         commentsCount: 0,
@@ -243,20 +281,27 @@ export const createQuestion = async (req, res, next) => {
 };
 
 // -----------------------------
-// POST /questions/:id/like
+// LIKE / BOOKMARK / REPORT / DELETE
 // -----------------------------
+
 export const toggleLikeQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, include: { likedBy: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { likedBy: true },
+    });
+    if (!question)
+      return res.status(404).json({ success: false, error: "Question not found" });
 
     const hasLiked = question.likedBy.some(u => u.id === userId);
     await prisma.question.update({
       where: { id: questionId },
-      data: hasLiked ? { likedBy: { disconnect: { id: userId } } } : { likedBy: { connect: { id: userId } } },
+      data: hasLiked
+        ? { likedBy: { disconnect: { id: userId } } }
+        : { likedBy: { connect: { id: userId } } },
     });
 
     const updated = await prisma.question.findUnique({
@@ -266,7 +311,6 @@ export const toggleLikeQuestion = async (req, res, next) => {
         bookmarkedBy: { select: { id: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         course: { select: { id: true, name: true, tags: true } },
-        exam: { select: { id: true, title: true } },
         _count: { select: { likedBy: true, reportedBy: true, comments: true } },
       },
     });
@@ -280,7 +324,11 @@ export const toggleLikeQuestion = async (req, res, next) => {
         reportsCount: updated._count.reportedBy,
         commentsCount: updated._count.comments,
         bookmarksCount: updated.bookmarkedBy.length,
-        creatorName: updated.createdBy?.studentId || updated.createdBy?.name || updated.createdBy?.email || "Unknown",
+        creatorName:
+          updated.createdBy?.studentId ||
+          updated.createdBy?.name ||
+          updated.createdBy?.email ||
+          "Unknown",
         tags: updated.course?.tags || [],
       },
     });
@@ -289,21 +337,24 @@ export const toggleLikeQuestion = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// POST /questions/:id/bookmark
-// -----------------------------
 export const toggleBookmarkQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, include: { bookmarkedBy: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      include: { bookmarkedBy: true },
+    });
+    if (!question)
+      return res.status(404).json({ success: false, error: "Question not found" });
 
     const hasBookmarked = question.bookmarkedBy.some(u => u.id === userId);
     await prisma.question.update({
       where: { id: questionId },
-      data: hasBookmarked ? { bookmarkedBy: { disconnect: { id: userId } } } : { bookmarkedBy: { connect: { id: userId } } },
+      data: hasBookmarked
+        ? { bookmarkedBy: { disconnect: { id: userId } } }
+        : { bookmarkedBy: { connect: { id: userId } } },
     });
 
     const updated = await prisma.question.findUnique({
@@ -313,7 +364,6 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
         bookmarkedBy: { select: { id: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         course: { select: { id: true, name: true, tags: true } },
-        exam: { select: { id: true, title: true } },
         _count: { select: { likedBy: true, reportedBy: true, comments: true } },
       },
     });
@@ -327,7 +377,11 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
         reportsCount: updated._count.reportedBy,
         commentsCount: updated._count.comments,
         bookmarksCount: updated.bookmarkedBy.length,
-        creatorName: updated.createdBy?.studentId || updated.createdBy?.name || updated.createdBy?.email || "Unknown",
+        creatorName:
+          updated.createdBy?.studentId ||
+          updated.createdBy?.name ||
+          updated.createdBy?.email ||
+          "Unknown",
         tags: updated.course?.tags || [],
       },
     });
@@ -336,72 +390,45 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
   }
 };
 
-// -----------------------------
-// POST /questions/:id/report
-// -----------------------------
 export const reportQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
     const reason = req.body.reason?.trim();
-    if (!reason) return res.status(400).json({ success: false, error: "Reason is required" });
+    if (!reason)
+      return res.status(400).json({ success: false, error: "Reason is required" });
 
-    const report = await prisma.report.create({ data: { userId, questionId, reason } });
-    res.status(201).json({ success: true, message: "Question reported successfully", data: report });
+    const report = await prisma.report.create({
+      data: { userId, questionId, reason },
+    });
+    res
+      .status(201)
+      .json({ success: true, message: "Question reported successfully", data: report });
   } catch (err) {
     next(err);
   }
 };
 
-// -----------------------------
-// GET /questions/:id
-// -----------------------------
-export const getQuestionById = async (req, res, next) => {
-  try {
-    const questionId = Number(req.params.id);
-
-    const question = await prisma.question.findUnique({
-      where: { id: questionId },
-      include: {
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
-        likedBy: { select: { id: true } },
-        bookmarkedBy: { select: { id: true } },
-        course: { select: { id: true, name: true, tags: true } },
-        exam: { select: { id: true, title: true } },
-        _count: { select: { likedBy: true, reportedBy: true, comments: true } },
-      },
-    });
-
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
-
-    res.status(200).json({
-      ...question,
-      likesCount: question._count.likedBy,
-      reportsCount: question._count.reportedBy,
-      commentsCount: question._count.comments,
-      bookmarksCount: question.bookmarkedBy.length,
-      creatorName: question.createdBy?.studentId || question.createdBy?.name || question.createdBy?.email || "Unknown",
-      tags: question.course?.tags || [],
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// -----------------------------
-// DELETE /questions/:id
-// -----------------------------
 export const deleteQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const questionId = Number(req.params.id);
 
-    const question = await prisma.question.findUnique({ where: { id: questionId }, select: { id: true, createdById: true } });
-    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
-    if (question.createdById !== userId) return res.status(403).json({ success: false, error: "Unauthorized to delete this question" });
+    const question = await prisma.question.findUnique({
+      where: { id: questionId },
+      select: { id: true, createdById: true },
+    });
+    if (!question)
+      return res.status(404).json({ success: false, error: "Question not found" });
+    if (question.createdById !== userId)
+      return res
+        .status(403)
+        .json({ success: false, error: "Unauthorized to delete this question" });
 
     await prisma.question.delete({ where: { id: questionId } });
-    res.status(200).json({ success: true, message: "Question deleted successfully" });
+    res
+      .status(200)
+      .json({ success: true, message: "Question deleted successfully" });
   } catch (err) {
     next(err);
   }

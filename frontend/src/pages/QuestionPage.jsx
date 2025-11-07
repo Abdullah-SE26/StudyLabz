@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import QuestionCard from "../components/QuestionCard";
 import QuestionCardSkeleton from "../components/QuestionCardSkeleton";
-import axios from "../../lib/axios"; // your axios instance
+import axios from "../../lib/axios"; 
 
 const QuestionPage = () => {
   const { questionId } = useParams();
