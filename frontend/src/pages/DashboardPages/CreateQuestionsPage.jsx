@@ -61,12 +61,15 @@ export default function CreateQuestionPage() {
       return;
     }
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/exams?courseId=${courseId}`);
-      if (!data) return;
-      const examsArray = Array.isArray(data) ? data : data.exams || [];
-      setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
-      setExamId("");
-    })();
+  const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/exams?courseId=${courseId}`);
+  console.log("Exams API response:", data);
+
+  if (!data) return;
+  const examsArray = data.exams || data.data || data || [];
+  setExams(examsArray.map((ex) => ({ id: String(ex.id), title: ex.title })));
+  setExamId("");
+})();
+
   }, [courseId, safeFetchJSON]);
 
   const handleOptionChange = (idx, val) => {
