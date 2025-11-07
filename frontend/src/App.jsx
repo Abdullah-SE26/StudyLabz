@@ -24,6 +24,7 @@ import ManageUsers from "./pages/DashboardPages/ManageUsers";
 import ManageReports from "./pages/DashboardPages/ManageReports";
 import CreateQuestionsPage from "./pages/DashboardPages/CreateQuestionsPage";
 import ManageQuestions from "./pages/DashboardPages/ManageQuestions";
+import UserBookmarks from "./pages/DashboardPages/UserBookmarks";
 
 function App() {
   const isAdminMode = true;
@@ -91,6 +92,7 @@ function App() {
             <Route path="users" element={<ManageUsers />} />
             <Route path="reports" element={<ManageReports />} />
             <Route path="create-question" element={<CreateQuestionsPage />} />
+            <Route path="user-bookmarks" element={<UserBookmarks />} />
           </Route>
         </Routes>
       </PageWrapper>

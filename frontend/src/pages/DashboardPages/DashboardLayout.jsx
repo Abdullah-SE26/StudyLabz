@@ -47,7 +47,7 @@ export default function DashboardLayout() {
       icon: <HelpCircle className="w-5 h-5" />,
     },
     {
-      to: "/dashboard/bookmarks",
+      to: "/dashboard/user-bookmarks",
       label: "My Bookmarks",
       icon: <Bookmark className="w-5 h-5" />,
     },

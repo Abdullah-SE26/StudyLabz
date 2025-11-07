@@ -6,21 +6,7 @@ import QuestionCard from "../../components/QuestionCard";
 import Pagination from "../../components/Pagination";
 import axios from "../../../lib/axios.js";
 
-const SkeletonCard = () => (
-  <div
-    className="card shadow-md border border-[#E0CFA6] p-4 space-y-3 max-w-full sm:max-w-lg mx-auto animate-pulse"
-    style={{ background: "var(--bg-sf-gradient)" }}
-  >
-    <div className="h-4 bg-[#E0CFA6] rounded w-3/4"></div>
-    <div className="h-4 bg-[#E0CFA6] rounded w-full"></div>
-    <div className="h-4 bg-[#E0CFA6] rounded w-5/6"></div>
-    <div className="flex gap-4 mt-2">
-      {[...Array(4)].map((_, i) => (
-        <div key={i} className="h-5 w-5 bg-[#E0CFA6] rounded-full"></div>
-      ))}
-    </div>
-  </div>
-);
+import QuestionCardSkeleton from "../../components/QuestionCardSkeleton";
 
 const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
@@ -133,29 +119,42 @@ const CourseQuestions = () => {
     if (!user?.id)
       return toast.error("You must be logged in to bookmark questions.");
     if (!questions) return;
+
     const prev = [...questions];
+    const questionToBookmark = questions.find((q) => q.id === qId);
+    if (!questionToBookmark) return;
+
+    const isBookmarked = questionToBookmark.bookmarkedBy.some(
+      (u) => u.id === user.id
+    );
+
+    // Optimistic UI update
     const updatedQs = questions.map((q) =>
       q.id === qId
         ? {
             ...q,
-            bookmarkedBy: q.bookmarkedBy.some((u) => u.id === user.id)
+            bookmarkedBy: isBookmarked
               ? q.bookmarkedBy.filter((u) => u.id !== user.id)
               : [...q.bookmarkedBy, { id: user.id }],
           }
         : q
     );
     setQuestions(updatedQs);
+
+    // Instant toast notification
+    toast.success(
+      !isBookmarked ? "Question added to bookmarks." : "Question removed from bookmarks."
+    );
+
     try {
+      // Sync with server
       const { data } = await axios.post(`/questions/${qId}/bookmark`);
+      // Verify server response and correct state if needed
       setQuestions((qs) =>
         qs.map((q) => (q.id === qId ? data.data : q))
       );
-      toast.success(
-        data.data.bookmarkedBy.some((u) => u.id === user.id)
-          ? "Question added to bookmarks."
-          : "Question removed from bookmarks."
-      );
     } catch {
+      // Revert on error
       setQuestions(prev);
       toast.error("Failed to sync bookmark with server.");
     }
@@ -243,7 +242,7 @@ const CourseQuestions = () => {
         {(loading || questions === null) && !error && (
           <>
             {[...Array(3)].map((_, i) => (
-              <SkeletonCard key={i} />
+              <QuestionCardSkeleton key={i} />
             ))}
           </>
         )}
