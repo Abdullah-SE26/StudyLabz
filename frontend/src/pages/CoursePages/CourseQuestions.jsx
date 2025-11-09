@@ -26,6 +26,7 @@ const CourseQuestions = () => {
   const location = useLocation();
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
+  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
 
   const [courseName, setCourseName] = useState(
     location.state?.courseName || "Loading..."
@@ -145,6 +146,7 @@ const CourseQuestions = () => {
     toast.success(
       !isBookmarked ? "Question added to bookmarks." : "Question removed from bookmarks."
     );
+    setShouldRefetchDashboard(true);
 
     try {
       // Sync with server

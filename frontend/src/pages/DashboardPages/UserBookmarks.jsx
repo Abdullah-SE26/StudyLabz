@@ -9,6 +9,7 @@ import QuestionCardSkeleton from "../../components/QuestionCardSkeleton";
 const UserBookmarks = () => {
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
+  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
 
   const [questions, setQuestions] = useState(null);
   const [page, setPage] = useState(1);
@@ -87,6 +88,7 @@ const UserBookmarks = () => {
     try {
       await axios.post(`/questions/${qId}/bookmark`);
       toast.success("Bookmark removed.");
+      setShouldRefetchDashboard(true);
     } catch {
       setQuestions(prev);
       toast.error("Failed to update bookmark.");

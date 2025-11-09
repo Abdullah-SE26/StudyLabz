@@ -6,50 +6,50 @@ export const getDashboardStats = async (req, res) => {
     const user = req.user;
     if (!user) return res.status(401).json({ success: false, error: "Unauthorized" });
 
-    const today = new Date();
-    const startDate = subDays(today, 6); // last 7 days including today
-    const formatDate = (date) => formatISO(date, { representation: "date" }); // YYYY-MM-DD
+    const formatDate = (date) => formatISO(date, { representation: "date" });
 
-    // Helper to aggregate records per day
-    const aggregatePerDay = (records) =>
-      [...Array(7)].map((_, i) => {
-        const date = formatDate(subDays(today, 6 - i));
-        const count = records.filter(r => formatDate(r.createdAt) === date).length;
-        return { date, count };
-      });
+    const aggregateAllTime = (records) => {
+      const aggregated = records.reduce((acc, record) => {
+        const date = formatDate(record.createdAt);
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
+      return Object.entries(aggregated)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+    };
 
     if (user.role === "admin") {
-      // Admin stats
       const [totalUsers, totalCourses, totalQuestions, totalReports, usersRaw, questionsRaw] =
         await Promise.all([
           prisma.user.count(),
           prisma.course.count(),
           prisma.question.count(),
           prisma.question.count({ where: { reportedBy: { some: {} } } }),
-          prisma.user.findMany({ where: { createdAt: { gte: startDate } }, select: { createdAt: true } }),
-          prisma.question.findMany({ where: { createdAt: { gte: startDate } }, select: { createdAt: true } }),
+          prisma.user.findMany({ select: { createdAt: true } }),
+          prisma.question.findMany({ select: { createdAt: true } }),
         ]);
 
-      const dailyUsers = aggregatePerDay(usersRaw);
-      const dailyQuestions = aggregatePerDay(questionsRaw);
+      const dailyUsers = aggregateAllTime(usersRaw);
+      const dailyQuestions = aggregateAllTime(questionsRaw);
 
       return res.json({
         success: true,
         data: { totalUsers, totalCourses, totalQuestions, totalReports, dailyUsers, dailyQuestions },
       });
     } else {
-      // Regular user stats
       const [userQuestions, userBookmarks, totalCourses, userQuestionsRaw, bookmarksRaw] =
         await Promise.all([
           prisma.question.count({ where: { createdById: user.id } }),
           prisma.question.count({ where: { bookmarkedBy: { some: { id: user.id } } } }),
           prisma.course.count(),
-          prisma.question.findMany({ where: { createdById: user.id, createdAt: { gte: startDate } }, select: { createdAt: true } }),
-          prisma.question.findMany({ where: { bookmarkedBy: { some: { id: user.id } }, createdAt: { gte: startDate } }, select: { createdAt: true } }),
+          prisma.question.findMany({ where: { createdById: user.id }, select: { createdAt: true } }),
+          prisma.question.findMany({ where: { bookmarkedBy: { some: { id: user.id } } }, select: { createdAt: true } }),
         ]);
 
-      const dailyUserQuestions = aggregatePerDay(userQuestionsRaw);
-      const dailyBookmarks = aggregatePerDay(bookmarksRaw);
+      const dailyUserQuestions = aggregateAllTime(userQuestionsRaw);
+      const dailyBookmarks = aggregateAllTime(bookmarksRaw);
 
       return res.json({
         success: true,

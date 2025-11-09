@@ -14,6 +14,7 @@ const uploadFiles = uploader.uploadFiles;
 
 export default function CreateQuestionPage() {
   const token = useStore((state) => state.authToken);
+  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
 
   const [text, setText] = useState("");
   const [marks, setMarks] = useState("");
@@ -121,6 +122,7 @@ export default function CreateQuestionPage() {
       });
 
       toast.success("Question created successfully!");
+      setShouldRefetchDashboard(true);
       setText("");
       setMarks("");
       setOptions(["", "", "", ""]);

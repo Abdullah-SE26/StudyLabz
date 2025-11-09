@@ -24,6 +24,8 @@ import {
 export default function DashboardHome() {
   const user = useStore((state) => state.user);
   const authToken = useStore((state) => state.authToken);
+  const shouldRefetchDashboard = useStore((state) => state.shouldRefetchDashboard);
+  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,6 +45,9 @@ export default function DashboardHome() {
         });
 
         setStats(data.data);
+        if (shouldRefetchDashboard) {
+          setShouldRefetchDashboard(false);
+        }
       } catch (err) {
         console.error("Error fetching dashboard stats:", err);
         const msg =
@@ -55,7 +60,7 @@ export default function DashboardHome() {
     };
 
     fetchDashboardStats();
-  }, [authToken]);
+  }, [authToken, shouldRefetchDashboard, setShouldRefetchDashboard]);
 
   if (loading) return <LoadingSkeleton />;
   if (error) return <ErrorMessage error={error} />;
@@ -165,7 +170,7 @@ const AdminCharts = memo(({ stats }) => {
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#a855f7"} strokeWidth={2} />
+            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#a855f7"} strokeWidth={2} dot={false} isAnimationActive={true} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -198,7 +203,7 @@ const UserCharts = memo(({ stats }) => {
             <XAxis dataKey="date" />
             <YAxis allowDecimals={false} />
             <Tooltip />
-            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#10b981"} strokeWidth={2} />
+            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#10b981"} strokeWidth={2} dot={false} isAnimationActive={true} />
           </LineChart>
         </ResponsiveContainer>
       </div>
