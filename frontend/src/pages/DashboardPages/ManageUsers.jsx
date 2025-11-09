@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from "react";
 import axios from "../../../lib/axios";
 import { toast } from "react-hot-toast";
+import { useStore } from "../../store/authStore";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { user, updateUser, logout } = useStore();
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [banUntil, setBanUntil] = useState("");
 
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const { data } = await axios.get("/users");
-      setUsers(data);
+      const response = await axios.get("/users");
+      setUsers(response.data);
     } catch {
       toast.error("Failed to fetch users");
     } finally {
@@ -27,26 +30,29 @@ const ManageUsers = () => {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      const { data } = await axios.put(`/users/${userId}/role`, { role: newRole });
+      const response = await axios.put(`/users/${userId}/role`, { role: newRole });
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: data.role } : u))
+        prev.map((u) => (u.id === userId ? { ...u, role: response.data.role } : u))
       );
+      if (user.id === userId) {
+        updateUser({ role: response.data.role });
+      }
       toast.success("User role updated!");
     } catch {
       toast.error("Failed to update role");
     }
   };
 
-  const handleBan = async () => {
+  const handleBan = async (banUntilValue) => {
     if (!selectedUser) return;
     try {
-      const { data } = await axios.put(`/users/${selectedUser.id}/block`, {
-        blockUntil: banUntil || null,
+      const response = await axios.put(`/users/${selectedUser.id}/block`, {
+        blockUntil: banUntilValue,
       });
       setUsers((prev) =>
-        prev.map((u) => (u.id === selectedUser.id ? data : u))
+        prev.map((u) => (u.id === selectedUser.id ? response.data : u))
       );
-      toast.success(banUntil ? "User banned!" : "User unbanned!");
+      toast.success(banUntilValue ? "User banned!" : "User unbanned!");
       // Close the modal
       document.getElementById("ban_modal").close();
       setSelectedUser(null);
@@ -59,9 +65,12 @@ const ManageUsers = () => {
   const handleLogoutUser = async (userId) => {
     try {
       await axios.post(`/users/${userId}/logout`);
-      toast.success("User logged out!");
+      toast.success("User logged out");
+      if (user.id === userId) {
+        logout();
+      }
     } catch {
-      toast.error("Failed to log out user");
+      toast.error("Failed to logout user");
     }
   };
 
@@ -158,7 +167,12 @@ const ManageUsers = () => {
             >
               Cancel
             </button>
-            <button type="button" className="btn btn-warning" onClick={handleBan}>
+            {selectedUser?.blockedUntil && (
+              <button type="button" className="btn" onClick={() => handleBan(null)}>
+                Unban
+              </button>
+            )}
+            <button type="button" className="btn btn-warning" onClick={() => handleBan(banUntil)}>
               {banUntil ? "Update" : "Ban"}
             </button>
           </div>

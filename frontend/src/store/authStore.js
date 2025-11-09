@@ -8,6 +8,7 @@ export const useStore = create((set) => ({
   authToken: savedToken || null,
   user: savedUser ? JSON.parse(savedUser) : null,
   menuOpen: false,
+  shouldRefetchDashboard: false,
 
   toggleMenu: () => set((state) => ({ menuOpen: !state.menuOpen })),
 
@@ -21,5 +22,16 @@ export const useStore = create((set) => ({
     localStorage.removeItem("authToken");
     localStorage.removeItem("user");
     set({ authToken: null, user: null });
+  },
+
+  updateUser: (user) => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const updatedUser = { ...savedUser, ...user };
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    set({ user: updatedUser });
+  },
+
+  setShouldRefetchDashboard: (shouldRefetch) => {
+    set({ shouldRefetchDashboard: shouldRefetch });
   },
 }));
