@@ -11,15 +11,7 @@ import { useState, useEffect, memo } from "react";
 import { useStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
 import axios from "../../../lib/axios";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import LineChartCard from "../../components/LineChartCard";
 
 export default function DashboardHome() {
   const user = useStore((state) => state.user);
@@ -119,28 +111,85 @@ const WelcomeBanner = memo(({ isAdmin }) => (
 const QuickStats = memo(({ stats, isAdmin }) => {
   const statCards = isAdmin
     ? [
-        { label: "Total Users", value: stats?.totalUsers || 0, icon: <Users className="w-5 h-5 text-blue-600" />, color: "blue", subtitle: "Registered users" },
-        { label: "Total Courses", value: stats?.totalCourses || 0, icon: <BookOpen className="w-5 h-5 text-emerald-600" />, color: "emerald", subtitle: "Available courses" },
-        { label: "Total Questions", value: stats?.totalQuestions || 0, icon: <HelpCircle className="w-5 h-5 text-purple-600" />, color: "purple", subtitle: "All questions" },
-        { label: "Total Reports", value: stats?.totalReports || 0, icon: <ClipboardList className="w-5 h-5 text-orange-600" />, color: "orange", subtitle: "Reported content" },
+        {
+          label: "Total Users",
+          value: stats?.totalUsers || 0,
+          icon: <Users className="w-5 h-5 text-blue-600" />,
+          color: "blue",
+          subtitle: "Registered users",
+        },
+        {
+          label: "Total Courses",
+          value: stats?.totalCourses || 0,
+          icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
+          color: "emerald",
+          subtitle: "Available courses",
+        },
+        {
+          label: "Total Questions",
+          value: stats?.totalQuestions || 0,
+          icon: <HelpCircle className="w-5 h-5 text-purple-600" />,
+          color: "purple",
+          subtitle: "All questions",
+        },
+        {
+          label: "Total Reports",
+          value: stats?.totalReports || 0,
+          icon: <ClipboardList className="w-5 h-5 text-orange-600" />,
+          color: "orange",
+          subtitle: "Reported content",
+        },
       ]
     : [
-        { label: "My Questions", value: stats?.userQuestions || 0, icon: <HelpCircle className="w-5 h-5 text-blue-600" />, color: "blue", subtitle: "Questions created" },
-        { label: "My Bookmarks", value: stats?.userBookmarks || 0, icon: <Bookmark className="w-5 h-5 text-emerald-600" />, color: "emerald", subtitle: "Saved questions" },
-        { label: "Total Courses", value: stats?.totalCourses || 0, icon: <BookOpen className="w-5 h-5 text-purple-600" />, color: "purple", subtitle: "Available courses" },
-        { label: "Recent Activity", value: stats?.recentQuestions?.length || 0, icon: <Activity className="w-5 h-5 text-orange-600" />, color: "orange", subtitle: "Recent questions" },
+        {
+          label: "My Questions",
+          value: stats?.userQuestions || 0,
+          icon: <HelpCircle className="w-5 h-5 text-blue-600" />,
+          color: "blue",
+          subtitle: "Questions created",
+        },
+        {
+          label: "My Bookmarks",
+          value: stats?.userBookmarks || 0,
+          icon: <Bookmark className="w-5 h-5 text-emerald-600" />,
+          color: "emerald",
+          subtitle: "Saved questions",
+        },
+        {
+          label: "Total Courses",
+          value: stats?.totalCourses || 0,
+          icon: <BookOpen className="w-5 h-5 text-purple-600" />,
+          color: "purple",
+          subtitle: "Available courses",
+        },
+        {
+          label: "Recent Activity",
+          value: stats?.recentQuestions?.length || 0,
+          icon: <Activity className="w-5 h-5 text-orange-600" />,
+          color: "orange",
+          subtitle: "Recent questions",
+        },
       ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       {statCards.map((card, idx) => (
-        <div key={idx} className={`bg-white rounded-xl p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-200 hover:scale-105`}>
+        <div
+          key={idx}
+          className="bg-white rounded-xl p-4 shadow-lg border border-slate-200/50 hover:shadow-xl transition-all duration-200 hover:scale-105"
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-slate-600 text-sm font-medium">{card.label}</p>
-              <p className={`text-3xl font-bold text-${card.color}-600`}>{card.value}</p>
+              <p className="text-slate-600 text-sm font-medium">
+                {card.label}
+              </p>
+              <p className={`text-3xl font-bold text-${card.color}-600`}>
+                {card.value}
+              </p>
             </div>
-            <div className={`p-2 bg-${card.color}-100 rounded-lg`}>{card.icon}</div>
+            <div className={`p-2 bg-${card.color}-100 rounded-lg`}>
+              {card.icon}
+            </div>
           </div>
           <div className="mt-2 flex items-center text-sm text-green-600">
             <Activity className="w-4 h-4 mr-1" />
@@ -153,67 +202,37 @@ const QuickStats = memo(({ stats, isAdmin }) => {
 });
 
 /* ---------- ADMIN CHARTS ---------- */
-const AdminCharts = memo(({ stats }) => {
-  const usersData = stats?.dailyUsers || [];
-  const questionsData = stats?.dailyQuestions || [];
-
-  const chartCard = (title, icon, data, color) => (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`p-2 bg-${color}-100 rounded-lg`}>{icon}</div>
-        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-      </div>
-      <div style={{ width: "100%", height: 250 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#a855f7"} strokeWidth={2} dot={false} isAnimationActive={true} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      {chartCard("Daily Users", <Users className="w-5 h-5 text-blue-600" />, usersData, "blue")}
-      {chartCard("Daily Questions", <HelpCircle className="w-5 h-5 text-purple-600" />, questionsData, "purple")}
-    </div>
-  );
-});
+const AdminCharts = memo(({ stats }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+    <LineChartCard
+      title="Daily Users"
+      icon={<Users className="w-5 h-5 text-blue-600" />}
+      data={stats?.dailyUsers || []}
+      color="blue"
+    />
+    <LineChartCard
+      title="Daily Questions"
+      icon={<HelpCircle className="w-5 h-5 text-purple-600" />}
+      data={stats?.dailyQuestions || []}
+      color="purple"
+    />
+  </div>
+));
 
 /* ---------- USER CHARTS ---------- */
-const UserCharts = memo(({ stats }) => {
-  const userQuestionsData = stats?.dailyUserQuestions || [];
-  const bookmarksData = stats?.dailyBookmarks || [];
-
-  const chartCard = (title, icon, data, color) => (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
-      <div className="flex items-center gap-3 mb-3">
-        <div className={`p-2 bg-${color}-100 rounded-lg`}>{icon}</div>
-        <h3 className="text-xl font-bold text-slate-800">{title}</h3>
-      </div>
-      <div style={{ width: "100%", height: 250 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            <Line type="monotone" dataKey="count" stroke={color === "blue" ? "#3b82f6" : "#10b981"} strokeWidth={2} dot={false} isAnimationActive={true} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-      {chartCard("My Questions Over Time", <HelpCircle className="w-5 h-5 text-blue-600" />, userQuestionsData, "blue")}
-      {chartCard("My Bookmarks Over Time", <Bookmark className="w-5 h-5 text-green-600" />, bookmarksData, "green")}
-    </div>
-  );
-});
+const UserCharts = memo(({ stats }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+    <LineChartCard
+      title="My Questions Over Time"
+      icon={<HelpCircle className="w-5 h-5 text-blue-600" />}
+      data={stats?.dailyUserQuestions || []}
+      color="blue"
+    />
+    <LineChartCard
+      title="My Bookmarks Over Time"
+      icon={<Bookmark className="w-5 h-5 text-green-600" />}
+      data={stats?.dailyBookmarks || []}
+      color="green"
+    />
+  </div>
+));
