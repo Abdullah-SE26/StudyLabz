@@ -9,84 +9,107 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  REJECTED
+}
+
 model User {
-  id                Int        @id @default(autoincrement())
-  email             String     @unique
-  role              String     @default("user")
-  studentId         String?    @unique
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  role              String    @default("user")
+  studentId         String?   @unique
   name              String?
   magicToken        String?
   magicTokenExpiry  DateTime?
   lastMagicLinkSent DateTime?
-  avatar            String?    @default("")
-  bio               String?    @db.VarChar(160)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  avatar            String?   @default("")
+  bio               String?   @db.VarChar(160)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  blockedUntil      DateTime?  // <-- new for blocking/ban
-  lastLogin         DateTime?  // <-- optional for last login
-  sessionVersion    Int        @default(0)  // optional forced logout
+  blockedUntil   DateTime?
+  lastLogin      DateTime?
+  sessionVersion Int       @default(0)
 
-  comments          Comment[]
-  createdCourses    Course[]
-  createdQuestions  Question[] @relation("CreatedBy")
-  likedComments     Comment[]  @relation("CommentLikes")
-  reportedComments  Comment[]  @relation("CommentReports")
-  likedQuestions    Question[] @relation("QuestionLikes")
-  reportedQuestions Question[] @relation("QuestionReports")
-  bookmarks         Question[] @relation("UserBookmarks")
+  comments         Comment[]
+  createdCourses   Course[]
+  createdQuestions Question[] @relation("CreatedBy")
+  likedComments    Comment[]  @relation("CommentLikes")
+  likedQuestions   Question[] @relation("QuestionLikes")
+  bookmarks        Question[] @relation("UserBookmarks")
+  reports          Report[]
 }
 
-
 model Question {
-  id           Int       @id @default(autoincrement())
-  type         String
-  text         String
-  options      Json?
-  createdById  Int
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  courseId     Int
-  marks        Int
-  image        String?
-  examType     String?  
+  id          Int      @id @default(autoincrement())
+  type        String
+  text        String
+  options     Json?
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  courseId    Int
+  marks       Int
+  image       String?
+  examType    String?
 
-  comments     Comment[]
-  course       Course    @relation(fields: [courseId], references: [id])
+  comments     Comment[] // <- array side: no onDelete
+  course       Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdBy    User      @relation("CreatedBy", fields: [createdById], references: [id])
   likedBy      User[]    @relation("QuestionLikes")
-  reportedBy   User[]    @relation("QuestionReports")
+  reports      Report[]  @relation("QuestionReports")
   bookmarkedBy User[]    @relation("UserBookmarks")
 }
 
 model Comment {
-  id              Int       @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   text            String
   questionId      Int
   userId          Int
   parentCommentId Int?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
-  replies         Comment[] @relation("CommentReplies")
-  question        Question  @relation(fields: [questionId], references: [id])
-  user            User      @relation(fields: [userId], references: [id])
-  likedBy         User[]    @relation("CommentLikes")
-  reportedBy      User[]    @relation("CommentReports")
+  parentComment Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id])
+  replies       Comment[] @relation("CommentReplies")
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id])
+  likedBy       User[]    @relation("CommentLikes")
+  reports       Report[]  @relation("CommentReports")
 }
 
 model Course {
-  id          Int        @id @default(autoincrement())
-  name        String     @unique
-  code        String?    @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  code        String?  @unique
   description String?
   createdById Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   tags        String[]
   image       String?
 
-  createdBy   User       @relation(fields: [createdById], references: [id])
-  questions   Question[]
+  createdBy User       @relation(fields: [createdById], references: [id])
+  questions Question[] // <- array side: no onDelete
+}
+
+model Report {
+  id           Int          @id @default(autoincrement())
+  reportedById Int
+  questionId   Int?
+  commentId    Int?
+  reason       String
+  description  String? // optional extra info by user
+  status       ReportStatus @default(PENDING)
+  actionTaken  String? // what admin did (e.g. "question removed", "warning issued")
+  createdAt    DateTime     @default(now())
+  resolvedAt   DateTime?
+
+  // relations
+  reportedBy User      @relation(fields: [reportedById], references: [id])
+  question   Question? @relation("QuestionReports", fields: [questionId], references: [id])
+  comment    Comment?  @relation("CommentReports", fields: [commentId], references: [id])
 }
