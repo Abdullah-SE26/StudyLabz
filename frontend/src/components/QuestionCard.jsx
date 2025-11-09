@@ -15,17 +15,19 @@ import toast from "react-hot-toast";
 import CommentsSection from "./CommentsSection";
 import { useStore } from "../store/authStore";
 
+import ReportModal from "./ReportModal"; // Import the ReportModal
+
 const QuestionCard = ({
   question,
   onToggleLike,
   onToggleBookmark,
-  onReport,
 }) => {
   const user = useStore((state) => state.user);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(
     question.commentsCount || 0
   );
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false); // State for report modal
 
   const liked = question.likedBy?.some((u) => u.id === user?.id);
   const bookmarked = question.bookmarkedBy?.some((u) => u.id === user?.id);
@@ -236,6 +238,23 @@ At the end, please solve the following problem:
     }
   };
 
+  const handleOpenReportModal = () => {
+    if (!user) {
+      toast.error("You need to be logged in to report a question.");
+      return;
+    }
+    setIsReportModalOpen(true);
+  };
+
+  const handleCloseReportModal = () => {
+    setIsReportModalOpen(false);
+  };
+
+  const handleReportSuccess = () => {
+    // Optionally, you can add some logic here after a report is successfully submitted
+    // e.g., disable the report button for this question for the current user
+  };
+
   return (
     <div className=" bg-sf-gradient border-theme shadow-lg rounded-xl max-w-2xl mx-auto mb-6 overflow-hidden transition hover:shadow-xl">
       {/* Header */}
@@ -260,7 +279,7 @@ At the end, please solve the following problem:
 
         <Tippy content="Report this question" placement="bottom">
           <button
-            onClick={onReport}
+            onClick={handleOpenReportModal} // Use the new handler
             className="text-gray-400 hover:text-red-500 transition cursor-pointer"
           >
             <Flag size={20} />
@@ -381,6 +400,14 @@ At the end, please solve the following problem:
           </div>
         )}
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={handleCloseReportModal}
+        onReportSuccess={handleReportSuccess}
+        questionId={question.id}
+      />
     </div>
   );
 };

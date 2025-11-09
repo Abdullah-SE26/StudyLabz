@@ -4,6 +4,7 @@ import { Heart, Trash2, AlertTriangle, CornerDownRight } from "lucide-react";
 import { useStore } from "../store/authStore";
 import toast from "react-hot-toast";
 import axios from "../../lib/axios";
+import ReportModal from "./ReportModal"; // Import the ReportModal
 
 const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
   const authToken = useStore((state) => state.authToken);
@@ -104,6 +105,7 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
     const [showModal, setShowModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [repliesCount, setRepliesCount] = useState(comment.repliesCount || 0);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false); // State for report modal
 
     const handleLike = async () => {
       if (!authToken) return toast.error("You must be logged in");
@@ -141,18 +143,21 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       }
     };
 
-    const handleReport = async () => {
-      if (!authToken) return toast.error("You must be logged in");
-      try {
-        await axios.patch(
-          `/comments/${comment.id}/report`,
-          {},
-          { headers: { Authorization: `Bearer ${authToken}` } }
-        );
-        toast.success("Reported comment");
-      } catch {
-        toast.error("Failed to report comment");
+    const handleReport = () => {
+      if (!user) {
+        toast.error("You need to be logged in to report a comment.");
+        return;
       }
+      setIsReportModalOpen(true);
+    };
+
+    const handleCloseReportModal = () => {
+      setIsReportModalOpen(false);
+    };
+
+    const handleReportSuccess = () => {
+      // Optionally, you can add some logic here after a report is successfully submitted
+      // e.g., disable the report button for this comment for the current user
     };
 
     const submitReply = async () => {
@@ -279,6 +284,14 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
             </div>
           </div>
         )}
+
+        {/* Report Modal for Comments */}
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={handleCloseReportModal}
+          onReportSuccess={handleReportSuccess}
+          commentId={comment.id}
+        />
       </div>
     );
   };

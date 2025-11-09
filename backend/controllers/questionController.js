@@ -43,7 +43,7 @@ export const getQuestions = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reportedBy: true, comments: true } },
+          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
         },
         orderBy,
         skip,
@@ -55,7 +55,7 @@ export const getQuestions = async (req, res, next) => {
     const formatted = questions.map(q => ({
       ...q,
       likesCount: q._count.likedBy,
-      reportsCount: q._count.reportedBy,
+      reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
       creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
@@ -74,7 +74,6 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
-
 // ----------------------------- 
 // GET /questions/:id 
 // -----------------------------
@@ -85,26 +84,11 @@ export const getQuestionById = async (req, res, next) => {
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        createdBy: {
-          select: {
-            id: true,
-            studentId: true,
-            name: true,
-            email: true,
-          },
-        },
+        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
-        course: {
-          select: { id: true, name: true, tags: true },
-        },
-        _count: {
-          select: {
-            likedBy: true,
-            reportedBy: true,
-            comments: true,
-          },
-        },
+        course: { select: { id: true, name: true, tags: true } },
+        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
       },
     });
 
@@ -114,22 +98,17 @@ export const getQuestionById = async (req, res, next) => {
     res.status(200).json({
       ...question,
       likesCount: question._count.likedBy,
-      reportsCount: question._count.reportedBy,
+      reportsCount: question._count.reports,
       commentsCount: question._count.comments,
       bookmarksCount: question.bookmarkedBy.length,
-      creatorName:
-        question.createdBy?.studentId ||
-        question.createdBy?.name ||
-        question.createdBy?.email ||
-        "Unknown",
+      creatorName: question.createdBy?.studentId || question.createdBy?.name || question.createdBy?.email || "Unknown",
       tags: question.course?.tags || [],
-      examType: question.examType || null, // ✅ new field replacing exam.title
+      examType: question.examType || null,
     });
   } catch (err) {
     next(err);
   }
 };
-
 
 // -----------------------------
 // GET /courses/:courseId/questions
@@ -173,7 +152,7 @@ export const getQuestionsByCourse = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reportedBy: true, comments: true } },
+          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
         },
         orderBy,
         skip,
@@ -185,7 +164,7 @@ export const getQuestionsByCourse = async (req, res, next) => {
     const formatted = questions.map(q => ({
       ...q,
       likesCount: q._count.likedBy,
-      reportsCount: q._count.reportedBy,
+      reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
       creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
@@ -280,10 +259,12 @@ export const createQuestion = async (req, res, next) => {
   }
 };
 
-// get bookmarks of the user
+// -----------------------------
+// GET user bookmarks
+// -----------------------------
 export const getUserBookmarks = async (req, res, next) => {
   try {
-    const userId = req.user.id; // get from auth middleware
+    const userId = req.user.id;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -296,7 +277,7 @@ export const getUserBookmarks = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reportedBy: true, comments: true } },
+          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -308,7 +289,7 @@ export const getUserBookmarks = async (req, res, next) => {
     const formatted = questions.map(q => ({
       ...q,
       likesCount: q._count.likedBy,
-      reportsCount: q._count.reportedBy,
+      reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
       creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
@@ -327,11 +308,9 @@ export const getUserBookmarks = async (req, res, next) => {
   }
 };
 
-
 // -----------------------------
 // LIKE / BOOKMARK / REPORT / DELETE
 // -----------------------------
-
 export const toggleLikeQuestion = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -359,7 +338,7 @@ export const toggleLikeQuestion = async (req, res, next) => {
         bookmarkedBy: { select: { id: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reportedBy: true, comments: true } },
+        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
       },
     });
 
@@ -369,7 +348,7 @@ export const toggleLikeQuestion = async (req, res, next) => {
       data: {
         ...updated,
         likesCount: updated._count.likedBy,
-        reportsCount: updated._count.reportedBy,
+        reportsCount: updated._count.reports,
         commentsCount: updated._count.comments,
         bookmarksCount: updated.bookmarkedBy.length,
         creatorName:
@@ -412,7 +391,7 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
         bookmarkedBy: { select: { id: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reportedBy: true, comments: true } },
+        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
       },
     });
 
@@ -422,7 +401,7 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
       data: {
         ...updated,
         likesCount: updated._count.likedBy,
-        reportsCount: updated._count.reportedBy,
+        reportsCount: updated._count.reports,
         commentsCount: updated._count.comments,
         bookmarksCount: updated.bookmarkedBy.length,
         creatorName:

@@ -1,7 +1,7 @@
 import prisma from "../prismaClient.js";
 
 // -----------------------------
-// Create comment or reply
+// Create a comment or reply
 // POST /api/comments
 // -----------------------------
 export const createComment = async (req, res, next) => {
@@ -10,13 +10,11 @@ export const createComment = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!questionId || !text?.trim()) {
-      return res.status(400).json({ error: "Question and text are required" });
+      return res.status(400).json({ success: false, error: "Question and text are required" });
     }
 
-    const question = await prisma.question.findUnique({
-      where: { id: Number(questionId) },
-    });
-    if (!question) return res.status(404).json({ error: "Question not found" });
+    const question = await prisma.question.findUnique({ where: { id: Number(questionId) } });
+    if (!question) return res.status(404).json({ success: false, error: "Question not found" });
 
     const comment = await prisma.comment.create({
       data: {
@@ -26,16 +24,16 @@ export const createComment = async (req, res, next) => {
         parentCommentId: parentCommentId ? Number(parentCommentId) : null,
       },
       include: {
-        user: { select: { id: true, name: true, avatar: true } },
+        user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
         reportedBy: true,
       },
     });
 
-    // Include replies count (initially 0)
-    const commentWithCount = { ...comment, repliesCount: 0 };
-
-    res.status(201).json(commentWithCount);
+    res.status(201).json({ 
+      success: true,
+      data: { ...comment, repliesCount: 0 } 
+    });
   } catch (err) {
     console.error("Error creating comment:", err);
     next(err);
@@ -43,19 +41,18 @@ export const createComment = async (req, res, next) => {
 };
 
 // -----------------------------
-// Get all top-level comments for a question (with replies count)
+// Get top-level comments for a question
 // GET /api/questions/:questionId/comments
 // -----------------------------
 export const getCommentsByQuestion = async (req, res, next) => {
   try {
     const questionId = Number(req.params.questionId);
 
-    // 1️⃣ Fetch top-level comments
     const comments = await prisma.comment.findMany({
       where: { questionId, parentCommentId: null },
       orderBy: { createdAt: "asc" },
       include: {
-        user: { select: { id: true, studentId: true, avatar: true, name: true } },
+        user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
         reportedBy: true,
       },
@@ -63,7 +60,6 @@ export const getCommentsByQuestion = async (req, res, next) => {
 
     const commentIds = comments.map(c => c.id);
 
-    // 2️⃣ Fetch replies count for all comments in a single query
     const counts = await prisma.comment.groupBy({
       by: ["parentCommentId"],
       _count: { parentCommentId: true },
@@ -72,35 +68,32 @@ export const getCommentsByQuestion = async (req, res, next) => {
 
     const countMap = Object.fromEntries(counts.map(c => [c.parentCommentId, c._count.parentCommentId]));
 
-    // 3️⃣ Add repliesCount to each comment
     const commentsWithCount = comments.map(c => ({
       ...c,
       repliesCount: countMap[c.id] || 0,
     }));
 
-    res.json(commentsWithCount);
+    res.status(200).json({ success: true, data: commentsWithCount });
   } catch (err) {
     console.error("Error fetching comments:", err);
-    res.status(500).json({ error: "Failed to fetch comments" });
+    next(err);
   }
 };
 
-
 // -----------------------------
-// Get direct replies of a comment (for lazy loading)
+// Get replies of a comment (lazy loading)
 // GET /api/comments?parentCommentId=:id
 // -----------------------------
 export const getRepliesByComment = async (req, res, next) => {
   try {
     const parentCommentId = Number(req.query.parentCommentId);
-    if (!parentCommentId) return res.status(400).json({ error: "parentCommentId is required" });
+    if (!parentCommentId) return res.status(400).json({ success: false, error: "parentCommentId is required" });
 
-    // 1️⃣ Fetch direct replies
     const replies = await prisma.comment.findMany({
       where: { parentCommentId },
       orderBy: { createdAt: "asc" },
       include: {
-        user: { select: { id: true, studentId: true, avatar: true, name: true } },
+        user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
         reportedBy: true,
       },
@@ -108,7 +101,6 @@ export const getRepliesByComment = async (req, res, next) => {
 
     const replyIds = replies.map(r => r.id);
 
-    // 2️⃣ Fetch replies count for these replies in one query
     const counts = await prisma.comment.groupBy({
       by: ["parentCommentId"],
       _count: { parentCommentId: true },
@@ -117,19 +109,17 @@ export const getRepliesByComment = async (req, res, next) => {
 
     const countMap = Object.fromEntries(counts.map(c => [c.parentCommentId, c._count.parentCommentId]));
 
-    // 3️⃣ Add repliesCount
     const repliesWithCount = replies.map(r => ({
       ...r,
       repliesCount: countMap[r.id] || 0,
     }));
 
-    res.json(repliesWithCount);
+    res.status(200).json({ success: true, data: repliesWithCount });
   } catch (err) {
     console.error("Error fetching replies:", err);
-    res.status(500).json({ error: "Failed to fetch replies" });
+    next(err);
   }
 };
-
 
 // -----------------------------
 // Toggle like/unlike comment
@@ -144,9 +134,9 @@ export const toggleLikeComment = async (req, res, next) => {
       where: { id: commentId },
       include: { likedBy: true },
     });
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (!comment) return res.status(404).json({ success: false, error: "Comment not found" });
 
-    const alreadyLiked = comment.likedBy.some((u) => u.id === userId);
+    const alreadyLiked = comment.likedBy.some(u => u.id === userId);
 
     const updatedComment = await prisma.comment.update({
       where: { id: commentId },
@@ -156,7 +146,7 @@ export const toggleLikeComment = async (req, res, next) => {
       include: { likedBy: true },
     });
 
-    res.json({ likesCount: updatedComment.likedBy.length });
+    res.status(200).json({ success: true, likesCount: updatedComment.likedBy.length });
   } catch (err) {
     console.error("Error toggling like:", err);
     next(err);
@@ -176,9 +166,9 @@ export const reportComment = async (req, res, next) => {
       where: { id: commentId },
       include: { reportedBy: true },
     });
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (!comment) return res.status(404).json({ success: false, error: "Comment not found" });
 
-    const alreadyReported = comment.reportedBy.some((u) => u.id === userId);
+    const alreadyReported = comment.reportedBy.some(u => u.id === userId);
     if (!alreadyReported) {
       await prisma.comment.update({
         where: { id: commentId },
@@ -186,7 +176,7 @@ export const reportComment = async (req, res, next) => {
       });
     }
 
-    res.json({ message: "Comment reported successfully" });
+    res.status(200).json({ success: true, message: "Comment reported successfully" });
   } catch (err) {
     console.error("Error reporting comment:", err);
     next(err);
@@ -194,7 +184,7 @@ export const reportComment = async (req, res, next) => {
 };
 
 // -----------------------------
-// Delete comment (recursive)
+// Delete comment and its replies (recursive)
 // DELETE /api/comments/:commentId
 // -----------------------------
 export const deleteComment = async (req, res, next) => {
@@ -204,13 +194,12 @@ export const deleteComment = async (req, res, next) => {
     const role = req.user.role;
 
     const comment = await prisma.comment.findUnique({ where: { id: commentId } });
-    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (!comment) return res.status(404).json({ success: false, error: "Comment not found" });
 
     if (comment.userId !== userId && role !== "admin") {
-      return res.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ success: false, error: "Unauthorized" });
     }
 
-    // Recursive delete helper
     const deleteRecursively = async (id) => {
       const replies = await prisma.comment.findMany({ where: { parentCommentId: id } });
       for (let r of replies) {
@@ -221,7 +210,7 @@ export const deleteComment = async (req, res, next) => {
 
     await deleteRecursively(commentId);
 
-    res.json({ message: "Comment and all its replies deleted" });
+    res.status(200).json({ success: true, message: "Comment and all its replies deleted" });
   } catch (err) {
     console.error("Error deleting comment:", err);
     next(err);

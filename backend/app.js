@@ -7,6 +7,7 @@ import contactRoutes from "./routes/contact.js";
 import courseRoutes from "./routes/courses.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import usersRoutes from "./routes/users.js";
+import reportRoutes from "./routes/reports.js"; // Import the new reports route
 
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./routes/uploadthing.js";
@@ -43,8 +44,8 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", usersRoutes);
-app.use("/api/comments", commentRoutes);         
-
+app.use("/api/comments", commentRoutes);
+app.use("/api/reports", reportRoutes); // <-- Add this line
 
 // UploadThing route
 app.use(
@@ -56,4 +57,5 @@ app.use(
     },
   })
 );
+
 export default app;
