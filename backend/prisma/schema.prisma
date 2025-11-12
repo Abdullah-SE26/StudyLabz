@@ -40,7 +40,9 @@ model User {
   likedComments    Comment[]  @relation("CommentLikes")
   likedQuestions   Question[] @relation("QuestionLikes")
   bookmarks        Question[] @relation("UserBookmarks")
-  reports          Report[]
+
+  reportsMade     Report[] @relation("ReportsMade")
+  reportsResolved Report[] @relation("ReportsResolved")
 }
 
 model Question {
@@ -102,14 +104,15 @@ model Report {
   questionId   Int?
   commentId    Int?
   reason       String
-  description  String? // optional extra info by user
+  description  String?
   status       ReportStatus @default(PENDING)
-  actionTaken  String? // what admin did (e.g. "question removed", "warning issued")
+  actionTaken  String?
   createdAt    DateTime     @default(now())
   resolvedAt   DateTime?
 
-  // relations
-  reportedBy User      @relation(fields: [reportedById], references: [id])
-  question   Question? @relation("QuestionReports", fields: [questionId], references: [id])
-  comment    Comment?  @relation("CommentReports", fields: [commentId], references: [id])
+  reportedBy   User      @relation("ReportsMade", fields: [reportedById], references: [id])
+  question     Question? @relation("QuestionReports", fields: [questionId], references: [id])
+  comment      Comment?  @relation("CommentReports", fields: [commentId], references: [id])
+  resolvedById Int?
+  resolvedBy   User?     @relation("ReportsResolved", fields: [resolvedById], references: [id])
 }

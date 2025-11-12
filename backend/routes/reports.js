@@ -1,25 +1,21 @@
-import express from 'express';
-import { authMiddleware, isAdmin } from '../middleware/authMiddleware.js';
+import express from "express";
+import { authMiddleware, isAdmin } from "../middleware/authMiddleware.js";
 import {
   createReport,
   getAllReports,
   updateReportStatus,
-} from '../controllers/reportController.js';
+} from "../controllers/reportController.js";
 
 const router = express.Router();
 
 // Protect all routes after this middleware
-router.use(authMiddleware); // Authenticated users only
+router.use(authMiddleware);
 
-// Routes for reports
-router.route('/')
-  .post(createReport); // Any authenticated user can create a report
+// Regular users
+router.post("/", createReport);
 
-// Admin-only routes
-router.route('/admin')
-  .get(isAdmin, getAllReports); // Admin access
-
-router.route('/:id')
-  .put(isAdmin, updateReportStatus); // Admin access
+// Admin routes
+router.get("/admin", isAdmin, getAllReports);
+router.put("/:id", isAdmin, updateReportStatus);
 
 export default router;

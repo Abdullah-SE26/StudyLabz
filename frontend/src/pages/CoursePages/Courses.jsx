@@ -154,7 +154,7 @@ const Courses = () => {
 
       {loading && (
         <div className="flex flex-col items-center justify-center mt-10 gap-4">
-          <span className="loading loading-bars loading-xl text-info"></span>
+          <span className="loading loading-bars loading-xl text-info bg-sf-green"></span>
         </div>
       )}
 

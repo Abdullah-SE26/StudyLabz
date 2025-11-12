@@ -21,7 +21,7 @@ const ReportModal = ({ isOpen, onClose, onReportSuccess, questionId, commentId }
         payload.commentId = commentId;
       }
 
-      await axios.post('/api/reports', payload);
+      await axios.post('/reports', payload);
       toast.success('Report submitted successfully!');
       onReportSuccess();
       onClose();
