@@ -124,3 +124,21 @@ export const updateReportStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to update report status.", error: error.message });
   }
 };
+
+// -----------------------------
+// Delete a report (Admin only)
+// -----------------------------
+export const deleteReport = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.report.delete({
+      where: { id: parseInt(id, 10) },
+    });
+
+    return res.status(200).json({ success: true, message: "Report deleted successfully." });
+  } catch (error) {
+    console.error(`Error deleting report ${id}:`, error);
+    return res.status(500).json({ success: false, message: "Failed to delete report.", error: error.message });
+  }
+};

@@ -4,6 +4,7 @@ import {
   createReport,
   getAllReports,
   updateReportStatus,
+  deleteReport,
 } from "../controllers/reportController.js";
 
 const router = express.Router();
@@ -17,5 +18,6 @@ router.post("/", createReport);
 // Admin routes
 router.get("/admin", isAdmin, getAllReports);
 router.put("/:id", isAdmin, updateReportStatus);
+router.delete("/:id", isAdmin, deleteReport);
 
 export default router;
