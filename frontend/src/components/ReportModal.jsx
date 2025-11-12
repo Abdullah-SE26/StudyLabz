@@ -55,73 +55,74 @@ const ReportModal = ({ isOpen, onClose, onReportSuccess, questionId, commentId }
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 backdrop-blur-sm">
-      {/* Removed the semi-black shade, only using blur now */}
-      <div className="modal modal-open w-full max-w-md">
-        <div className="modal-box p-6 bg-base-100 rounded-lg shadow-lg">
-          <h2 className="text-xl font-bold mb-4">
-            Report {questionId ? "Question" : "Comment"}
-          </h2>
-          <p className="mb-4 text-gray-600">
-            Select the reason and optionally provide more details:
-          </p>
+    <div className="fixed inset-0 flex justify-center items-center z-50">
+      {/* Only backdrop blur, no dark overlay */}
+      <div className="absolute inset-0 backdrop-blur-sm"></div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              {availableReasons.map((reason) => (
-                <button
-                  type="button"
-                  key={reason}
-                  className={`btn btn-outline text-left ${
-                    selectedReason === reason ? "btn-primary" : ""
-                  }`}
-                  onClick={() => setSelectedReason(reason)}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
+      {/* Modal content */}
+      <div className="relative w-full max-w-md bg-base-100 rounded-lg shadow-lg p-6 z-10">
+        <h2 className="text-xl font-bold mb-4">
+          Report {questionId ? "Question" : "Comment"}
+        </h2>
+        <p className="mb-4 text-gray-600">
+          Select the reason and optionally provide more details:
+        </p>
 
-            {selectedReason === "Other" && (
-              <textarea
-                className="textarea textarea-bordered w-full"
-                rows={3}
-                placeholder="Write your custom reason..."
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-                required
-              />
-            )}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            {availableReasons.map((reason) => (
+              <button
+                type="button"
+                key={reason}
+                className={`btn btn-outline text-left ${
+                  selectedReason === reason ? "btn-primary" : ""
+                }`}
+                onClick={() => setSelectedReason(reason)}
+              >
+                {reason}
+              </button>
+            ))}
+          </div>
 
+          {selectedReason === "Other" && (
             <textarea
               className="textarea textarea-bordered w-full"
               rows={3}
-              placeholder="Additional description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Write your custom reason..."
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
+              required
             />
+          )}
 
-            <div className="modal-action justify-end gap-2">
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={onClose}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={
-                  !selectedReason || (selectedReason === "Other" && !customReason.trim())
-                }
-              >
-                {loading ? "Submitting..." : "Submit Report"}
-              </button>
-            </div>
-          </form>
-        </div>
+          <textarea
+            className="textarea textarea-bordered w-full"
+            rows={3}
+            placeholder="Additional description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                !selectedReason || (selectedReason === "Other" && !customReason.trim())
+              }
+            >
+              {loading ? "Submitting..." : "Submit Report"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

@@ -24,51 +24,55 @@ const ActionTakenModal = ({ isOpen, onClose, onSubmit, reportId }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex justify-center items-center z-50 backdrop-blur-sm bg-white/20">
-      <div className="modal modal-open w-full max-w-md bg-base-100 p-6 rounded-lg shadow-xl">
-        <div className="modal-box">
-          <h2 className="text-xl font-bold mb-4">Action Taken</h2>
-          <p className="mb-4">
-            Select the action you have taken to resolve this report:
-          </p>
+    <div className="fixed inset-0 flex justify-center items-center z-50">
+      {/* Only backdrop blur, no black overlay */}
+      <div className="absolute inset-0 backdrop-blur-sm"></div>
 
-          <div className="flex flex-col gap-2 mb-4">
-            {prefilledActions.map((action) => (
-              <button
-                key={action}
-                className={`btn btn-outline text-left ${
-                  selectedAction === action ? "btn-primary" : ""
-                }`}
-                onClick={() => setSelectedAction(action)}
-              >
-                {action}
-              </button>
-            ))}
-          </div>
+      {/* Modal content */}
+      <div className="relative w-full max-w-md bg-base-100 rounded-lg shadow-xl p-6 z-10">
+        <h2 className="text-xl font-bold mb-4">Action Taken</h2>
+        <p className="mb-4">
+          Select the action you have taken to resolve this report:
+        </p>
 
-          {/* Show custom textarea if "Other" is selected */}
-          {selectedAction === "Other" && (
-            <textarea
-              className="textarea textarea-bordered w-full mb-4"
-              rows="4"
-              value={customAction}
-              onChange={(e) => setCustomAction(e.target.value)}
-              placeholder="Describe your custom action here..."
-            ></textarea>
-          )}
-
-          <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="btn btn-ghost">
-              Cancel
-            </button>
+        <div className="flex flex-col gap-2 mb-4">
+          {prefilledActions.map((action) => (
             <button
-              onClick={handleSubmit}
-              className="btn btn-primary"
-              disabled={!selectedAction || (selectedAction === "Other" && !customAction.trim())}
+              key={action}
+              className={`btn btn-outline text-left ${
+                selectedAction === action ? "btn-primary" : ""
+              }`}
+              onClick={() => setSelectedAction(action)}
             >
-              Submit
+              {action}
             </button>
-          </div>
+          ))}
+        </div>
+
+        {/* Show custom textarea if "Other" is selected */}
+        {selectedAction === "Other" && (
+          <textarea
+            className="textarea textarea-bordered w-full mb-4"
+            rows="4"
+            value={customAction}
+            onChange={(e) => setCustomAction(e.target.value)}
+            placeholder="Describe your custom action here..."
+          ></textarea>
+        )}
+
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="btn btn-ghost">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="btn btn-primary"
+            disabled={
+              !selectedAction || (selectedAction === "Other" && !customAction.trim())
+            }
+          >
+            Submit
+          </button>
         </div>
       </div>
     </div>

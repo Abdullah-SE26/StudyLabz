@@ -15,7 +15,6 @@ const ManageReports = () => {
 
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [sortOrder, setSortOrder] = useState("desc");
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -72,15 +71,19 @@ const ManageReports = () => {
     }
   };
 
-  // Filtering and Sorting
+  // Filtering, Sorting, and pushing resolved reports to the bottom
   const filteredAndSortedReports = useMemo(() => {
-    let result = reports;
+    let result = [...reports];
 
     if (filterStatus !== "ALL") {
       result = result.filter((report) => report.status === filterStatus);
     }
 
     result.sort((a, b) => {
+      // Push resolved to bottom
+      if (a.status === "RESOLVED" && b.status !== "RESOLVED") return 1;
+      if (b.status === "RESOLVED" && a.status !== "RESOLVED") return -1;
+
       const dateA = new Date(a.createdAt);
       const dateB = new Date(b.createdAt);
       return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
@@ -96,23 +99,53 @@ const ManageReports = () => {
     currentPage * pageSize
   );
 
+  // Loading skeletons
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <span className="loading loading-bars loading-xl text-info bg-sf-green"></span>
+      <div className="flex flex-col gap-4 p-8">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-12 bg-gray-200 rounded animate-pulse w-full"></div>
+        ))}
+        <p className="text-gray-500 text-center mt-2">Loading reports...</p>
       </div>
     );
   }
 
-  if (error)
+  if (error) {
     return <div className="p-4 text-red-500">Error: {error.message}</div>;
+  }
+
+  if (reports.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        <p className="text-lg font-semibold mb-2">No reports available.</p>
+        <p>Reports will appear here once users submit them.</p>
+      </div>
+    );
+  }
+
+  const statusBadge = (status) => {
+    const colors = {
+      PENDING: "bg-yellow-500",
+      REVIEWED: "bg-blue-500",
+      RESOLVED: "bg-green-500",
+      REJECTED: "bg-red-500",
+    };
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-white text-sm ${colors[status] || "bg-gray-500"}`}
+      >
+        {status}
+      </span>
+    );
+  };
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Manage Reports</h1>
 
       {/* Filters and Sorters */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
         <div>
           <label htmlFor="status-filter" className="mr-2 font-semibold">
             Filter by Status:
@@ -146,117 +179,114 @@ const ManageReports = () => {
         </div>
       </div>
 
-      {reports.length === 0 ? (
-        <p>No reports found.</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b">ID</th>
-                  <th className="py-2 px-4 border-b">Reported By</th>
-                  <th className="py-2 px-4 border-b">Type</th>
-                  <th className="py-2 px-4 border-b">Content</th>
-                  <th className="py-2 px-4 border-b">Reason</th>
-                  <th className="py-2 px-4 border-b">Description</th>
-                  <th className="py-2 px-4 border-b">Status</th>
-                  <th className="py-2 px-4 border-b">Action Taken</th>
-                  <th className="py-2 px-4 border-b">Resolved By</th>
-                  <th className="py-2 px-4 border-b">Created At</th>
-                  <th className="py-2 px-4 border-b">Resolved At</th>
-                  <th className="py-2 px-4 border-b">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedReports.map((report) => (
-                  <tr
-                    key={report.id}
-                    className={`hover:bg-gray-50 ${
-                      updatingReportId === report.id ? "opacity-50" : ""
-                    }`}
-                  >
-                    <td className="py-2 px-4 border-b">{report.id}</td>
-                    <td className="py-2 px-4 border-b">
-                      {report.reportedBy?.name || report.reportedBy?.email || "N/A"}
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {report.questionId ? "Question" : report.commentId ? "Comment" : "N/A"}
-                    </td>
-                    <td className="py-2 px-4 border-b max-w-xs truncate">
-                      {report.questionId && report.question ? (
-                        <Link
-                          to={`/questions/${report.question.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          <span dangerouslySetInnerHTML={{ __html: report.question.text }} />
-                        </Link>
-                      ) : report.commentId && report.comment ? (
-                        <Link
-                          to={`/questions/${report.comment.questionId}#comment-${report.comment.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          {report.comment.text}
-                        </Link>
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
-                    <td className="py-2 px-4 border-b">{report.reason}</td>
-                    <td className="py-2 px-4 border-b max-w-xs truncate">{report.description || "N/A"}</td>
-                    <td className="py-2 px-4 border-b">{report.status}</td>
-                    <td className="py-2 px-4 border-b max-w-xs truncate">{report.actionTaken || "N/A"}</td>
-                    <td className="py-2 px-4 border-b">{report.resolvedBy?.name || "N/A"}</td>
-                    <td className="py-2 px-4 border-b">{new Date(report.createdAt).toLocaleString()}</td>
-                    <td className="py-2 px-4 border-b">{report.resolvedAt ? new Date(report.resolvedAt).toLocaleString() : "N/A"}</td>
-                    <td className="py-2 px-4 border-b">
-                      {updatingReportId === report.id ? (
-                        <span className="loading loading-spinner"></span>
-                      ) : (
-                        <select
-                          value={report.status}
-                          onChange={(e) =>
-                            handleStatusChange(report.id, e.target.value)
-                          }
-                          className="border rounded p-1"
-                        >
-                          <option value="PENDING">PENDING</option>
-                          <option value="REVIEWED">REVIEWED</option>
-                          <option value="RESOLVED">RESOLVED</option>
-                          <option value="REJECTED">REJECTED</option>
-                        </select>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <div className="overflow-x-auto border rounded-lg shadow-sm">
+        <table className="min-w-full bg-white">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="py-2 px-4 border-b">ID</th>
+              <th className="py-2 px-4 border-b">Reported By</th>
+              <th className="py-2 px-4 border-b">Type</th>
+              <th className="py-2 px-4 border-b">Content</th>
+              <th className="py-2 px-4 border-b">Reason</th>
+              <th className="py-2 px-4 border-b">Description</th>
+              <th className="py-2 px-4 border-b">Status</th>
+              <th className="py-2 px-4 border-b">Action Taken</th>
+              <th className="py-2 px-4 border-b">Resolved By</th>
+              <th className="py-2 px-4 border-b">Created At</th>
+              <th className="py-2 px-4 border-b">Resolved At</th>
+              <th className="py-2 px-4 border-b">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedReports.map((report) => (
+              <tr
+                key={report.id}
+                className={`hover:bg-gray-50 ${
+                  updatingReportId === report.id ? "opacity-50" : ""
+                }`}
+              >
+                <td className="py-2 px-4 border-b">{report.id}</td>
+                <td className="py-2 px-4 border-b">
+                  {report.reportedBy?.name || report.reportedBy?.email || "N/A"}
+                </td>
+                <td className="py-2 px-4 border-b">
+                  {report.questionId ? "Question" : report.commentId ? "Comment" : "N/A"}
+                </td>
+                <td className="py-2 px-4 border-b max-w-xs truncate" title={report.question?.text || report.comment?.text || "N/A"}>
+                  {report.questionId && report.question ? (
+                    <Link
+                      to={`/questions/${report.question.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      <span dangerouslySetInnerHTML={{ __html: report.question.text }} />
+                    </Link>
+                  ) : report.commentId && report.comment ? (
+                    <Link
+                      to={`/questions/${report.comment.questionId}#comment-${report.comment.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {report.comment.text}
+                    </Link>
+                  ) : (
+                    "N/A"
+                  )}
+                </td>
+                <td className="py-2 px-4 border-b">{report.reason}</td>
+                <td className="py-2 px-4 border-b max-w-xs truncate" title={report.description || "N/A"}>
+                  {report.description || "N/A"}
+                </td>
+                <td className="py-2 px-4 border-b">{statusBadge(report.status)}</td>
+                <td className="py-2 px-4 border-b max-w-xs truncate">{report.actionTaken || "N/A"}</td>
+                <td className="py-2 px-4 border-b">{report.resolvedBy?.name || "N/A"}</td>
+                <td className="py-2 px-4 border-b">{new Date(report.createdAt).toLocaleString()}</td>
+                <td className="py-2 px-4 border-b">{report.resolvedAt ? new Date(report.resolvedAt).toLocaleString() : "N/A"}</td>
+                <td className="py-2 px-4 border-b">
+                  {updatingReportId === report.id ? (
+                    <span className="loading loading-spinner"></span>
+                  ) : (
+                    <select
+                      value={report.status}
+                      onChange={(e) =>
+                        handleStatusChange(report.id, e.target.value)
+                      }
+                      className="border rounded p-1"
+                    >
+                      <option value="PENDING">PENDING</option>
+                      <option value="REVIEWED">REVIEWED</option>
+                      <option value="RESOLVED">RESOLVED</option>
+                      <option value="REJECTED">REJECTED</option>
+                    </select>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-          <Pagination
-            totalPages={totalPages}
-            currentPage={currentPage}
-            handlePageChange={(page) => setCurrentPage(page)}
-          />
+      <Pagination
+        totalPages={totalPages}
+        currentPage={currentPage}
+        handlePageChange={(page) => setCurrentPage(page)}
+      />
 
-          <ActionTakenModal
-            isOpen={isModalOpen}
-            onClose={() => {
-              setIsModalOpen(false);
-              setSelectedReport(null);
-            }}
-            onSubmit={(reportId, actionTaken) =>
-              handleSubmitActionTaken(
-                reportId,
-                selectedReport.status,
-                actionTaken
-              )
-            }
-            reportId={selectedReport?.id}
-          />
-        </>
-      )}
+      <ActionTakenModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedReport(null);
+        }}
+        onSubmit={(reportId, actionTaken) =>
+          handleSubmitActionTaken(
+            reportId,
+            selectedReport.status,
+            actionTaken
+          )
+        }
+        reportId={selectedReport?.id}
+      />
     </div>
   );
 };
+
 export default ManageReports;
