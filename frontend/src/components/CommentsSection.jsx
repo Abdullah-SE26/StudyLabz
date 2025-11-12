@@ -30,7 +30,7 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
         `/comments/question/${questionId}`,
         { headers: { Authorization: `Bearer ${authToken}` }, signal: controller.signal }
       );
-      setComments(res.data.map((c) => ({ ...c, replies: [] })));
+      setComments(res.data.data.map((c) => ({ ...c, replies: [] })));
     } catch (err) {
       if (err.name !== "CanceledError") {
         console.error(err);

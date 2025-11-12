@@ -1,94 +1,127 @@
-import React, { useState } from 'react';
-import axios from '../../lib/axios';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import axios from "../../lib/axios";
+import { toast } from "react-hot-toast";
 
 const ReportModal = ({ isOpen, onClose, onReportSuccess, questionId, commentId }) => {
-  const [reason, setReason] = useState('');
-  const [description, setDescription] = useState('');
+  const [selectedReason, setSelectedReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [availableReasons, setAvailableReasons] = useState([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const reasons = [
+      "Inappropriate content",
+      "Spam",
+      "Offensive",
+      "Misinformation",
+      "Providing answers",
+      "Other",
+    ];
+    if (commentId) {
+      setAvailableReasons(reasons.filter((r) => r !== "Providing answers"));
+    } else {
+      setAvailableReasons(reasons);
+    }
+    setSelectedReason("");
+    setCustomReason("");
+    setDescription("");
+  }, [isOpen, commentId]);
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const payload = {
-        reason,
+        reason: selectedReason === "Other" ? customReason : selectedReason,
         description,
       };
-      if (questionId) {
-        payload.questionId = questionId;
-      } else if (commentId) {
-        payload.commentId = commentId;
-      }
+      if (questionId) payload.questionId = questionId;
+      if (commentId) payload.commentId = commentId;
 
-      await axios.post('/reports', payload);
-      toast.success('Report submitted successfully!');
+      await axios.post("/reports", payload);
+      toast.success("Report submitted successfully!");
       onReportSuccess();
       onClose();
     } catch (err) {
-      toast.error('Failed to submit report.');
-      console.error('Error submitting report:', err);
+      toast.error("Failed to submit report.");
+      console.error("Error submitting report:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4">Report {questionId ? 'Question' : 'Comment'}</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="reason" className="block text-gray-700 text-sm font-bold mb-2">
-              Reason for reporting:
-            </label>
-            <select
-              id="reason"
-              className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              required
-            >
-              <option value="">Select a reason</option>
-              <option value="INAPPROPRIATE_CONTENT">Inappropriate Content</option>
-              <option value="SPAM">Spam</option>
-              <option value="OFFENSIVE">Offensive</option>
-              <option value="MISINFORMATION">Misinformation</option>
-              <option value="OTHER">Other</option>
-            </select>
-          </div>
-          <div className="mb-4">
-            <label htmlFor="description" className="block text-gray-700 text-sm font-bold mb-2">
-              Description (optional):
-            </label>
+    <div className="fixed inset-0 flex justify-center items-center z-50 backdrop-blur-sm">
+      {/* Removed the semi-black shade, only using blur now */}
+      <div className="modal modal-open w-full max-w-md">
+        <div className="modal-box p-6 bg-base-100 rounded-lg shadow-lg">
+          <h2 className="text-xl font-bold mb-4">
+            Report {questionId ? "Question" : "Comment"}
+          </h2>
+          <p className="mb-4 text-gray-600">
+            Select the reason and optionally provide more details:
+          </p>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              {availableReasons.map((reason) => (
+                <button
+                  type="button"
+                  key={reason}
+                  className={`btn btn-outline text-left ${
+                    selectedReason === reason ? "btn-primary" : ""
+                  }`}
+                  onClick={() => setSelectedReason(reason)}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            {selectedReason === "Other" && (
+              <textarea
+                className="textarea textarea-bordered w-full"
+                rows={3}
+                placeholder="Write your custom reason..."
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                required
+              />
+            )}
+
             <textarea
-              id="description"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-24"
-              placeholder="Provide more details..."
+              className="textarea textarea-bordered w-full"
+              rows={3}
+              placeholder="Additional description (optional)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-            ></textarea>
-          </div>
-          <div className="flex justify-end gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              disabled={loading}
-            >
-              {loading ? 'Submitting...' : 'Submit Report'}
-            </button>
-          </div>
-        </form>
+            />
+
+            <div className="modal-action justify-end gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={
+                  !selectedReason || (selectedReason === "Other" && !customReason.trim())
+                }
+              >
+                {loading ? "Submitting..." : "Submit Report"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

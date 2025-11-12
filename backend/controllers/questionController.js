@@ -43,7 +43,7 @@ export const getQuestions = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+          _count: { select: { likedBy: true, reports: true, comments: true } }, 
         },
         orderBy,
         skip,
@@ -88,7 +88,7 @@ export const getQuestionById = async (req, res, next) => {
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+        _count: { select: { likedBy: true, reports: true, comments: true } }, 
       },
     });
 
@@ -152,7 +152,7 @@ export const getQuestionsByCourse = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+          _count: { select: { likedBy: true, reports: true, comments: true } },
         },
         orderBy,
         skip,
@@ -277,7 +277,7 @@ export const getUserBookmarks = async (req, res, next) => {
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+          _count: { select: { likedBy: true, reports: true, comments: true } },
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -338,7 +338,7 @@ export const toggleLikeQuestion = async (req, res, next) => {
         bookmarkedBy: { select: { id: true } },
         createdBy: { select: { id: true, studentId: true, name: true, email: true } },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+        _count: { select: { likedBy: true, reports: true, comments: true } }, 
       },
     });
 

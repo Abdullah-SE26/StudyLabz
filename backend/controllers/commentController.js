@@ -26,13 +26,13 @@ export const createComment = async (req, res, next) => {
       include: {
         user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
-        reportedBy: true,
+        reports: true,
       },
     });
 
     res.status(201).json({ 
       success: true,
-      data: { ...comment, repliesCount: 0 } 
+      data: { ...comment, repliesCount: 0, reportsCount: comment.reports.length } 
     });
   } catch (err) {
     console.error("Error creating comment:", err);
@@ -54,7 +54,7 @@ export const getCommentsByQuestion = async (req, res, next) => {
       include: {
         user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
-        reportedBy: true,
+        reports: true,
       },
     });
 
@@ -71,6 +71,7 @@ export const getCommentsByQuestion = async (req, res, next) => {
     const commentsWithCount = comments.map(c => ({
       ...c,
       repliesCount: countMap[c.id] || 0,
+      reportsCount: c.reports.length,
     }));
 
     res.status(200).json({ success: true, data: commentsWithCount });
@@ -95,7 +96,7 @@ export const getRepliesByComment = async (req, res, next) => {
       include: {
         user: { select: { id: true, studentId: true, name: true, avatar: true } },
         likedBy: true,
-        reportedBy: true,
+        reports: true,
       },
     });
 
@@ -112,6 +113,7 @@ export const getRepliesByComment = async (req, res, next) => {
     const repliesWithCount = replies.map(r => ({
       ...r,
       repliesCount: countMap[r.id] || 0,
+      reportsCount: r.reports.length,
     }));
 
     res.status(200).json({ success: true, data: repliesWithCount });
@@ -164,17 +166,23 @@ export const reportComment = async (req, res, next) => {
 
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
-      include: { reportedBy: true },
+      include: { reports: true },
     });
     if (!comment) return res.status(404).json({ success: false, error: "Comment not found" });
 
-    const alreadyReported = comment.reportedBy.some(u => u.id === userId);
-    if (!alreadyReported) {
-      await prisma.comment.update({
-        where: { id: commentId },
-        data: { reportedBy: { connect: { id: userId } } },
-      });
+    const alreadyReported = comment.reports.some(r => r.reportedById === userId);
+    if (alreadyReported) {
+      return res.status(400).json({ success: false, error: "You already reported this comment" });
     }
+
+    await prisma.report.create({
+      data: {
+        commentId,
+        reportedById: userId,
+        reason: req.body.reason || "OTHER",
+        description: req.body.description || null,
+      },
+    });
 
     res.status(200).json({ success: true, message: "Comment reported successfully" });
   } catch (err) {
