@@ -45,6 +45,29 @@
 .fadein-slow { animation: fadein 0.6s ease-in-out; }
 .fadein-delay { animation: fadein 0.7s ease-in-out 0.1s both; }
 
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Normal bounce */
+.bounce-slow {
+  animation: bounce-slow 1.2s ease-in-out infinite;
+}
+
+/* Optional variations */
+.bounce-slow-fast {
+  animation: bounce-slow 0.8s ease-in-out infinite;
+}
+
+.bounce-slow-delay {
+  animation: bounce-slow 1.2s ease-in-out 0.2s infinite;
+}
+
+
+
+
+
 /* ---------------------------- */
 /* Rich text editor styling     */
 /* ---------------------------- */

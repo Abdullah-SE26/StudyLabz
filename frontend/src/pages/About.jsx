@@ -1,5 +1,3 @@
-"use client";
-
 import { AnimatedTooltip } from "../components/ui/animated-tooltip";
 import {
   Sparkles,
@@ -105,7 +103,7 @@ export default function AboutPage() {
               key={index}
               className="group flex flex-col items-center text-center p-8 rounded-2xl cursor-pointer
         bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-2 
-        hover:bg-gradient-to-br hover:from-blue-50 hover:to-blue-100"
+        hover:bg-linear-to-br hover:from-blue-50 hover:to-blue-100"
             >
               <div className="p-4 rounded-xl  text-white shadow-md mb-4 group-hover:scale-110 transition-transform">
                 {feature.icon}
