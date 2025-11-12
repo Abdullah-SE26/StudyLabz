@@ -1,61 +1,92 @@
 import React from "react";
-import { Upload, BookOpen, Heart, MessageCircle, Sparkles, Bookmark, Cpu } from "lucide-react";
+import {
+  Upload,
+  BookOpen,
+  MessageCircle,
+  Bookmark,
+  Cpu,
+  FilePlus2,
+  Sparkles,
+} from "lucide-react";
 
 const featuresData = [
   {
     title: "Upload Questions",
-    subtitle: "Add MCQs or essays",
-    icon: <Upload className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Contribute your past exam questions to help others practice effectively.",
+    subtitle: "Share your past exams",
+    icon: (
+      <Upload className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Add your own exam questions - MCQs or essays - to help others prepare and keep the question bank growing.",
   },
   {
-    title: "Browse Exams",
-    subtitle: "Explore student uploads",
-    icon: <BookOpen className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Filter by subject or year and access a wide collection of past questions.",
+    title: "Browse & Practice",
+    subtitle: "Find what matters",
+    icon: (
+      <BookOpen className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Explore a massive library of student-uploaded questions, organized by courses, exams and majors.",
   },
   {
-    title: "Interact",
-    subtitle: "Like, bookmark, report",
-    icon: <Heart className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Engage with questions to maintain quality and relevance in the community.",
+    title: "Discuss with Peers",
+    subtitle: "Collaborate & learn",
+    icon: (
+      <MessageCircle className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Comment on questions, exchange ideas, and learn together - just like a digital study group.",
   },
   {
-    title: "Discuss & Comment",
-    subtitle: "Engage with peers",
-    icon: <MessageCircle className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Collaborate with other students through comments and discussions.",
+    title: "Bookmark for Revision",
+    subtitle: "Save key questions",
+    icon: (
+      <Bookmark className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Keep track of important or tricky questions by bookmarking them for quick access during revision.",
   },
   {
-    title: "Bookmark Questions",
-    subtitle: "Save for later",
-    icon: <Bookmark className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Keep track of important questions by bookmarking them for later review.",
+    title: "Solve with AI",
+    subtitle: "Guided hints & help",
+    icon: (
+      <Cpu className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Use AI to understand tough questions with step-by-step hints and logical explanations.",
   },
   {
-    title: "Solve with ChatGPT",
-    subtitle: "AI-assisted solutions",
-    icon: <Cpu className="w-12 h-12 text-slate-800 mb-4 transition-transform duration-300 group-hover:scale-110" />,
-    content: "Use AI to get hints or solutions for challenging questions.",
+    title: "Generate Sample Exams",
+    subtitle: "AI-powered mock tests",
+    icon: (
+      <FilePlus2 className="w-12 h-12 text-sf-green mb-4 transition-transform duration-300 group-hover:scale-110" />
+    ),
+    content:
+      "Generate mock exams using AI based on courses and exam types to simulate real test scenarios.",
   },
 ];
 
 export default function FeaturesSection() {
   return (
-    <section className="py-16 bg-white">
-      <h1 className="text-4xl font-bold text-center mb-12 flex justify-center items-center gap-2">
-        Features <Sparkles color="#0a95ff" strokeWidth={1.5} />
+    <section className="py-16 bg-sf-cream">
+      <h1 className="text-4xl font-bold text-center mb-12 flex justify-center items-center gap-2 text-sf-green">
+        Features <Sparkles color="#FFD700" strokeWidth={1.5} />
       </h1>
 
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 grid gap-8 sm:grid-cols-2 md:grid-cols-3">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {featuresData.map((feature, index) => (
           <div
             key={index}
-            className="group flex flex-col items-center text-center p-6 rounded-xl cursor-pointer transition-transform transform hover:-translate-y-2 hover:shadow-xl bg-gradient-to-br from-white to-white hover:from-blue-50 hover:to-blue-100"
+            className="group flex flex-col items-center text-center p-6 rounded-2xl bg-white border border-sf-green/30 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
           >
             {feature.icon}
-            <h3 className="text-xl font-semibold text-blue-500 mb-2">{feature.title}</h3>
-            <p className="text-slate-600 text-sm">{feature.content}</p>
+            <h3 className="text-xl font-semibold text-sf-green mb-1">
+              {feature.title}
+            </h3>
+            <p className="text-slate-500 text-sm mb-2">{feature.subtitle}</p>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              {feature.content}
+            </p>
           </div>
         ))}
       </div>
