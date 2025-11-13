@@ -143,7 +143,7 @@ const ManageReports = () => {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-8 gap-2">
-        <span className="loading loading-bars loading-xl text-info"></span>
+        <span className="loading loading-bars loading-xl text-sf-green"></span>
         <span className="text-gray-600 font-semibold">Loading reports...</span>
       </div>
     );

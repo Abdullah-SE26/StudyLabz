@@ -64,16 +64,11 @@ export default function CreateQuestionPage() {
     })();
   }, [courseId, safeFetchJSON]);
 
-  const getPlaceholder = () => {
-    if (type === "MCQ") {
-      return "Question: \nA. \nB. \nC. \nD. ";
-    }
-    return "Question: ";
-  };
+  const getPlaceholder = () => (type === "MCQ" ? "Question:\nA.\nB.\nC.\nD." : "Question:");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const strippedText = text.replace(/<[^>]*>/g, "").trim(); // remove HTML tags for empty check
+    const strippedText = text.replace(/<[^>]*>/g, "").trim();
     if (!courseId || !examId) return toast.error("Select course and exam");
     if (!strippedText) return toast.error("Question text cannot be empty");
     if (!marks || isNaN(Number(marks)) || Number(marks) <= 0)
@@ -117,87 +112,89 @@ export default function CreateQuestionPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 rounded-2xl shadow-xl">
-      <div className="alert alert-warning mb-6 shadow-lg">
-        ⚠️ Do NOT provide answers in the question text. Violating this may lead to a ban.
-      </div>
-
-      <h1 className="text-2xl font-semibold mb-6 flex items-center gap-2">
-        <Upload className="w-6 h-6 text-primary" /> Create New Question
-      </h1>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Course & Exam */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="form-control w-full">
-            <span className="label-text">Course</span>
-            <select
-              className="select select-bordered dropdown-bottom"
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
-            >
-              <option value="">Select Course</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="form-control w-full">
-            <span className="label-text">Exam</span>
-            <select
-              className="select select-bordered dropdown-bottom"
-              value={examId}
-              onChange={(e) => setExamId(e.target.value)}
-              disabled={examTypes.length === 0}
-            >
-              <option value="">Select Exam</option>
-              {examTypes.map((ex, idx) => (
-                <option key={idx} value={ex}>{ex}</option>
-              ))}
-            </select>
-          </label>
+    <div className="min-h-screen flex justify-center pt-6 pb-10 bg-base-100">
+      <div className="w-full max-w-3xl p-6 rounded-2xl shadow-xl bg-white">
+        <div className="alert alert-warning mb-6 shadow-md text-sm">
+          ⚠️ Do NOT provide answers in the question text. Violating this may lead to a ban.
         </div>
 
-        {/* Marks & Type */}
-        <div className="grid grid-cols-2 gap-4 items-end">
-          <input
-            type="number"
-            className="input input-bordered w-full"
-            placeholder="Marks"
-            value={marks}
-            onChange={(e) => setMarks(e.target.value)}
-            min={1}
-          />
-          <select
-            className="select select-bordered dropdown-bottom"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
+        <h1 className="text-2xl font-semibold mb-5 flex items-center gap-2">
+          <Upload className="w-6 h-6 text-primary" /> Create New Question
+        </h1>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Course & Exam */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="form-control w-full">
+              <span className="label-text">Course</span>
+              <select
+                className="select select-bordered"
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+              >
+                <option value="">Select Course</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="form-control w-full">
+              <span className="label-text">Exam</span>
+              <select
+                className="select select-bordered"
+                value={examId}
+                onChange={(e) => setExamId(e.target.value)}
+                disabled={examTypes.length === 0}
+              >
+                <option value="">Select Exam</option>
+                {examTypes.map((ex, idx) => (
+                  <option key={idx} value={ex}>
+                    {ex}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          {/* Marks & Type */}
+          <div className="grid grid-cols-2 gap-4 items-end">
+            <input
+              type="number"
+              className="input input-bordered w-full"
+              placeholder="Marks"
+              value={marks}
+              onChange={(e) => setMarks(e.target.value)}
+              min={1}
+            />
+            <select
+              className="select select-bordered"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+            >
+              <option value="MCQ">MCQ</option>
+              <option value="Essay">Essay</option>
+            </select>
+          </div>
+
+          {/* Question Text */}
+          <RichTextEditor value={text} onChange={setText} placeholder={getPlaceholder()} />
+
+          {/* Attachment */}
+          <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="btn bg-sf-green text-sf-border w-full mt-4 flex items-center justify-center gap-2"
+            disabled={loading}
           >
-            <option value="MCQ">MCQ</option>
-            <option value="Essay">Essay</option>
-          </select>
-        </div>
-
-        {/* Question Text */}
-        <RichTextEditor
-          value={text}
-          onChange={setText}
-          placeholder={getPlaceholder()}
-        />
-
-        {/* Attachment */}
-        <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />
-
-        {/* Submit */}
-        <button
-          type="submit"
-          className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2"
-          disabled={loading}
-        >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
-        </button>
-      </form>
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
