@@ -98,7 +98,7 @@ export default function DashboardLayout() {
   }, [location.pathname, user]);
 
   return (
-    <div className="flex min-h-[600px] max-h-[90vh] bg-slate-50 text-slate-800">
+    <div className="flex min-h-[600px] max-h-[90vh] mb-20 bg-slate-50 text-slate-800">
       {/* Sidebar */}
       <aside
         className={`${

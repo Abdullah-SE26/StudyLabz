@@ -19,91 +19,72 @@ export default function CreateQuestionPage() {
   const [text, setText] = useState("");
   const [marks, setMarks] = useState("");
   const [type, setType] = useState("MCQ");
-  const [options, setOptions] = useState(["", "", "", ""]);
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
   const [examTypes, setExamTypes] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
-  const [activeOption, setActiveOption] = useState(-1);
 
   const safeFetchJSON = useCallback(
     async (url) => {
       try {
-        const { data } = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { data } = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
         return data;
       } catch (err) {
-        toast.error(
-          err.response?.data?.error || err.message || "Fetch failed",
-          {
-            duration: 4000,
-          }
-        );
+        toast.error(err.response?.data?.error || err.message || "Fetch failed", { duration: 4000 });
         return null;
       }
     },
     [token]
   );
 
-  // Fetch courses
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const data = await safeFetchJSON(
-        `${import.meta.env.VITE_API_URL}/courses`
-      );
+      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses`);
       if (!data) return;
       const normalized = Array.isArray(data) ? data : data.courses || [];
       setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
     })();
   }, [token, safeFetchJSON]);
 
-  // Fetch examTypes for selected course
   useEffect(() => {
     if (!courseId) {
       setExamTypes([]);
       setExamId("");
       return;
     }
-
     (async () => {
-      const data = await safeFetchJSON(
-        `${import.meta.env.VITE_API_URL}/courses/${courseId}`
-      );
-
+      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses/${courseId}`);
       if (!data) return;
-
-      const types = data.examTypes || []; 
-      setExamTypes(types); 
-      setExamId(types[0] || ""); // auto-select first exam type
+      const types = data.examTypes || [];
+      setExamTypes(types);
+      setExamId(types[0] || "");
     })();
   }, [courseId, safeFetchJSON]);
 
-  const handleOptionChange = (idx, val) => {
-    setOptions((prev) => prev.map((o, i) => (i === idx ? val : o)));
+  const getPlaceholder = () => {
+    if (type === "MCQ") {
+      return "Question: \nA. \nB. \nC. \nD. ";
+    }
+    return "Question: ";
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    const strippedText = text.replace(/<[^>]*>/g, "").trim(); // remove HTML tags for empty check
     if (!courseId || !examId) return toast.error("Select course and exam");
-    if (!text.trim()) return toast.error("Question text cannot be empty");
+    if (!strippedText) return toast.error("Question text cannot be empty");
     if (!marks || isNaN(Number(marks)) || Number(marks) <= 0)
       return toast.error("Marks must be a positive number");
-    if (type === "MCQ" && options.some((o) => !o.trim()))
-      return toast.error("All 4 options are required");
 
     setLoading(true);
     let uploadedFileUrl = null;
 
     try {
       if (attachmentFile) {
-        const uploaded = await uploadFiles("imageUploader", {
-          files: [attachmentFile],
-        });
+        const uploaded = await uploadFiles("imageUploader", { files: [attachmentFile] });
         uploadedFileUrl = uploaded[0]?.ufsUrl || null;
       }
 
@@ -112,9 +93,8 @@ export default function CreateQuestionPage() {
         type,
         marks: Number(marks),
         courseId: Number(courseId),
-        examType: examId, // now sending the actual string
+        examType: examId,
         image: uploadedFileUrl,
-        options: type === "MCQ" ? options : undefined,
       };
 
       await axios.post(`${import.meta.env.VITE_API_URL}/questions`, payload, {
@@ -125,16 +105,12 @@ export default function CreateQuestionPage() {
       setShouldRefetchDashboard(true);
       setText("");
       setMarks("");
-      setOptions(["", "", "", ""]);
       setAttachmentFile(null);
       setCourseId("");
       setExamId("");
       setType("MCQ");
-      setActiveOption(-1);
     } catch (err) {
-      toast.error(
-        err.response?.data?.error || err.message || "Failed to create question"
-      );
+      toast.error(err.response?.data?.error || err.message || "Failed to create question");
     } finally {
       setLoading(false);
     }
@@ -142,6 +118,10 @@ export default function CreateQuestionPage() {
 
   return (
     <div className="max-w-3xl mx-auto mt-10 p-6 rounded-2xl shadow-xl">
+      <div className="alert alert-warning mb-6 shadow-lg">
+        ⚠️ Do NOT provide answers in the question text. Violating this may lead to a ban.
+      </div>
+
       <h1 className="text-2xl font-semibold mb-6 flex items-center gap-2">
         <Upload className="w-6 h-6 text-primary" /> Create New Question
       </h1>
@@ -158,9 +138,7 @@ export default function CreateQuestionPage() {
             >
               <option value="">Select Course</option>
               {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </label>
@@ -171,13 +149,11 @@ export default function CreateQuestionPage() {
               className="select select-bordered dropdown-bottom"
               value={examId}
               onChange={(e) => setExamId(e.target.value)}
-              disabled={examTypes.length === 0} // enable only if array has elements
+              disabled={examTypes.length === 0}
             >
               <option value="">Select Exam</option>
               {examTypes.map((ex, idx) => (
-                <option key={idx} value={ex}>
-                  {ex}
-                </option>
+                <option key={idx} value={ex}>{ex}</option>
               ))}
             </select>
           </label>
@@ -204,39 +180,14 @@ export default function CreateQuestionPage() {
         </div>
 
         {/* Question Text */}
-        <RichTextEditor value={text} onChange={setText} />
-
-        {/* MCQ Options */}
-        {type === "MCQ" &&
-          options.map((opt, idx) => (
-            <div
-              key={idx}
-              className={`collapse collapse-arrow border border-base-300 bg-base-100 rounded-box ${
-                activeOption === idx ? "collapse-open" : ""
-              }`}
-              onClick={() => setActiveOption(activeOption === idx ? -1 : idx)}
-            >
-              <div className="collapse-title text-xl font-medium">
-                Option {idx + 1}
-              </div>
-              {activeOption === idx && (
-                <div className="collapse-content">
-                  <RichTextEditor
-                    value={opt}
-                    onChange={(val) => handleOptionChange(idx, val)}
-                    height={100}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
+        <RichTextEditor
+          value={text}
+          onChange={setText}
+          placeholder={getPlaceholder()}
+        />
 
         {/* Attachment */}
-        <UploadDropzone
-          file={attachmentFile}
-          onFileSelect={setAttachmentFile}
-          maxFiles={1}
-        />
+        <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />
 
         {/* Submit */}
         <button
@@ -244,11 +195,7 @@ export default function CreateQuestionPage() {
           className="btn btn-primary w-full mt-4 flex items-center justify-center gap-2"
           disabled={loading}
         >
-          {loading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            "Save Question"
-          )}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Save Question"}
         </button>
       </form>
     </div>
