@@ -165,7 +165,7 @@ export default function DashboardLayout() {
                   <>
                     <button
                       onClick={toggleAdminMenu}
-                      className="flex items-center justify-between w-full px-4 py-2 rounded-lg font-medium text-sf-green hover:bg-sf-border transition-all duration-200"
+                      className="flex items-center justify-between cursor-pointer w-full px-4 py-2 rounded-lg font-medium text-sf-green hover:bg-sf-border transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <LayoutDashboard className="w-5 h-5" />
@@ -233,7 +233,7 @@ export default function DashboardLayout() {
             {sidebarOpen ? (
               <button
                 onClick={clearAuth}
-                className="flex items-center gap-3 w-full px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
+                className="flex items-center gap-3 w-full cursor-pointer px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
