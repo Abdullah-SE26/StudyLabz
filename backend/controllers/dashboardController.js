@@ -1,6 +1,24 @@
 import prisma from "../prismaClient.js";
 import { subDays, formatISO } from "date-fns";
 
+export const getPublicStats = async (req, res) => {
+  try {
+    const [totalUsers, totalCourses, totalQuestions] = await Promise.all([
+      prisma.user.count(),
+      prisma.course.count(),
+      prisma.question.count(),
+    ]);
+
+    return res.json({
+      success: true,
+      data: { totalUsers, totalCourses, totalQuestions },
+    });
+  } catch (err) {
+    console.error("Error fetching public stats:", err);
+    return res.status(500).json({ success: false, error: "Failed to fetch public stats" });
+  }
+};
+
 export const getDashboardStats = async (req, res) => {
   try {
     const user = req.user;

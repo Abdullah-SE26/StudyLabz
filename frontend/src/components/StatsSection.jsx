@@ -14,7 +14,7 @@ const StatCard = ({ icon: IconComponent, label, value, animate, delay }) => {
   useEffect(() => {
     if (!animate) return;
     let current = 0;
-    const step = Math.ceil(value / 50); // ~50 ticks for animation
+    const step = Math.ceil(value / 50);
     const interval = setInterval(() => {
       current += step;
       if (current >= value) {
@@ -23,7 +23,7 @@ const StatCard = ({ icon: IconComponent, label, value, animate, delay }) => {
       } else {
         setDisplayValue(current);
       }
-    }, 20); // 20ms per tick → ~1s total
+    }, 20);
 
     return () => clearInterval(interval);
   }, [animate, value]);
@@ -58,7 +58,7 @@ const StatsSection = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get("/dashboard/stats");
+        const res = await axios.get("/dashboard/stats/public"); // <- public endpoint
         const data = res.data.data;
         setStats({
           totalUsers: data.totalUsers || 0,

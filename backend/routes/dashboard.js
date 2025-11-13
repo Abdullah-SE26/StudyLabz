@@ -1,11 +1,13 @@
 import express from "express";
-import { getDashboardStats } from "../controllers/dashboardController.js";
+import { getDashboardStats, getPublicStats } from "../controllers/dashboardController.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// GET /dashboard/stats - Get dashboard statistics
+// Auth-protected dashboard stats (admin/user)
 router.get("/stats", authMiddleware, getDashboardStats);
 
-export default router;
+// Public stats for home page
+router.get("/stats/public", getPublicStats);
 
+export default router;
