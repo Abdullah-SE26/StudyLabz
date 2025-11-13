@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Mail, Phone, MapPin, User, Send } from "lucide-react";
 import { IconBrandLinkedin, IconBrandGithub } from "@tabler/icons-react";
 import toast, { Toaster } from "react-hot-toast";
-import axios from "../../lib/axios"; 
+import axios from "../../lib/axios";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ export default function Contact() {
         phone: "",
         email: "",
         message: "",
-        subject: "General Inquiry",
+        subject: "General Inquiry/Feedback",
       });
     } catch (err) {
       toast.dismiss(toastId);
@@ -48,50 +48,61 @@ export default function Contact() {
     }
   };
 
+  const subjects = [
+    "General Inquiry/Feedback",
+    "Technical Support",
+    "Request Course",
+  ];
+
   return (
-    <div className="flex justify-center items-center py-10 px-4 min-h-screen ">
+    <div className="flex justify-center items-center py-10 px-4 min-h-screen bg-background text-foreground">
       <Toaster />
       <div className="relative shadow-2xl rounded-3xl w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
-        
-        {/* Owl Image Overlay */}
-        <img
-          src="/scientist_owl_512.png"
-          alt="Mascot"
-          className="absolute -top-10 -right-10 w-32 h-32 opacity-20 rotate-12 pointer-events-none"
-        />
-
         {/* Left Side - Contact Info */}
-        <div className="relative bg-[url('/contact-bg.jpg')] bg-cover bg-center text-white p-10 flex flex-col justify-between">
-          <div className="absolute inset-0 bg-black/50"></div>
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold mb-4">Contact Information</h2>
-            <p className="mb-8 text-blue-100">Have a big idea or any inquiries? Get in touch!</p>
-            <ul className="space-y-4">
-              <li className="flex items-center gap-3">
-                <Mail className="w-6 h-6" />
+        <div className="relative bg-[url('/contact-bg.jpg')] bg-cover bg-center text-white p-8 flex flex-col justify-between rounded-l-3xl">
+          <div className="absolute inset-0 bg-black/50 rounded-l-3xl"></div>
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <img
+              src="/StudyLabzOwl.png"
+              alt="StudyLabz Logo"
+              className="w-24 h-24 sm:w-28 sm:h-28 mb-4 shadow-lg rounded-full"
+            />
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2">Contact Us</h2>
+            <p className="mb-6 text-blue-100 text-sm sm:text-base">
+              Have questions, feedback, or course requests? Reach out and we’ll
+              get back to you!
+            </p>
+            <ul className="space-y-3 text-xs sm:text-sm">
+              <li className="flex items-center gap-2">
+                <Mail className="w-4 h-4" />
                 <span>studylabz2025@gmail.com</span>
               </li>
-              <li className="flex items-center gap-3">
-                <MapPin className="w-6 h-6" />
+              <li className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
                 <span>Al Ain University of Science and Technology</span>
               </li>
             </ul>
           </div>
-          <div className="relative z-10 flex gap-4 mt-8">
+          <div className="relative z-10 flex gap-4 mt-6 justify-center">
             <a href="#" className="hover:text-yellow-300 transition">
-              <IconBrandLinkedin size={28} />
+              <IconBrandLinkedin size={24} />
             </a>
             <a href="#" className="hover:text-yellow-300 transition">
-              <IconBrandGithub size={28} />
+              <IconBrandGithub size={24} />
             </a>
           </div>
         </div>
 
         {/* Right Side - Form */}
-        <div className="p-10 relative">
-          <h3 className="text-2xl font-bold mb-6 text-gray-800">Send us a Message</h3>
+        <div className="p-10 relative bg-card-background rounded-r-3xl">
+          <h3 className="text-2xl font-bold mb-4 text-gray-800 text-center">
+            Send us a Message
+          </h3>
+          <p className="text-sm text-gray-600 mb-6 text-center">
+            Fill out the form below and we will respond as quickly as possible.
+          </p>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative">
@@ -165,9 +176,12 @@ export default function Contact() {
             {/* Subject */}
             <div>
               <p className="font-semibold mb-2 text-gray-700">Select Subject</p>
-              <div className="flex gap-6">
-                {["General Inquiry", "Technical Support", "Website Feedback"].map((sub) => (
-                  <label key={sub} className="flex items-center gap-2 text-gray-600">
+              <div className="flex flex-wrap gap-6">
+                {subjects.map((sub) => (
+                  <label
+                    key={sub}
+                    className="flex items-center gap-2 text-gray-600"
+                  >
                     <input
                       type="radio"
                       name="subject"
@@ -186,7 +200,7 @@ export default function Contact() {
             <button
               type="submit"
               disabled={loading}
-              className="cursor-pointer flex items-center justify-center gap-2 bg-linear-to-r from-indigo-500 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform font-semibold shadow-lg"
+              className="cursor-pointer flex items-center justify-center gap-2 bg-linear-to-r from-indigo-500 to-blue-500 text-white px-6 py-3 rounded-xl hover:scale-105 transition-transform font-semibold shadow-lg w-full"
             >
               <Send className="w-5 h-5" />
               {loading ? "Sending..." : "Send Message"}

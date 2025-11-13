@@ -1,17 +1,31 @@
 import { sendMail } from "../config/mailer.js";
+import createDOMPurify from "dompurify";
+import { JSDOM } from "jsdom";
+
+// Setup DOMPurify for Node
+const window = new JSDOM("").window;
+const DOMPurify = createDOMPurify(window);
 
 export const sendContactForm = async (req, res) => {
-  console.log("Form data received:", req.body);
-
   try {
     const { firstName, lastName, phone, email, message, subject } = req.body;
 
-    // Validation
-    if (!firstName || !lastName || !email || !message) {
+    // Required fields validation
+    if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !message?.trim()) {
       return res.status(400).json({ error: "Required fields are missing" });
     }
 
-    const fullName = `${firstName} ${lastName}`;
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+    const contactSubject = subject?.trim() || "General Inquiry/Feedback";
+
+    // Sanitize the message using DOMPurify
+    const safeMessage = DOMPurify.sanitize(message, { ALLOWED_TAGS: ["b", "i", "strong", "em", "br", "p"] });
 
     // Compose email HTML
     const emailHTML = `
@@ -19,19 +33,19 @@ export const sendContactForm = async (req, res) => {
       <p><b>Name:</b> ${fullName}</p>
       <p><b>Phone:</b> ${phone || "Not provided"}</p>
       <p><b>Email:</b> ${email}</p>
-      <p><b>Subject:</b> ${subject || "General Inquiry"}</p>
-      <p><b>Message:</b><br/>${message}</p>
+      <p><b>Subject:</b> ${contactSubject}</p>
+      <p><b>Message:</b><br/>${safeMessage}</p>
     `;
 
-    // Send email via SendGrid
+    // Send email
     await sendMail({
-      from: `"StudyLabz Contact" <${process.env.EMAIL_FROM}>`, // ✅ Verified sender
-      to: process.env.EMAIL_FROM, // You receive the contact form in your inbox
-      subject: `📩 ${subject || "General Inquiry"} - Message from ${fullName}`,
+      from: `"StudyLabz Contact" <${process.env.EMAIL_FROM}>`,
+      to: process.env.EMAIL_FROM,
+      replyTo: email,
+      subject: `📩 ${contactSubject} - Message from ${fullName}`,
       html: emailHTML,
     });
 
-    console.log("✅ Email sent successfully");
     return res.status(200).json({ success: true, message: "Message sent successfully" });
   } catch (error) {
     console.error("❌ Error sending email:", error);
