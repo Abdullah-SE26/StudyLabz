@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -36,14 +37,30 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-base-200">
-      <div className="card w-full max-w-md bg-white shadow-xl rounded-xl p-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center relative">
+
+      {/* Background Image with rounded bottom */}
+      <div
+        className="absolute inset-0 bg-no-repeat bg-center bg-cover rounded-b-[6rem]"
+        style={{ backgroundImage: "url('/LoginImage.png')" }}
+      ></div>
+
+      {/* Overlay + Login Form */}
+      <div className="relative w-full max-w-sm p-6 flex flex-col items-center bg-white/30 backdrop-blur-md rounded-xl shadow-[0_10px_25px_rgba(0,0,0,0.1)]">
+
+        {/* Owl Logo inside the form */}
+        <img
+          src="/StudyLabzOwl-nobg.png"
+          alt="StudyLabz Owl"
+          className="w-16 h-16 object-contain mb-3"
+        />
+
+        <h1 className="text-xl font-bold text-sf-text mb-4 text-center">
           Login
         </h1>
 
         {!authToken ? (
-          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
+          <form onSubmit={handleSubmit} className="space-y-3 w-full" autoComplete="on">
             <div className="form-control w-full">
               <input
                 type="email"
@@ -53,14 +70,14 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="input input-bordered w-full"
+                className="input input-bordered w-full text-sf-text py-2"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full flex items-center justify-center gap-2"
+              className="btn w-full flex items-center justify-center gap-2 bg-sf-green hover:bg-sf-green-hover text-white py-2"
             >
               {loading ? (
                 <div className="flex items-center gap-2">
@@ -73,8 +90,8 @@ export default function Login() {
             </button>
           </form>
         ) : (
-          <div className="text-center space-y-4">
-            <p className="text-gray-700 mb-4">You are logged in.</p>
+          <div className="text-center space-y-2">
+            <p className="text-sf-text/80 mb-2">You are logged in.</p>
             <SignOutButton />
           </div>
         )}
