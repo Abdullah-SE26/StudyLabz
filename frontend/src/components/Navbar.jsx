@@ -21,7 +21,7 @@ export default function Navbar() {
     [
       "block px-4 py-2 rounded-md font-medium transition-all duration-200",
       isActive
-        ? "bg-sf-cream text-black shadow-md"
+        ? "bg-sf-border text-black shadow-md"
         : "text-gray-700 hover:text-black hover:bg-sf-cream",
     ].join(" ");
 
