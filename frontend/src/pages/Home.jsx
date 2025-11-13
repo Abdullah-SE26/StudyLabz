@@ -1,6 +1,7 @@
 import HeroSection from "../components/HeroSection";
 import FeaturesSection from "../components/FeaturesSection"
 import HomeSearchBar from "../components/HomeSearchBar";
+import StatsSection from "../components/StatsSection";
  
 
 const Home = () => {
@@ -11,6 +12,7 @@ const Home = () => {
         <HeroSection/>
         <HomeSearchBar/>
         <FeaturesSection/>
+        <StatsSection/>
       </div>
     </>
   );
