@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { IconMenu2, IconX } from "@tabler/icons-react";
@@ -11,9 +12,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -22,8 +21,8 @@ export default function Navbar() {
     [
       "block px-4 py-2 rounded-md font-medium transition-all duration-200",
       isActive
-        ? "bg-[#FFFDF9] text-black shadow-md"
-        : "text-gray-700 hover:text-black hover:bg-[#FFFDF9]",
+        ? "bg-sf-cream text-black shadow-md"
+        : "text-gray-700 hover:text-black hover:bg-sf-cream",
     ].join(" ");
 
   const loginClasses = ({ isActive }) =>
@@ -36,29 +35,26 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-4 z-50 transition-all duration-300 ${
+      className={`sticky top-4 z-50 transition-all duration-300 mb-10 ${
         isScrolled
-          ? "py-2 bg-linear-to-r from-[#E0F7FA]/80 via-[#FFFDE7]/70 to-[#E1F5FE]/80 backdrop-blur-lg shadow-xl rounded-3xl mx-6"
+          ? "py-2 bg-sf-border/90 shadow-lg rounded-3xl mx-6"
           : "py-4 bg-transparent"
       }`}
     >
-      <div className="px-3 sm:px-8 flex items-center justify-between">
+      <div className="px-3 sm:px-8 flex items-center justify-between ">
         {/* Logo */}
         <Link to="/" className="flex items-center">
-          <img
-            src="/studylabz-logo.png"
-            alt="logo"
-            className="hidden sm:block w-50"
-          />
-          <img
-            src="/logo_placeholder.jpg"
-            alt="logo"
-            className="sm:hidden w-6"
-          />
+          <div className="w-40 h-16 rounded-md flex items-center justify-center overflow-hidden">
+            <img
+              src="/StudyLabzLogo-nobg.png"
+              alt="logo"
+              className="object-contain max-h-full max-w-full"
+            />
+          </div>
         </Link>
 
         {/* Desktop Menu */}
-        <ul className="hidden lg:flex flex-1 justify-center gap-6 items-center">
+        <ul className="hidden lg:flex flex-1 justify-center gap-6 items-center font-medium text-sf-text">
           <li>
             <NavLink to="/" className={navLinkClasses}>
               Home
@@ -81,14 +77,14 @@ export default function Navbar() {
           </li>
         </ul>
 
-        {/* Right side: Login or UserMenu */}
+        {/* Right side: Login/UserMenu */}
         <div className="hidden lg:block">
           {user ? <UserMenu user={user} /> : <NavLink to="/login" className={loginClasses}>Login</NavLink>}
         </div>
 
         {/* Mobile Toggle */}
         <div className="lg:hidden flex items-center gap-4">
-          <button onClick={toggleMenu} className="text-gray-700 focus:outline-none">
+          <button onClick={toggleMenu} className="text-sf-text focus:outline-none">
             {menuOpen ? <IconX size={28} /> : <IconMenu2 size={28} />}
           </button>
         </div>
@@ -96,7 +92,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <ul className="lg:hidden flex flex-col gap-2 font-medium text-gray-700 bg-white/80 backdrop-blur-lg shadow-md p-4 mx-4 rounded-b-2xl mt-2">
+        <ul className="lg:hidden flex flex-col gap-2 font-medium text-sf-text bg-black/20 backdrop-blur-sm shadow-md p-4 mx-4 rounded-b-2xl mt-2 transition-all duration-300">
           <li>
             <NavLink to="/" onClick={toggleMenu} className={navLinkClasses}>
               Home
