@@ -99,19 +99,8 @@ export const getCourseById = async (req, res, next) => {
 
     if (!course) return res.status(404).json({ error: "Course not found" });
 
-    // Fetch distinct exam types from questions belonging to this course
-    const examTypesData = await prisma.question.findMany({
-      where: { courseId: id },
-      select: { examType: true },
-      distinct: ["examType"],
-    });
-
-    let examTypes = examTypesData.map((q) => q.examType).filter(Boolean);
-
-    // ===== If no exam types exist, return default 5 =====
-    if (!examTypes.length) {
-      examTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
-    }
+    // ===== Always return default 5 exam types =====
+    const examTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
 
     res.json({ success: true, course, examTypes });
   } catch (err) {
