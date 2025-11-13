@@ -34,7 +34,7 @@ const StatCard = ({ icon: IconComponent, label, value, animate, delay }) => {
       style={{ animationDelay: `${delay}s` }}
     >
       <div className="flex flex-col items-center">
-        <div className="flex items-center justify-center w-14 h-14 rounded-full bg-sf-green text-white mb-4">
+        <div className="flex items-center justify-center w-14 h-14 rounded-full bg-sf-green text-white mb-3">
           <IconComponent size={28} />
         </div>
         <p className="text-4xl font-extrabold text-sf-text mb-1 leading-none">

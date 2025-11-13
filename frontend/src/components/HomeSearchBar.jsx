@@ -64,7 +64,7 @@ export default function HomeSearchBar() {
         {/* Title with animated search icon */}
         <h2 className="flex items-center justify-center text-2xl md:text-3xl font-bold text-sf-cream mb-6">
           Search Courses
-          <Search className="w-8 h-7 ml-1 text-sf-cream bounce-slow" />
+          <Search className="w-8 h-7 ml-1 text-sf-cream " />
         </h2>
 
         {/* Search input */}
