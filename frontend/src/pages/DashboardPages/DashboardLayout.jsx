@@ -62,12 +62,12 @@ export default function DashboardLayout() {
     {
       to: "/dashboard/create-course",
       label: "Create Course",
-      icon: <BookOpen className="w-5 h-5" />,
+      icon: <FilePlus className="w-5 h-5" />, // distinct icon
     },
     {
       to: "/courses",
       label: "Manage Courses",
-      icon: <BookOpen className="w-5 h-5" />,
+      icon: <BookOpen className="w-5 h-5" />, // distinct icon
     },
     {
       to: "/dashboard/users",
@@ -81,13 +81,11 @@ export default function DashboardLayout() {
     },
   ];
 
-  // Determine active link
   const allLinks = [...baseLinks, ...adminLinks];
   const currentPage = allLinks
     .filter((link) => location.pathname.startsWith(link.to))
     .sort((a, b) => b.to.length - a.to.length)[0];
 
-  // Keep admin menu open if inside admin page
   useEffect(() => {
     if (user?.role === "admin") {
       const isAdminPage = adminLinks.some((link) =>
@@ -98,48 +96,48 @@ export default function DashboardLayout() {
   }, [location.pathname, user]);
 
   return (
-    <div className="flex min-h-[600px] max-h-[90vh] mb-20 bg-slate-50 text-slate-800">
+    <div className="flex min-h-[650px] max-h-[92vh] mb-16 text-sf-text bg-gradient-to-br from-sf-light via-white to-sf-border">
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? "w-64" : "w-16"
-        } shrink-0 z-20 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out`}
+          sidebarOpen ? "w-72" : "w-20"
+        } shrink-0 z-20 bg-sf-cream border-r border-sf-border flex flex-col shadow-md transition-all duration-300 ease-in-out`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 h-16 border-b border-slate-200 bg-white">
+        <div className="flex items-center justify-between px-4 h-16 border-b border-sf-border bg-sf-light">
           {sidebarOpen && (
             <div className="flex items-center gap-2">
-              <GraduationCap className="w-6 h-6 text-blue-600" />
-              <h2 className="font-bold text-lg text-slate-800">StudyLabz</h2>
+              <GraduationCap className="w-6 h-6 text-sf-green" />
+              <h2 className="font-bold text-lg text-sf-green">StudyLabz</h2>
             </div>
           )}
           <button
             onClick={toggleSidebar}
             aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            className="btn btn-ghost btn-sm hover:bg-slate-100 p-1 text-slate-600"
+            className="btn btn-ghost btn-sm hover:bg-sf-light p-1 text-sf-green"
           >
             <Menu className="w-5 h-5" />
           </button>
         </div>
 
         {/* Links */}
-        <nav className="flex-1 overflow-y-auto p-2 flex flex-col justify-between">
+        <nav className="flex-1 overflow-y-auto p-3 flex flex-col justify-between">
           <ul className="space-y-1">
             {baseLinks.map((link) => {
               const active = currentPage?.to === link.to;
-              const linkClass = `flex items-center gap-2 w-full rounded-lg transition-all duration-200 ${
-                sidebarOpen ? "px-3 py-2 text-sm" : "px-0 py-2 justify-center"
+              const linkClass = `flex items-center gap-2 w-full rounded-lg font-medium transition-all duration-200 ${
+                sidebarOpen ? "px-4 py-2 text-sm" : "px-0 py-2 justify-center"
               } ${
                 active
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"
+                  ? "bg-sf-green text-white shadow-sm"
+                  : "hover:bg-sf-border text-sf-text hover:text-sf-green"
               }`;
               return (
-                <li key={link.to} className="w-full">
+                <li key={link.to}>
                   {sidebarOpen ? (
                     <Link to={link.to} className={linkClass}>
                       {link.icon}
-                      <span className="truncate font-medium">{link.label}</span>
+                      <span className="truncate">{link.label}</span>
                     </Link>
                   ) : (
                     <Tippy
@@ -162,23 +160,21 @@ export default function DashboardLayout() {
             })}
 
             {user?.role === "admin" && (
-              <li className="mt-2 w-full">
+              <li className="mt-3">
                 {sidebarOpen ? (
                   <>
                     <button
                       onClick={toggleAdminMenu}
-                      className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-100 transition-all duration-200"
+                      className="flex items-center justify-between w-full px-4 py-2 rounded-lg font-medium text-sf-green hover:bg-sf-border transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
-                        <LayoutDashboard className="w-4 h-4 text-slate-600" />
-                        <span className="font-medium text-slate-800">
-                          Admin Panel
-                        </span>
+                        <LayoutDashboard className="w-5 h-5" />
+                        <span>Admin Panel</span>
                       </div>
                       {adminOpen ? (
-                        <ChevronDown className="w-4 h-4 text-slate-600" />
+                        <ChevronDown className="w-4 h-4" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-600" />
+                        <ChevronRight className="w-4 h-4" />
                       )}
                     </button>
 
@@ -194,16 +190,14 @@ export default function DashboardLayout() {
                             <li key={link.to}>
                               <Link
                                 to={link.to}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
                                   active
-                                    ? "bg-blue-600 text-white"
-                                    : "hover:bg-slate-100 text-slate-600 hover:text-slate-800"
+                                    ? "bg-sf-green text-white shadow-sm"
+                                    : "hover:bg-sf-border text-sf-text hover:text-sf-green"
                                 }`}
                               >
                                 {link.icon}
-                                <span className="font-medium">
-                                  {link.label}
-                                </span>
+                                <span>{link.label}</span>
                               </Link>
                             </li>
                           );
@@ -219,7 +213,7 @@ export default function DashboardLayout() {
                     theme="light-border"
                   >
                     <button
-                      className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-all"
+                      className="flex items-center justify-center w-full p-2 rounded-lg hover:bg-sf-border text-sf-green transition-all"
                       onClick={() => {
                         setSidebarOpen(true);
                         setAdminOpen(true);
@@ -234,15 +228,15 @@ export default function DashboardLayout() {
             )}
           </ul>
 
-          {/* Logout pinned at bottom */}
-          <div className="p-2 border-t border-amber-500 mt-auto mb-3">
+          {/* Logout pinned bottom */}
+          <div className="p-2 border-t border-sf-border mt-auto mb-2">
             {sidebarOpen ? (
               <button
                 onClick={clearAuth}
-                className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-all duration-200"
+                className="flex items-center gap-3 w-full px-4 py-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-all duration-200"
               >
                 <LogOut className="w-5 h-5" />
-                <span className="font-medium">Logout</span>
+                <span>Logout</span>
               </button>
             ) : (
               <Tippy
@@ -265,7 +259,7 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 overflow-y-auto max-h-[90vh] p-4">
+      <main className="flex-1 min-w-0 overflow-y-auto max-h-[92vh] px-8 py-6">
         <Outlet />
       </main>
     </div>

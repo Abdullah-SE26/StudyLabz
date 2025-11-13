@@ -42,7 +42,7 @@ export default function CreateQuestionPage() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses`);
+      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses?limit=all`);
       if (!data) return;
       const normalized = Array.isArray(data) ? data : data.courses || [];
       setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));

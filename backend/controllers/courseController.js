@@ -17,9 +17,8 @@ export const getCourses = async (req, res, next) => {
     const search = (req.query.search || "").trim();
     const tags = parseTags(req.query.tags || "");
     const sort = req.query.sort || "latest";
+    const limitParam = req.query.limit;
     const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 12;
-    const offset = (page - 1) * limit;
 
     const where = {};
     if (search) {
@@ -32,6 +31,7 @@ export const getCourses = async (req, res, next) => {
       where.AND = tags.map((tag) => ({ tags: { has: tag } }));
     }
 
+    // Determine sorting order
     let orderBy;
     switch (sort) {
       case "oldest":
@@ -47,13 +47,23 @@ export const getCourses = async (req, res, next) => {
         orderBy = { createdAt: "desc" };
     }
 
+    // Handle "limit=all"
+    let limit, offset;
+    if (limitParam === "all") {
+      limit = undefined; // fetch all
+      offset = undefined;
+    } else {
+      limit = parseInt(limitParam, 10) || 12;
+      offset = (page - 1) * limit;
+    }
+
+    // Fetch total count and courses
     const [totalCount, courses] = await Promise.all([
       prisma.course.count({ where }),
       prisma.course.findMany({
         where,
         orderBy,
-        skip: offset,
-        take: limit,
+        ...(limit && { skip: offset, take: limit }),
         include: {
           createdBy: { select: { id: true, name: true, email: true } },
         },
@@ -65,12 +75,13 @@ export const getCourses = async (req, res, next) => {
       courses,
       totalCount,
       page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: limit ? Math.ceil(totalCount / limit) : 1,
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 // ===== GET /courses/:id =====
 export const getCourseById = async (req, res, next) => {

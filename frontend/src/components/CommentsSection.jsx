@@ -231,7 +231,8 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
       }
     };
 
-    const canDelete = user?.studentId === comment.user?.studentId || user?.role === "admin";
+    const canDelete =
+      user?.studentId === comment.user?.studentId || user?.role === "admin";
 
     return (
       <div
@@ -323,7 +324,9 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
             )}
 
             {showReplies &&
-              replies.map((r) => <Comment key={r.id} comment={r} depth={depth + 1} />)}
+              replies.map((r) => (
+                <Comment key={r.id} comment={r} depth={depth + 1} />
+              ))}
           </div>
         )}
 
@@ -332,7 +335,8 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
             <div className="modal-box">
               <h3 className="font-bold text-lg">Delete Comment</h3>
               <p className="py-4">
-                Are you sure you want to delete this comment and all its replies?
+                Are you sure you want to delete this comment and all its
+                replies?
               </p>
               <div className="modal-action">
                 <button className="btn" onClick={() => setShowModal(false)}>
@@ -352,6 +356,7 @@ const CommentsSection = ({ questionId, questionCreatorId, onNewComment }) => {
         <ReportModal
           isOpen={isReportModalOpen}
           onClose={handleCloseReportModal}
+          onReportSuccess={fetchComments}
           commentId={comment.id}
         />
       </div>
