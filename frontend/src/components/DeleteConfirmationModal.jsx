@@ -1,6 +1,6 @@
 import React from "react";
 
-const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName }) => {
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName, isDeleting }) => {
   if (!isOpen) return null;
 
   return (
@@ -16,11 +16,11 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName }) => {
           This action cannot be undone.
         </p>
         <div className="mt-6 flex justify-end gap-2">
-          <button onClick={onClose} className="btn btn-ghost">
+          <button onClick={onClose} className="btn btn-ghost" disabled={isDeleting}>
             Cancel
           </button>
-          <button onClick={onConfirm} className="btn btn-error">
-            Delete
+          <button onClick={onConfirm} className="btn btn-error" disabled={isDeleting}>
+            {isDeleting ? <span className="loading loading-spinner"></span> : "Delete"}
           </button>
         </div>
       </div>

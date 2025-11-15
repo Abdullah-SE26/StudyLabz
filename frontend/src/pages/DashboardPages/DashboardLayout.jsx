@@ -62,12 +62,12 @@ export default function DashboardLayout() {
     {
       to: "/dashboard/create-course",
       label: "Create Course",
-      icon: <FilePlus className="w-5 h-5" />, // distinct icon
+      icon: <FilePlus className="w-5 h-5" />, 
     },
     {
       to: "/courses",
       label: "Manage Courses",
-      icon: <BookOpen className="w-5 h-5" />, // distinct icon
+      icon: <BookOpen className="w-5 h-5" />, 
     },
     {
       to: "/dashboard/users",
@@ -100,7 +100,7 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? "w-72" : "w-20"
+          sidebarOpen ? "w-52" : "w-15"
         } shrink-0 z-20 bg-sf-cream border-r border-sf-border flex flex-col shadow-md transition-all duration-300 ease-in-out`}
       >
         {/* Header */}

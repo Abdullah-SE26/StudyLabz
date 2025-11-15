@@ -372,6 +372,7 @@ const ManageReports = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         itemName="report"
+        isDeleting={isDeleting}
       />
     </div>
   );

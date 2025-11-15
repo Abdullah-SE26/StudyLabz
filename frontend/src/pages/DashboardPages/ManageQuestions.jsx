@@ -260,7 +260,6 @@ const ManageQuestions = () => {
                   <th className="px-2 py-1 w-12">#</th>
                   <th className="px-2 py-1">Question</th>
                   <th className="px-2 py-1 hidden sm:table-cell">Course</th>
-                  <th className="px-2 py-1 hidden md:table-cell">Author</th>
                   <th className="px-2 py-1 w-[170px]">Interactions</th>
                   <th className="px-2 py-1 w-16">Actions</th>
                 </tr>
@@ -286,7 +285,7 @@ const ManageQuestions = () => {
                           dangerouslySetInnerHTML={{ __html: q.sanitized }}
                         />
                         <div className="text-xs text-gray-500 mt-1">
-                          Created on {new Date(q.createdAt).toLocaleDateString()}
+                          by {getAuthorName(q)} on {new Date(q.createdAt).toLocaleDateString()}
                         </div>
 
                         {tags.length > 0 && (
@@ -309,10 +308,6 @@ const ManageQuestions = () => {
 
                       <td className="px-2 py-2 hidden sm:table-cell align-top text-gray-700">
                         {course.name || "—"}
-                      </td>
-
-                      <td className="px-2 py-2 hidden md:table-cell align-top text-gray-700">
-                        {getAuthorName(q)}
                       </td>
 
                       <td className="px-2 py-2 align-top text-gray-700">
