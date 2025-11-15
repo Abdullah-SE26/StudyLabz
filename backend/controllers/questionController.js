@@ -522,7 +522,7 @@ export const reportQuestion = async (req, res, next) => {
 
 export const deleteQuestion = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const { id: userId, role: userRole } = req.user;
     const questionId = Number(req.params.id);
 
     const question = await prisma.question.findUnique({
@@ -533,7 +533,8 @@ export const deleteQuestion = async (req, res, next) => {
       return res
         .status(404)
         .json({ success: false, error: "Question not found" });
-    if (question.createdById !== userId)
+
+    if (userRole !== "admin" && question.createdById !== userId)
       return res
         .status(403)
         .json({

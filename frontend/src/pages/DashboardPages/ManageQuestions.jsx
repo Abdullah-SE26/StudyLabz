@@ -15,7 +15,7 @@ import Pagination from "../../components/Pagination";
 import PageFilters from "../../components/PageFilters";
 import { useNavigate } from "react-router-dom";
 import axios from "../../../lib/axios.js";
-import DeleteCourseModal from "../../components/DeleteCourseModal";
+import DeleteConfirmationModal from "../../components/DeleteConfirmationModal";
 
 const SkeletonRow = ({ columns = 6 }) => (
   <tr className="animate-pulse">
@@ -254,13 +254,12 @@ const ManageQuestions = () => {
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
-            <table className="min-w-[900px] w-full divide-y text-sm">
+            <table className="w-full divide-y text-sm">
               <thead>
                 <tr className="text-left text-sm text-gray-600">
                   <th className="px-2 py-1 w-12">#</th>
                   <th className="px-2 py-1">Question</th>
-                  <th className="px-2 py-1 hidden sm:table-cell">Course</th>
-                  <th className="px-2 py-1 w-[170px]">Interactions</th>
+                  <th className="px-2 py-1 w-[140px]">Interactions</th>
                   <th className="px-2 py-1 w-16">Actions</th>
                 </tr>
               </thead>
@@ -284,8 +283,10 @@ const ManageQuestions = () => {
                           className="font-medium text-sf-dark line-clamp-3"
                           dangerouslySetInnerHTML={{ __html: q.sanitized }}
                         />
-                        <div className="text-xs text-gray-500 mt-1">
-                          by {getAuthorName(q)} on {new Date(q.createdAt).toLocaleDateString()}
+                        <div className="text-xs text-gray-500 mt-1 space-x-2">
+                          <span>by {getAuthorName(q)}</span>
+                          <span>on {new Date(q.createdAt).toLocaleDateString()}</span>
+                          <span>in <strong>{course.name || "—"}</strong></span>
                         </div>
 
                         {tags.length > 0 && (
@@ -306,12 +307,8 @@ const ManageQuestions = () => {
                         )}
                       </td>
 
-                      <td className="px-2 py-2 hidden sm:table-cell align-top text-gray-700">
-                        {course.name || "—"}
-                      </td>
-
                       <td className="px-2 py-2 align-top text-gray-700">
-                        <div className="flex gap-4 items-center">
+                        <div className="flex gap-2 items-center">
                           <div className="flex items-center gap-1">
                             <Heart className="w-4 h-4 text-red-500" />
                             <span>{q.likesCount || 0}</span>
@@ -360,16 +357,15 @@ const ManageQuestions = () => {
         />
       </div>
 
-      <DeleteCourseModal
-        show={showDeleteModal}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
         onClose={() => {
           setShowDeleteModal(false);
           setQuestionToDelete(null);
         }}
         onConfirm={confirmDelete}
-        title="Delete Question"
-        message="Are you sure you want to delete this question? This action cannot be undone."
-        loading={deleteLoading}
+        itemName="question"
+        isDeleting={deleteLoading}
       />
     </div>
   );
