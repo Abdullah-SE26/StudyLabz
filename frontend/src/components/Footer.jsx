@@ -14,7 +14,7 @@ export default function Footer() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-4 md:mb-0">
           <img
-            src="/StudyLabzLogoStamp-nobg.png"
+            src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239291/StudyLabzLogoStamp-nobg_jpfjgu.png"
             alt="StudyLabz Logo"
             className="w-30 h-25 object-contain mb-1"
           />

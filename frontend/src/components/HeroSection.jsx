@@ -38,7 +38,7 @@ export default function HeroSection() {
         {/* Right Image */}
         <div className="flex-1 flex justify-center lg:justify-end">
           <img
-            src="/heroimage.png"
+            src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239296/heroimage_umpcog.png"
             alt="StudyLabz Hero Illustration"
             className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto rounded-3xl drop-shadow-md hover:scale-[1.03] transition-transform duration-300"
           />

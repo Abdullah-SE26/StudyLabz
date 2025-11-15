@@ -46,7 +46,7 @@ export default function Navbar() {
         <Link to="/" className="flex items-center">
           <div className="w-40 h-16 rounded-md flex items-center justify-center overflow-hidden">
             <img
-              src="/StudyLabzLogo-nobg.png"
+              src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239291/StudyLabzLogo-nobg_taqs85.png"
               alt="logo"
               className="object-contain max-h-full max-w-full"
             />

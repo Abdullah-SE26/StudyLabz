@@ -50,7 +50,7 @@ export default function Login() {
 
         {/* Owl Logo inside the form */}
         <img
-          src="/StudyLabzOwl-nobg.png"
+          src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239292/StudyLabzOwl-nobg_gtoc7x.png"
           alt="StudyLabz Owl"
           className="w-16 h-16 object-contain mb-3"
         />

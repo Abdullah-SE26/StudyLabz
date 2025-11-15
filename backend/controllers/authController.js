@@ -58,7 +58,7 @@ export const sendMagicLink = async (req, res) => {
         <div style="text-align: center; margin-bottom: 20px;">
           <img src="${
             process.env.FRONTEND_URL
-          }/scientist_owl_512.png" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
+          }https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239292/StudyLabzLogoStamp_evjjyn.png" alt="StudyLabz Logo" style="width: 120px; height: auto;" />
         </div>
         <h2 style="text-align: center; color: #333;">Hello!</h2>
         <p style="font-size: 16px; color: #555; line-height: 1.5;">
