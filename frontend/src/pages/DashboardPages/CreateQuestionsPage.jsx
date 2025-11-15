@@ -5,6 +5,7 @@ import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
 import { genUploader } from "uploadthing/client";
 import RichTextEditor from "../../components/RichTextEditor";
+import OptionEditor from "../../components/OptionEditor";
 import axios from "axios";
 
 const uploader = genUploader({
@@ -19,12 +20,21 @@ export default function CreateQuestionPage() {
   const [text, setText] = useState("");
   const [marks, setMarks] = useState("");
   const [type, setType] = useState("MCQ");
+  const [mcqOptions, setMcqOptions] = useState(["", "", "", ""]);
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
   const [examTypes, setExamTypes] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
+
+  const handleOptionChange = useCallback((index, value) => {
+    setMcqOptions(prev => {
+        const newOptions = [...prev];
+        newOptions[index] = value;
+        return newOptions;
+    });
+  }, []);
 
   const safeFetchJSON = useCallback(
     async (url) => {
@@ -64,7 +74,6 @@ export default function CreateQuestionPage() {
     })();
   }, [courseId, safeFetchJSON]);
 
-  const getPlaceholder = () => (type === "MCQ" ? "Question:\nA.\nB.\nC.\nD." : "Question:");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +82,12 @@ export default function CreateQuestionPage() {
     if (!strippedText) return toast.error("Question text cannot be empty");
     if (!marks || isNaN(Number(marks)) || Number(marks) <= 0)
       return toast.error("Marks must be a positive number");
+
+    if (type === "MCQ") {
+      if (mcqOptions.some(opt => !opt.replace(/<[^>]*>/g, "").trim())) {
+        return toast.error("All four MCQ options are required");
+      }
+    }
 
     setLoading(true);
     let uploadedFileUrl = null;
@@ -90,6 +105,7 @@ export default function CreateQuestionPage() {
         courseId: Number(courseId),
         examType: examId,
         image: uploadedFileUrl,
+        ...(type === "MCQ" && { options: mcqOptions }),
       };
 
       await axios.post(`${import.meta.env.VITE_API_URL}/questions`, payload, {
@@ -104,6 +120,7 @@ export default function CreateQuestionPage() {
       setCourseId("");
       setExamId("");
       setType("MCQ");
+      setMcqOptions(["", "", "", ""]);
     } catch (err) {
       toast.error(err.response?.data?.error || err.message || "Failed to create question");
     } finally {
@@ -180,7 +197,25 @@ export default function CreateQuestionPage() {
           </div>
 
           {/* Question Text */}
-          <RichTextEditor value={text} onChange={setText} placeholder={getPlaceholder()} />
+          <RichTextEditor value={text} onChange={setText}/>
+
+          {/* MCQ Options */}
+          {type === "MCQ" && (
+            <div className="space-y-3 p-4 border rounded-lg bg-base-50">
+                <label className="text-sm font-medium text-gray-700">MCQ Options</label>
+                <p className="text-xs text-gray-500 mb-2">Please provide exactly four options for the multiple-choice question.</p>
+                <div className="grid grid-cols-1 gap-4">
+                    {mcqOptions.map((option, index) => (
+                        <OptionEditor
+                            key={index}
+                            index={index}
+                            value={option}
+                            onChange={handleOptionChange}
+                        />
+                    ))}
+                </div>
+            </div>
+          )}
 
           {/* Attachment */}
           <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />

@@ -1,14 +1,6 @@
-TODOs:
-
-FRONTEND:
-fix Question Pages skeleton and course name
-
-#FCF8F5
-
-
-
-BACKEND:
-create report schema
+caching
+cdn for images
+lazy reload/suspense app.jsx
 
 
 FOR RENDER TO KEEP IT ACTIVE

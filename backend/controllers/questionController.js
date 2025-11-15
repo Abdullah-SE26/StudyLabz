@@ -15,7 +15,10 @@ export const getQuestions = async (req, res, next) => {
     const search = req.query.search?.trim() || "";
     const sort = req.query.sort || "latest";
     const tags = req.query.tags
-      ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean)
+      ? req.query.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
     const examType = req.query.examType?.trim() || "";
 
@@ -39,11 +42,13 @@ export const getQuestions = async (req, res, next) => {
       prisma.question.findMany({
         where,
         include: {
-          createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+          createdBy: {
+            select: { id: true, studentId: true, name: true, email: true },
+          },
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
-          _count: { select: { likedBy: true, reports: true, comments: true } }, 
+          _count: { select: { likedBy: true, reports: true, comments: true } },
         },
         orderBy,
         skip,
@@ -52,13 +57,17 @@ export const getQuestions = async (req, res, next) => {
       prisma.question.count({ where }),
     ]);
 
-    const formatted = questions.map(q => ({
+    const formatted = questions.map((q) => ({
       ...q,
       likesCount: q._count.likedBy,
       reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
-      creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
+      creatorName:
+        q.createdBy?.studentId ||
+        q.createdBy?.name ||
+        q.createdBy?.email ||
+        "Unknown",
       tags: q.course?.tags || [],
     }));
 
@@ -74,8 +83,8 @@ export const getQuestions = async (req, res, next) => {
   }
 };
 
-// ----------------------------- 
-// GET /questions/:id 
+// -----------------------------
+// GET /questions/:id
 // -----------------------------
 export const getQuestionById = async (req, res, next) => {
   try {
@@ -84,16 +93,20 @@ export const getQuestionById = async (req, res, next) => {
     const question = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+        createdBy: {
+          select: { id: true, studentId: true, name: true, email: true },
+        },
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reports: true, comments: true } }, 
+        _count: { select: { likedBy: true, reports: true, comments: true } },
       },
     });
 
     if (!question)
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
 
     res.status(200).json({
       ...question,
@@ -101,7 +114,11 @@ export const getQuestionById = async (req, res, next) => {
       reportsCount: question._count.reports,
       commentsCount: question._count.comments,
       bookmarksCount: question.bookmarkedBy.length,
-      creatorName: question.createdBy?.studentId || question.createdBy?.name || question.createdBy?.email || "Unknown",
+      creatorName:
+        question.createdBy?.studentId ||
+        question.createdBy?.name ||
+        question.createdBy?.email ||
+        "Unknown",
       tags: question.course?.tags || [],
       examType: question.examType || null,
     });
@@ -122,12 +139,17 @@ export const getQuestionsByCourse = async (req, res, next) => {
     const skip = (page - 1) * limit;
     const sort = req.query.sort || "latest";
     const tags = req.query.tags
-      ? req.query.tags.split(",").map(t => t.trim()).filter(Boolean)
+      ? req.query.tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
       : [];
 
     const course = await prisma.course.findUnique({ where: { id: courseId } });
     if (!course)
-      return res.status(404).json({ success: false, error: "Course not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
 
     const where = {
       courseId,
@@ -148,7 +170,9 @@ export const getQuestionsByCourse = async (req, res, next) => {
       prisma.question.findMany({
         where,
         include: {
-          createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+          createdBy: {
+            select: { id: true, studentId: true, name: true, email: true },
+          },
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
@@ -161,13 +185,17 @@ export const getQuestionsByCourse = async (req, res, next) => {
       prisma.question.count({ where }),
     ]);
 
-    const formatted = questions.map(q => ({
+    const formatted = questions.map((q) => ({
       ...q,
       likesCount: q._count.likedBy,
       reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
-      creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
+      creatorName:
+        q.createdBy?.studentId ||
+        q.createdBy?.name ||
+        q.createdBy?.email ||
+        "Unknown",
       tags: q.course?.tags || [],
     }));
 
@@ -192,33 +220,65 @@ export const createQuestion = async (req, res, next) => {
     const { text, type, options, marks, courseId, examType, image } = req.body;
 
     if (!text?.trim())
-      return res.status(400).json({ success: false, error: "Question text is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Question text is required" });
     if (!["MCQ", "Essay"].includes(type))
-      return res.status(400).json({ success: false, error: "Invalid question type" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid question type" });
     if (!marks || isNaN(marks) || marks <= 0)
-      return res.status(400).json({ success: false, error: "Marks must be positive" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Marks must be positive" });
     if (!courseId)
-      return res.status(400).json({ success: false, error: "Course ID is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Course ID is required" });
     if (!examType)
-      return res.status(400).json({ success: false, error: "Exam type is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Exam type is required" });
 
-    const validExamTypes = ["Quiz 1","Quiz 2","Midterm","Additional Quiz","Final"];
+    const validExamTypes = [
+      "Quiz 1",
+      "Quiz 2",
+      "Midterm",
+      "Additional Quiz",
+      "Final",
+    ];
     if (!validExamTypes.includes(examType))
-      return res.status(400).json({ success: false, error: "Invalid exam type" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid exam type" });
 
-    const course = await prisma.course.findUnique({ where: { id: Number(courseId) } });
+    const course = await prisma.course.findUnique({
+      where: { id: Number(courseId) },
+    });
     if (!course)
-      return res.status(404).json({ success: false, error: "Course not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
 
     const cleanText = sanitize(text);
-    let parsedOptions = null;
-    if (type === "MCQ") {
-      if (!options?.length || options.length < 2)
-        return res
-          .status(400)
-          .json({ success: false, error: "MCQ must have at least two options" });
-      parsedOptions = options.map(sanitize);
-    }
+let parsedOptions = null;
+
+if (type === "MCQ") {
+  if (!options || !Array.isArray(options) || options.length !== 4) {
+    return res.status(400).json({
+      success: false,
+      error: "MCQ must have exactly 4 options",
+    });
+  }
+  parsedOptions = options.map(opt => sanitize(opt.trim())).filter(Boolean);
+  if (parsedOptions.length !== 4) {
+    return res.status(400).json({
+      success: false,
+      error: "All 4 MCQ options must be non-empty",
+    });
+  }
+}
+
 
     const question = await prisma.question.create({
       data: {
@@ -233,7 +293,9 @@ export const createQuestion = async (req, res, next) => {
       },
       include: {
         course: { select: { id: true, name: true, tags: true } },
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+        createdBy: {
+          select: { id: true, studentId: true, name: true, email: true },
+        },
       },
     });
 
@@ -273,7 +335,9 @@ export const getUserBookmarks = async (req, res, next) => {
       prisma.question.findMany({
         where: { bookmarkedBy: { some: { id: userId } } },
         include: {
-          createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+          createdBy: {
+            select: { id: true, studentId: true, name: true, email: true },
+          },
           course: { select: { id: true, name: true, tags: true } },
           likedBy: { select: { id: true } },
           bookmarkedBy: { select: { id: true } },
@@ -283,16 +347,22 @@ export const getUserBookmarks = async (req, res, next) => {
         skip,
         take: limit,
       }),
-      prisma.question.count({ where: { bookmarkedBy: { some: { id: userId } } } }),
+      prisma.question.count({
+        where: { bookmarkedBy: { some: { id: userId } } },
+      }),
     ]);
 
-    const formatted = questions.map(q => ({
+    const formatted = questions.map((q) => ({
       ...q,
       likesCount: q._count.likedBy,
       reportsCount: q._count.reports,
       commentsCount: q._count.comments,
       bookmarksCount: q.bookmarkedBy.length,
-      creatorName: q.createdBy?.studentId || q.createdBy?.name || q.createdBy?.email || "Unknown",
+      creatorName:
+        q.createdBy?.studentId ||
+        q.createdBy?.name ||
+        q.createdBy?.email ||
+        "Unknown",
       tags: q.course?.tags || [],
     }));
 
@@ -321,9 +391,11 @@ export const toggleLikeQuestion = async (req, res, next) => {
       include: { likedBy: true },
     });
     if (!question)
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
 
-    const hasLiked = question.likedBy.some(u => u.id === userId);
+    const hasLiked = question.likedBy.some((u) => u.id === userId);
     await prisma.question.update({
       where: { id: questionId },
       data: hasLiked
@@ -336,9 +408,11 @@ export const toggleLikeQuestion = async (req, res, next) => {
       include: {
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+        createdBy: {
+          select: { id: true, studentId: true, name: true, email: true },
+        },
         course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reports: true, comments: true } }, 
+        _count: { select: { likedBy: true, reports: true, comments: true } },
       },
     });
 
@@ -374,9 +448,11 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
       include: { bookmarkedBy: true },
     });
     if (!question)
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
 
-    const hasBookmarked = question.bookmarkedBy.some(u => u.id === userId);
+    const hasBookmarked = question.bookmarkedBy.some((u) => u.id === userId);
     await prisma.question.update({
       where: { id: questionId },
       data: hasBookmarked
@@ -389,7 +465,9 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
       include: {
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
-        createdBy: { select: { id: true, studentId: true, name: true, email: true } },
+        createdBy: {
+          select: { id: true, studentId: true, name: true, email: true },
+        },
         course: { select: { id: true, name: true, tags: true } },
         _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
       },
@@ -423,14 +501,20 @@ export const reportQuestion = async (req, res, next) => {
     const questionId = Number(req.params.id);
     const reason = req.body.reason?.trim();
     if (!reason)
-      return res.status(400).json({ success: false, error: "Reason is required" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Reason is required" });
 
     const report = await prisma.report.create({
       data: { userId, questionId, reason },
     });
     res
       .status(201)
-      .json({ success: true, message: "Question reported successfully", data: report });
+      .json({
+        success: true,
+        message: "Question reported successfully",
+        data: report,
+      });
   } catch (err) {
     next(err);
   }
@@ -446,11 +530,16 @@ export const deleteQuestion = async (req, res, next) => {
       select: { id: true, createdById: true },
     });
     if (!question)
-      return res.status(404).json({ success: false, error: "Question not found" });
+      return res
+        .status(404)
+        .json({ success: false, error: "Question not found" });
     if (question.createdById !== userId)
       return res
         .status(403)
-        .json({ success: false, error: "Unauthorized to delete this question" });
+        .json({
+          success: false,
+          error: "Unauthorized to delete this question",
+        });
 
     await prisma.question.delete({ where: { id: questionId } });
     res
