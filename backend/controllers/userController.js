@@ -2,16 +2,30 @@ import prisma from '../prismaClient.js';
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await prisma.user.findMany({
-      include: {
-        _count: {
-          select: {
-            createdQuestions: true,
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        include: {
+          _count: {
+            select: {
+              createdQuestions: true,
+            },
           },
         },
-      },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.user.count(),
+    ]);
+
+    res.status(200).json({
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit),
+      data: users,
     });
-    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: error.message });
   }

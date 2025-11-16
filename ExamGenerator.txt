@@ -1,0 +1,167 @@
+Full Implementation Plan: AI-Powered Exam Generator (PERN Stack)
+1. Frontend (React)
+1.1 User Interface
+
+A button: Generate Exam with AI
+
+Opens a modal with the following inputs:
+
+Exam title (text input)
+
+Total marks (number input)
+
+Question sources (checkboxes: quiz, midterm, final, additional quizzes)
+
+Optional: number of versions (default = 1)
+
+Buttons inside modal:
+
+Preview Exam – shows AI-formatted exam text in a scrollable container
+
+Download PDF – triggers backend to generate and return PDF
+
+1.2 Preview
+
+Clicking Preview sends a request to the backend.
+
+Backend responds with AI-formatted text (professional layout, sections, instructions).
+
+Display the formatted exam in a modal for user review.
+
+1.3 Download PDF
+
+Clicking Download PDF sends a request to backend.
+
+Backend generates PDF from AI-formatted text and returns it as a binary blob.
+
+Frontend triggers download with proper filename (e.g., ExamTitle.pdf).
+
+2. Backend (Express + Node.js)
+2.1 API Endpoints
+
+POST /generate-exam/preview
+
+Receives: exam title, total marks, selected question sources, version count (optional)
+
+Returns: AI-formatted exam text (plain text)
+
+POST /generate-exam/pdf
+
+Receives same data as preview
+
+Returns: PDF buffer of AI-formatted exam (with headers, footers, page breaks)
+
+2.2 Question Selection
+
+Use Prisma to query questions from database based on selected sources.
+
+Random selection logic to match exact total marks:
+
+Sum marks of selected questions until total = requested total marks
+
+Arrange questions by type:
+
+MCQs first
+
+Then short answers
+
+Then long answers
+
+For multiple versions:
+
+Repeat random selection to create different question combinations for each version
+
+Keep exact total marks
+
+2.3 AI Integration (Gemini)
+
+All calls happen on backend (keeps API key safe)
+
+AI task:
+
+Format questions into professional exam layout
+
+Add cover page with exam title, course, total marks, and optional instructions
+
+Add section headings automatically (MCQs, Short Answer, Long Answer)
+
+Keep original marks from DB (do not change)
+
+Sample prompt:
+
+Format the following questions into a professional exam paper:
+Title: [Exam Title]
+Total Marks: [Total Marks]
+Sections: MCQs first, then Short Answer
+Instructions: Please answer all questions.
+Questions:
+1. [question text] (marks)
+2. [question text] (marks)
+Output should be plain text suitable for PDF generation.
+
+2.4 PDF Generation
+
+Use jsPDF or pdf-lib (Node.js compatible)
+
+Features:
+
+Cover page with title, course, date, total marks
+
+Header/footer with page numbers
+
+Section headings (MCQs, Short Answer, Long Answer)
+
+Automatic page breaks
+
+Polished formatting: font sizes, bold headings, spacing
+
+Convert AI-formatted text to PDF and send to frontend for download
+
+2.5 Backend Workflow
+
+Receive request from frontend (preview or PDF)
+
+Fetch questions from DB based on sources
+
+Randomly select questions to meet exact total marks
+
+Organize questions by type (MCQs first, etc.)
+
+Send question list + exam info to Gemini AI for formatting
+
+Receive AI-formatted text
+
+If preview → return plain text
+If PDF → generate PDF and return binary buffer
+
+3. Multiple Versions
+
+If user requests multiple exam versions:
+
+Generate separate random question sets for each version
+
+Call AI separately for each version (or reuse formatting logic)
+
+Return either multiple preview texts or multiple PDFs
+
+Ensures variation between versions while keeping exact marks
+
+4. Additional Features
+
+Preview before PDF download
+
+Random selection ensures different question combinations for practice exams
+
+Cover page and polished layout give professional appearance
+
+All AI calls on backend to keep API key secure and maintain full control
+
+5. Flow Summary
+
+User clicks Generate Exam with AI
+
+Modal opens → user fills title, total marks, sources, version count
+
+Click Preview → backend returns AI-formatted exam text → show in modal
+
+Click Download PDF → backend generates PDF with AI-formatted text → frontend downloads

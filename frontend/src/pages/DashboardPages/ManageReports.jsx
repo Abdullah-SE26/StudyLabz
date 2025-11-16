@@ -20,20 +20,28 @@ const ManageReports = () => {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/reports/admin");
+      const params = {
+        page: currentPage,
+        limit: pageSize,
+        sort: sortOrder,
+        ...(filterStatus !== "ALL" && { status: filterStatus }),
+      };
+      const response = await axios.get("/reports/admin", { params });
       setReports(response.data.data || []);
+      setTotalPages(response.data.pages || 1);
     } catch (err) {
       setError(err);
       toast.error("Failed to fetch reports.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, pageSize, sortOrder, filterStatus]);
 
   useEffect(() => {
     fetchReports();
@@ -97,27 +105,14 @@ const ManageReports = () => {
     }
   };
 
-  const filteredAndSortedReports = useMemo(() => {
-    let result = [...reports];
-    if (filterStatus !== "ALL")
-      result = result.filter((r) => r.status === filterStatus);
-
-    result.sort((a, b) => {
+  // Sorting only for "resolved goes down"
+  const sortedReports = useMemo(() => {
+    return [...reports].sort((a, b) => {
       if (a.status === "RESOLVED" && b.status !== "RESOLVED") return 1;
       if (b.status === "RESOLVED" && a.status !== "RESOLVED") return -1;
-      return sortOrder === "asc"
-        ? new Date(a.createdAt) - new Date(b.createdAt)
-        : new Date(b.createdAt) - new Date(a.createdAt);
+      return 0; // leave the rest in backend order
     });
-
-    return result;
-  }, [reports, filterStatus, sortOrder]);
-
-  const totalPages = Math.ceil(filteredAndSortedReports.length / pageSize);
-  const paginatedReports = filteredAndSortedReports.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  }, [reports]);
 
   const rowColor = (report) => {
     if (report.questionId) return "bg-blue-100"; // lighter blue
@@ -129,8 +124,6 @@ const ManageReports = () => {
     switch (status) {
       case "PENDING":
         return "bg-yellow-200 text-yellow-800";
-      case "REVIEWED":
-        return "bg-blue-200 text-blue-800";
       case "RESOLVED":
         return "bg-green-200 text-green-800";
       case "REJECTED":
@@ -162,7 +155,6 @@ const ManageReports = () => {
   const counts = {
     TOTAL: reports.length,
     PENDING: reports.filter((r) => r.status === "PENDING").length,
-    REVIEWED: reports.filter((r) => r.status === "REVIEWED").length,
     RESOLVED: reports.filter((r) => r.status === "RESOLVED").length,
     REJECTED: reports.filter((r) => r.status === "REJECTED").length,
   };
@@ -177,7 +169,6 @@ const ManageReports = () => {
           const colors = {
             TOTAL: "bg-gray-200",
             PENDING: "bg-yellow-200",
-            REVIEWED: "bg-blue-200",
             RESOLVED: "bg-green-200",
             REJECTED: "bg-red-200",
           };
@@ -201,12 +192,14 @@ const ManageReports = () => {
           <select
             id="status-filter"
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => {
+              setCurrentPage(1);
+              setFilterStatus(e.target.value);
+            }}
             className="border rounded p-1"
           >
             <option value="ALL">All</option>
             <option value="PENDING">Pending</option>
-            <option value="REVIEWED">Reviewed</option>
             <option value="RESOLVED">Resolved</option>
             <option value="REJECTED">Rejected</option>
           </select>
@@ -218,7 +211,10 @@ const ManageReports = () => {
           <select
             id="date-sort"
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
+            onChange={(e) => {
+              setCurrentPage(1);
+              setSortOrder(e.target.value);
+            }}
             className="border rounded p-1"
           >
             <option value="desc">Newest First</option>
@@ -255,14 +251,14 @@ const ManageReports = () => {
             </tr>
           </thead>
           <tbody>
-            {paginatedReports.map((report) => (
+            {sortedReports.map((report, index) => (
               <tr
                 key={report.id}
                 className={`${rowColor(report)} hover:bg-gray-50 ${
                   updatingReportId === report.id ? "opacity-50" : ""
                 }`}
               >
-                <td className="py-2 px-2 border-b">{report.id}</td>
+                <td className="py-2 px-2 border-b">{(currentPage - 1) * pageSize + index + 1}</td>
                 <td className="py-2 px-4 border-b">
                   {report.reportedBy?.name || report.reportedBy?.email || "N/A"}
                 </td>
@@ -275,11 +271,7 @@ const ManageReports = () => {
                       to={`/questions/${report.question.id}`}
                       className="text-blue-700 hover:underline"
                     >
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: report.question.text,
-                        }}
-                      />
+                      <span dangerouslySetInnerHTML={{ __html: report.question.text }} />
                     </Link>
                   ) : report.commentId && report.comment ? (
                     <Link
@@ -303,9 +295,7 @@ const ManageReports = () => {
                   {new Date(report.createdAt).toLocaleString()}
                 </td>
                 <td className="py-2 px-4 border-b">
-                  {report.resolvedAt
-                    ? new Date(report.resolvedAt).toLocaleString()
-                    : "N/A"}
+                  {report.resolvedAt ? new Date(report.resolvedAt).toLocaleString() : "N/A"}
                 </td>
                 <td className="py-2 px-4 border-b">
                   {updatingReportId === report.id ? (
@@ -313,23 +303,16 @@ const ManageReports = () => {
                   ) : (
                     <select
                       value={report.status}
-                      onChange={(e) =>
-                        handleStatusChange(report.id, e.target.value)
-                      }
-                      className={`border rounded p-1 ${getStatusColor(
-                        report.status
-                      )}`}
+                      onChange={(e) => handleStatusChange(report.id, e.target.value)}
+                      className={`border rounded p-1 ${getStatusColor(report.status)}`}
                     >
                       <option value="PENDING">PENDING</option>
-                      <option value="REVIEWED">REVIEWED</option>
                       <option value="RESOLVED">RESOLVED</option>
                       <option value="REJECTED">REJECTED</option>
                     </select>
                   )}
                 </td>
-                <td className="py-2 px-4 border-b max-w-xs truncate">
-                  {report.actionTaken || "N/A"}
-                </td>
+                <td className="py-2 px-4 border-b max-w-xs truncate">{report.actionTaken || "N/A"}</td>
                 <td className="py-2 px-4 border-b">
                   <button
                     onClick={() => handleDeleteClick(report)}

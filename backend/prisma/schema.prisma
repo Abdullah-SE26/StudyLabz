@@ -115,4 +115,6 @@ model Report {
   comment      Comment?  @relation("CommentReports", fields: [commentId], references: [id])
   resolvedById Int?
   resolvedBy   User?     @relation("ReportsResolved", fields: [resolvedById], references: [id])
+  @@map("report")
+
 }

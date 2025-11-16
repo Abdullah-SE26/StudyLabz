@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "../../../lib/axios";
 import { toast } from "react-hot-toast";
 import { useStore } from "../../store/authStore";
+import Pagination from "../../components/Pagination";
 
 const ManageUsers = () => {
   const [users, setUsers] = useState([]);
@@ -11,22 +12,28 @@ const ManageUsers = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [banUntil, setBanUntil] = useState("");
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get("/users");
-      setUsers(response.data);
+      const response = await axios.get("/users", {
+        params: { page: currentPage, limit: pageSize },
+      });
+      setUsers(response.data.data);
+      setTotalPages(response.data.pages);
     } catch {
       toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleRoleChange = async (userId, newRole) => {
     try {
@@ -53,7 +60,6 @@ const ManageUsers = () => {
         prev.map((u) => (u.id === selectedUser.id ? response.data : u))
       );
       toast.success(banUntilValue ? "User banned!" : "User unbanned!");
-      // Close the modal
       document.getElementById("ban_modal").close();
       setSelectedUser(null);
       setBanUntil("");
@@ -144,6 +150,14 @@ const ManageUsers = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4">
+        <Pagination
+          totalPages={totalPages}
+          currentPage={currentPage}
+          handlePageChange={(page) => setCurrentPage(page)}
+        />
       </div>
 
       {/* DaisyUI Ban Modal */}

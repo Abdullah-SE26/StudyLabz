@@ -53,10 +53,11 @@ export const createReport = async (req, res) => {
 // -----------------------------
 export const getAllReports = async (req, res) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, page = 1, limit = 20, sort = "desc" } = req.query;
 
     const where = status ? { status } : {};
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    const orderBy = { createdAt: sort === "asc" ? "asc" : "desc" };
 
     const [reports, total] = await Promise.all([
       prisma.report.findMany({
@@ -67,7 +68,7 @@ export const getAllReports = async (req, res) => {
           comment: { select: { id: true, text: true, questionId: true } },
           resolvedBy: { select: { id: true, name: true, email: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: parseInt(limit),
       }),
