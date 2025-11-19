@@ -7,7 +7,8 @@ import contactRoutes from "./routes/contact.js";
 import courseRoutes from "./routes/courses.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import usersRoutes from "./routes/users.js";
-import reportRoutes from "./routes/reports.js"; 
+import reportRoutes from "./routes/reports.js";
+import { startKeepAwake, trafficHit } from './keepAwake.js';  // ✅ import trafficHit
 
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./routes/uploadthing.js";
@@ -35,6 +36,20 @@ app.use(express.json());
 // Health check
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
+});
+
+// Start the smart ping
+startKeepAwake();
+
+// Keeping render free tier awake
+app.get('/ping', (req, res) => {
+  res.send('ok'); 
+});
+
+// Track traffic on every request
+app.use((req, res, next) => {
+  trafficHit();
+  next();
 });
 
 // Routes
