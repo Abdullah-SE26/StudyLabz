@@ -1,16 +1,20 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
   Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+// Register Chart.js components
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 /**
- * Reusable Line Chart Card Component
+ * Reusable Line Chart Card Component using Chart.js
  * @param {string} title - Chart title
  * @param {ReactNode} icon - Icon component
  * @param {Array} data - Array of { date, count }
@@ -32,6 +36,48 @@ export default function LineChartCard({ title, icon, data, color }) {
     }
   };
 
+  const chartData = useMemo(() => ({
+    labels: data.map((d) => d.date),
+    datasets: [
+      {
+        label: title,
+        data: data.map((d) => d.count),
+        borderColor: getStrokeColor(color),
+        backgroundColor: "transparent",
+        tension: 0.4,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+      },
+    ],
+  }), [data, color, title]);
+
+  const options = useMemo(() => ({
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: "index",
+        intersect: false,
+        backgroundColor: "#fff",
+        titleColor: "#000",
+        bodyColor: "#000",
+        borderColor: "#e5e7eb",
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: "#374151" },
+      },
+      y: {
+        grid: { color: "#e5e7eb" },
+        ticks: { color: "#374151", stepSize: 1 },
+        beginAtZero: true,
+      },
+    },
+  }), []);
+
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200">
       {/* Header */}
@@ -42,40 +88,7 @@ export default function LineChartCard({ title, icon, data, color }) {
 
       {/* Chart */}
       <div style={{ width: "100%", height: 250 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={data}
-            margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              tickMargin={6}
-              axisLine={false}
-            />
-            <YAxis
-              allowDecimals={false}
-              domain={["auto", "auto"]}
-              tick={{ fontSize: 12 }}
-              axisLine={false}
-            />
-            <Tooltip
-              contentStyle={{
-                fontSize: "0.875rem",
-                borderRadius: "8px",
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="count"
-              stroke={getStrokeColor(color)}
-              strokeWidth={2}
-              dot={{ r: 3 }}
-              isAnimationActive={true}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <Line data={chartData} options={options} />
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, memo } from "react";
+import { useState, useEffect, Suspense, memo, lazy } from "react";
 import { useStore } from "../../store/authStore";
 import { toast } from "react-hot-toast";
 import axios from "../../../lib/axios";
@@ -43,15 +43,9 @@ const WelcomeBanner = memo(({ isAdmin }) => (
 ));
 
 // Lazy-load heavy parts
-const QuickStats = Suspense
-  ? memo(() => import("../../components/QuickStats"))
-  : null;
-const AdminCharts = Suspense
-  ? memo(() => import("../../components/AdminCharts"))
-  : null;
-const UserCharts = Suspense
-  ? memo(() => import("../../components/UserCharts"))
-  : null;
+const QuickStats = lazy(() => import("../../components/QuickStats"));
+const AdminCharts = lazy(() => import("../../components/AdminCharts"));
+const UserCharts = lazy(() => import("../../components/UserCharts"));
 
 export default function DashboardHome() {
   const user = useStore((state) => state.user);

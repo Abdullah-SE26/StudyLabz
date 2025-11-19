@@ -1,189 +1,194 @@
-# Unit Test Scenarios for StudyLabz Project
+# **White-Box Unit Test Analysis Report for StudyLabz Project**
 
-This file describes unit test scenarios in plain text, outlining the component being tested, the scenario, input, and expected output.
+## **Introduction**
 
----
+This report provides a detailed white-box testing analysis for key components of the StudyLabz application. The white-box approach is utilized, meaning the tests are designed with an internal perspective of the system's code and structure.
 
-## Backend Unit Tests
-
-### 1. File: `backend/utils/sanitize.js`
-   - **Function:** `stripEmbeddedAnswers(text)`
-
-   - **Scenario 1:** Should remove a standard answer from the end of a string.
-     - **Input:** `What is the capital of France? (Answer: Paris)`
-     - **Action:** Call `stripEmbeddedAnswers` with the input string.
-     - **Expected Output:** The string `What is the capital of France?`.
-
-   - **Scenario 2:** Should remove an answer in brackets with different casing.
-     - **Input:** `Question text [ans: solution]`
-     - **Action:** Call `stripEmbeddedAnswers` with the input string.
-     - **Expected Output:** The string `Question text`.
-
-   - **Scenario 3:** Should not change a string that does not contain an answer.
-     - **Input:** `This is a simple sentence.`
-     - **Action:** Call `stripEmbeddedAnswers` with the input string.
-     - **Expected Output:** The string `This is a simple sentence.`.
-
-   - **Scenario 4:** Should handle an empty string without errors.
-     - **Input:** `''` (empty string)
-     - **Action:** Call `stripEmbeddedAnswers` with the input string.
-     - **Expected Output:** `''` (empty string).
-
-### 2. File: `backend/controllers/questionController.js`
-   - **Function:** `createQuestion(req, res, next)`
-
-   - **Scenario 1:** Successful creation of a new MCQ question.
-     - **Input:**
-       - A request from an authenticated user (user ID is present).
-       - Request body contains valid `text`, `type: 'MCQ'`, `options` (as an HTML string), `marks`, `courseId`, and `examType`.
-     - **Action:** Call the `createQuestion` function. The database lookup for the course should succeed.
-     - **Expected Output:**
-       - An HTTP status code of `201 Created`.
-       - A JSON response with `{ success: true, message: 'Question created successfully', ... }`.
-       - The new question object is saved to the database.
-
-   - **Scenario 2:** Attempt to create a question with empty text.
-     - **Input:** Request body with `text` as an empty string.
-     - **Action:** Call the `createQuestion` function.
-     - **Expected Output:**
-       - An HTTP status code of `400 Bad Request`.
-       - A JSON response with `{ success: false, error: 'Question text is required' }`.
-
-   - **Scenario 3:** Attempt to create an MCQ question with empty options.
-     - **Input:** Request body with `type: 'MCQ'` and `options` as an empty string.
-     - **Action:** Call the `createQuestion` function.
-     - **Expected Output:**
-       - An HTTP status code of `400 Bad Request`.
-       - A JSON response with `{ success: false, error: 'MCQ options cannot be empty.' }`.
-
-   - **Scenario 4:** Attempt to create a question for a course that does not exist.
-     - **Input:** Request body with a `courseId` that is not in the database.
-     - **Action:** Call the `createQuestion` function. The database lookup for the course should return `null`.
-     - **Expected Output:**
-       - An HTTP status code of `404 Not Found`.
-       - A JSON response with `{ success: false, error: 'Course not found' }`.
-
-   - **Scenario 5:** A database error occurs.
-     - **Input:** A valid request body.
-     - **Action:** Call the `createQuestion` function. The database call throws an error.
-     - **Expected Output:** The `next` function is called with the database error object, passing it to the error-handling middleware.
+For each selected unit, this report will:
+1.  Present the source code of the **Unit Under Test**.
+2.  Discuss the **Testing Methodology and Coverage Criteria** used to design the tests.
+3.  Outline the specific **Test Scenarios** derived from the methodology.
 
 ---
 
-## Frontend Unit Tests
+## **1. Backend: `questionController.js` - `createQuestion` Function**
 
-### 1. File: `frontend/src/store/authStore.js`
+This function is critical as it handles the creation of new questions, involving validation, data sanitization, and database interaction.
 
-   - **Scenario 1:** The store has the correct initial state.
-     - **Input:** The application is loaded for the first time.
-     - **Action:** Check the initial state of `useStore`.
-     - **Expected Output:** The `user` and `authToken` properties in the store are both `null`.
+### **1.1. Unit Under Test (Source Code)**
 
-   - **Scenario 2:** Logging in a user updates the store and localStorage.
-     - **Input:** A user object `{ id: 1, name: 'Test User' }` and a token `'fake-jwt-token'`.
-     - **Action:** Call the `login` action from the store with the user and token.
-     - **Expected Output:**
-       - The `user` property in the store is set to the user object.
-       - The `authToken` property in the store is set to the token.
-       - The user object is saved to the browser's localStorage.
-       - The auth token is saved to the browser's localStorage.
+```javascript
+// File: backend/controllers/questionController.js
 
-   - **Scenario 3:** Logging out a user clears the store and localStorage.
-     - **Input:** The store has an authenticated user and token.
-     - **Action:** Call the `logout` action from the store.
-     - **Expected Output:**
-       - The `user` and `authToken` properties in the store are set to `null`.
-       - The user and auth token are removed from the browser's localStorage.
+export const createQuestion = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { text, type, options, marks, courseId, examType, image } = req.body;
 
-### 2. File: `frontend/src/components/ProtectedRoute.jsx`
+    if (!text?.trim())
+      return res
+        .status(400)
+        .json({ success: false, error: "Question text is required" });
+    if (!["MCQ", "Essay"].includes(type))
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid question type" });
+    if (!marks || isNaN(marks) || marks <= 0)
+      return res
+        .status(400)
+        .json({ success: false, error: "Marks must be a positive number" });
+    if (!courseId)
+      return res
+        .status(400)
+        .json({ success: false, error: "Course ID is required" });
+    if (!examType)
+      return res
+        .status(400)
+        .json({ success: false, error: "Exam type is required" });
 
-   - **Scenario 1:** An authenticated user can access a protected page.
-     - **Input:** The `authStore` has a valid `authToken`.
-     - **Action:** The user navigates to a URL wrapped by the `ProtectedRoute` component (e.g., `/dashboard`).
-     - **Expected Output:** The content of the protected page is rendered and displayed to the user.
+    // ... (omitting validExamTypes check for brevity)
 
-   - **Scenario 2:** A non-authenticated user is redirected to the login page.
-     - **Input:** The `authStore` has `authToken` as `null`.
-     - **Action:** The user navigates to a URL wrapped by the `ProtectedRoute` component (e.g., `/dashboard`).
-     - **Expected Output:**
-       - The content of the protected page is NOT rendered.
-       - The user is automatically redirected to the `/login` page.
+    const course = await prisma.course.findUnique({
+      where: { id: Number(courseId) },
+    });
+    if (!course)
+      return res
+        .status(404)
+        .json({ success: false, error: "Course not found" });
 
-### 3. File: `frontend/src/components/QuestionCard.jsx`
+    const cleanText = sanitize(text);
+    let parsedOptions = null;
 
-   - **Scenario 1:** Renders basic question information correctly.
-     - **Input:** A `question` prop with `creatorName`, `createdAt`, `examType`, `marks`, and `text`.
-     - **Action:** Render the `QuestionCard` component with the question prop.
-     - **Expected Output:**
-       - The creator's name, creation date, exam type, and marks are all visible on the card.
-       - The question text is correctly rendered, including any HTML formatting.
+    if (type === "MCQ") {
+      if (!options || typeof options !== "string" || options.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          error: "MCQ options cannot be empty.",
+        });
+      }
+      parsedOptions = sanitize(options);
+    }
 
-   - **Scenario 2:** Renders MCQ options correctly.
-     - **Input:** A `question` prop where `options` is an HTML string (e.g., `<ol><li>Option A</li><li>Option B</li></ol>`).
-     - **Action:** Render the `QuestionCard` component.
-     - **Expected Output:** The options are displayed as a formatted list, not as plain text. The HTML from the `options` string is rendered.
+    const question = await prisma.question.create({
+      data: {
+        type,
+        text: cleanText,
+        options: parsedOptions,
+        marks: Number(marks),
+        image: image?.trim() || null,
+        examType,
+        course: { connect: { id: Number(courseId) } },
+        createdBy: { connect: { id: userId } },
+      },
+      // ... include block
+    });
 
-   - **Scenario 3:** Does not render the options section if no options are provided.
-     - **Input:** A `question` prop where `options` is `null` or an empty string.
-     - **Action:** Render the `QuestionCard` component.
-     - **Expected Output:** The `div` for options is not present in the rendered output.
+    res.status(201).json({
+      success: true,
+      message: "Question created successfully",
+      data: { ... }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+```
 
-   - **Scenario 4:** Renders an image when an image URL is provided.
-     - **Input:** A `question` prop with a valid `image` URL string.
-     - **Action:** Render the `QuestionCard` component.
-     - **Expected Output:** An `<img>` tag is rendered with the `src` attribute set to the `image` URL.
+### **1.2. Testing Methodology and Coverage Criteria**
 
-   - **Scenario 5:** Clicking the 'Like' button calls the onToggleLike function.
-     - **Input:** A mock function passed as the `onToggleLike` prop.
-     - **Action:** Simulate a user click on the 'Like' button.
-     - **Expected Output:** The mock `onToggleLike` function is called exactly once.
+The internal logic of `createQuestion` is characterized by a sequence of validation checks (guards) followed by database interactions. The testing strategy is therefore designed to achieve a high degree of **Branch Coverage** and **Path Coverage** for this validation logic.
 
-   - **Scenario 6:** Clicking the 'Comments' button toggles the visibility of the comments section.
-     - **Input:** The component is rendered.
-     - **Action:**
-       1. Simulate a user click on the 'Comments' button.
-       2. Simulate another user click on the 'Comments' button.
-     - **Expected Output:**
-       1. The `CommentsSection` component becomes visible.
-       2. The `CommentsSection` component is no longer visible.
+*   **Coverage Goal:** The primary goal is to achieve 100% **Branch Coverage**. This means that every `if` statement will be tested for both its `true` and `false` outcomes. This ensures that every validation rule and error path is tested. We will also aim for high **Path Coverage** by testing each failure path independently.
 
-### 4. File: `frontend/src/pages/DashboardPages/CreateQuestionsPage.jsx`
+*   **Methodology:**
+    *   **Dependency Mocking:** External dependencies, specifically the `prisma` client and the `sanitize` utility, will be mocked. This isolates the controller's logic, ensuring we are only testing the unit itself, not its dependencies.
+    *   **Path Analysis:**
+        1.  **Success Path:** A test will be designed to pass all validation checks, resulting in a successful database write.
+        2.  **Failure Paths:** A separate test will be created for each validation `if` statement. Each test will provide input that specifically triggers that validation rule, ensuring the correct error response is sent.
+        3.  **Exception Path:** A test will simulate a failure in the `prisma` database call to ensure the `try...catch` block correctly passes the error to the `next()` middleware.
 
-   - **Scenario 1:** Form submission is blocked if the question text is empty.
-     - **Input:** User has not entered any text for the question.
-     - **Action:** Simulate a click on the "Save Question" button.
-     - **Expected Output:**
-       - A toast notification appears with an error message like "Question text cannot be empty".
-       - No network request is made to the backend.
+### **1.3. Test Scenarios**
 
-   - **Scenario 2:** Form submission is blocked if marks are not a positive number.
-     - **Input:** User enters '0' or '-5' or 'abc' in the marks field.
-     - **Action:** Simulate a click on the "Save Question" button.
-     - **Expected Output:**
-       - A toast notification appears with an error message like "Marks must be a positive number".
-       - No network request is made to the backend.
+*   **Scenario 1: Successful Creation (Success Path)**
+    *   **Description:** Tests the ideal path where all inputs are valid.
+    *   **Input:** A request from an authenticated user with a body containing valid `text`, `type`, `options`, `marks`, `courseId`, and `examType`. The mocked `prisma.course.findUnique` returns a valid course.
+    *   **Action:** Call the `createQuestion` function.
+    *   **Expected Output:** The function returns an HTTP status of `201` with a success message and the created question data. `prisma.question.create` is called once.
 
-   - **Scenario 3:** A successful form submission sends the correct data to the backend.
-     - **Input:** All form fields are filled out correctly.
-     - **Action:** Simulate a click on the "Save Question" button.
-     - **Expected Output:**
-       - A `POST` request is made to the `/questions` API endpoint.
-       - The payload of the request contains the correct data from the form's state (`text`, `type`, `marks`, `courseId`, `examType`, `options`).
-       - After a successful response, a success toast is shown and the form fields are reset.
+*   **Scenario 2: Failure due to Missing Text (Branch 1)**
+    *   **Description:** Tests the first validation guard.
+    *   **Input:** Request body where `text` is an empty string or `null`.
+    *   **Action:** Call the `createQuestion` function.
+    *   **Expected Output:** The function returns an HTTP status of `400` with the error "Question text is required". No database methods are called.
 
-### 5. File: `frontend/lib/axios.js`
+*   **Scenario 3: Failure due to Invalid Marks (Branch 3)**
+    *   **Description:** Tests the validation for the `marks` field.
+    *   **Input:** Request body where `marks` is `0`, `-10`, or a non-numeric string like `"abc"`.
+    *   **Action:** Call the `createQuestion` function.
+    *   **Expected Output:** The function returns an HTTP status of `400` with the error "Marks must be a positive number".
 
-   - **Scenario 1:** The Authorization header is added to requests when a token is available.
-     - **Input:** The `authStore` contains an `authToken`.
-     - **Action:** Make any API request using the configured Axios instance.
-     - **Expected Output:** The outgoing request includes an `Authorization` header with the value `Bearer <authToken>`.
+*   **Scenario 4: Failure due to Course Not Found (Branch 6)**
+    *   **Description:** Tests the case where the specified `courseId` does not exist.
+    *   **Input:** A valid request body, but the mocked `prisma.course.findUnique` is configured to return `null`.
+    *   **Action:** Call the `createQuestion` function.
+    - **Expected Output:** The function returns an HTTP status of `404` with the error "Course not found".
 
-   - **Scenario 2:** The Authorization header is NOT added if no token is available.
-     - **Input:** The `authStore`'s `authToken` is `null`.
-     - **Action:** Make any API request using the configured Axios instance.
-     - **Expected Output:** The outgoing request does NOT include an `Authorization` header.
+*   **Scenario 5: Failure due to Database Exception (Exception Path)**
+    *   **Description:** Tests the `try...catch` block.
+    *   **Input:** A valid request body.
+    *   **Action:** Call the `createQuestion` function, with the mocked `prisma.question.create` configured to throw an error.
+    *   **Expected Output:** The `next()` function is called exactly once with the error object that was thrown.
 
-   - **Scenario 3:** A global 'auth-expired' event is dispatched on a 401 Unauthorized error.
-     - **Input:** An API request is made that results in a `401 Unauthorized` response from the server.
-     - **Action:** The Axios error interceptor processes the error.
-     - **Expected Output:** A custom browser event named `auth-expired` is dispatched on the `window` object.
+---
+
+## **2. Frontend: `ProtectedRoute.jsx` Component**
+
+This component is a fundamental part of the application's security, deciding whether a user can access a specific route.
+
+### **2.1. Unit Under Test (Source Code)**
+
+```javascript
+// File: frontend/src/components/ProtectedRoute.jsx
+
+import { useLocation, Navigate } from "react-router-dom";
+import { useStore } from "../store/authStore";
+
+const ProtectedRoute = ({ children }) => {
+  const authToken = useStore((state) => state.authToken);
+  const location = useLocation();
+
+  if (!authToken) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;
+```
+
+### **2.2. Testing Methodology and Coverage Criteria**
+
+The component's logic contains a single, critical decision point: `if (!authToken)`. The testing strategy is therefore focused on ensuring both outcomes of this decision are tested thoroughly.
+
+*   **Coverage Goal:** 100% **Branch Coverage**. This is easily achievable and essential for this component.
+
+*   **Methodology:**
+    *   **Dependency Mocking:** The `useStore` hook is the component's only external dependency and will be mocked. This allows us to control the value of `authToken` for each test case.
+    *   **Path Analysis:**
+        1.  **Authenticated Path:** A test will simulate the state where `authToken` has a value (is "truthy").
+        2.  **Unauthenticated Path:** A test will simulate the state where `authToken` is `null` (is "falsy").
+
+### **2.3. Test Scenarios**
+
+*   **Scenario 1: Authenticated User Access (The `else` Path)**
+    *   **Description:** Tests that a logged-in user can access the content protected by the route.
+    *   **Input:** The mocked `useStore` hook returns a non-null `authToken` (e.g., `'fake-token'`). The `ProtectedRoute` wraps a child component.
+    *   **Action:** Render the `ProtectedRoute` component within a router context.
+    *   **Expected Output:** The child component is rendered successfully.
+
+*   **Scenario 2: Unauthenticated User Redirect (The `if` Path)**
+    *   **Description:** Tests that a logged-out user is redirected away from the protected content.
+    *   **Input:** The mocked `useStore` hook returns `null`.
+    *   **Action:** Render the `ProtectedRoute` component within a router context.
+    *   **Expected Output:** The child component is **not** rendered. The user is instead redirected to the `/login` route.
