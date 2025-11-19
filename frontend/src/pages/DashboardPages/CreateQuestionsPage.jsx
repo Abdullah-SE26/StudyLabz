@@ -4,9 +4,8 @@ import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
 import { genUploader } from "uploadthing/client";
 import axios from "axios";
-
+import RichTextEditorWrapper from "../../components/RichTextEditorWrapper"
 // Lazy-load heavy components
-const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
 const UploadDropzone = lazy(() => import("../../components/UploadDropzone"));
 
 const uploader = genUploader({
@@ -107,8 +106,8 @@ export default function CreateQuestionPage() {
   return (
     <div className="min-h-screen flex justify-center pt-6 pb-10 bg-base-100">
       <div className="w-full max-w-3xl p-6 rounded-2xl shadow-xl bg-white">
-        <div className="alert alert-warning mb-6 shadow-md text-sm">
-          ⚠️ Do NOT provide answers in the question text.
+        <div className="alert alert-error mb-6 shadow-md text-sm font-extrabold justify-center ">
+           Do NOT provide answers in the question text.
         </div>
 
         <h1 className="text-2xl font-semibold mb-5 flex items-center gap-2">
@@ -174,7 +173,7 @@ export default function CreateQuestionPage() {
 
           {/* Question Text */}
           <Suspense fallback={<div>Loading editor...</div>}>
-            <RichTextEditor value={text} onChange={setText} />
+            <RichTextEditorWrapper value={text} onChange={setText} />
           </Suspense>
 
           {/* MCQ Options */}
@@ -184,7 +183,7 @@ export default function CreateQuestionPage() {
                 <span className="label-text mb-1 block">
                   MCQ Options (Enter 4 options, one per line)
                 </span>
-                <RichTextEditor
+                <RichTextEditorWrapper
                   value={mcqOptions}
                   onChange={setMcqOptions}
                   placeholder={`Option 1\nOption 2\nOption 3\nOption 4`}
