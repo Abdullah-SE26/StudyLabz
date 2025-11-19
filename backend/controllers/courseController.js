@@ -1,4 +1,5 @@
 import prisma from "../prismaClient.js";
+import { cachedQuery, invalidateCache } from "../utils/prismaCache.js";
 
 // ===== Utility: Parse tags from string or array =====
 const parseTags = (tags) => {
@@ -31,7 +32,6 @@ export const getCourses = async (req, res, next) => {
       where.AND = tags.map((tag) => ({ tags: { has: tag } }));
     }
 
-    // Determine sorting order
     let orderBy;
     switch (sort) {
       case "oldest":
@@ -47,28 +47,31 @@ export const getCourses = async (req, res, next) => {
         orderBy = { createdAt: "desc" };
     }
 
-    // Handle "limit=all"
     let limit, offset;
     if (limitParam === "all") {
-      limit = undefined; // fetch all
+      limit = undefined;
       offset = undefined;
     } else {
       limit = parseInt(limitParam, 10) || 12;
       offset = (page - 1) * limit;
     }
 
-    // Fetch total count and courses
-    const [totalCount, courses] = await Promise.all([
-      prisma.course.count({ where }),
-      prisma.course.findMany({
-        where,
-        orderBy,
-        ...(limit && { skip: offset, take: limit }),
-        include: {
-          createdBy: { select: { id: true, name: true, email: true } },
-        },
-      }),
-    ]);
+    // ===== Use Prisma Cache =====
+    const cacheKey = `courses:${JSON.stringify({ search, tags, sort, limit, page })}`;
+    const { totalCount, courses } = await cachedQuery(cacheKey, async () => {
+      const [count, data] = await Promise.all([
+        prisma.course.count({ where }),
+        prisma.course.findMany({
+          where,
+          orderBy,
+          ...(limit && { skip: offset, take: limit }),
+          include: {
+            createdBy: { select: { id: true, name: true, email: true } },
+          },
+        }),
+      ]);
+      return { totalCount: count, courses: data };
+    });
 
     res.json({
       success: true,
@@ -82,24 +85,23 @@ export const getCourses = async (req, res, next) => {
   }
 };
 
-
 // ===== GET /courses/:id =====
 export const getCourseById = async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
-    // Fetch course
-    const course = await prisma.course.findUnique({
-      where: { id },
-      include: {
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
+    // ===== Use Prisma Cache =====
+    const cacheKey = `course:${id}`;
+    const course = await cachedQuery(cacheKey, async () => {
+      return prisma.course.findUnique({
+        where: { id },
+        include: { createdBy: { select: { id: true, name: true, email: true } } },
+      });
     });
 
     if (!course) return res.status(404).json({ error: "Course not found" });
 
-    // ===== Always return default 5 exam types =====
     const examTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
 
     res.json({ success: true, course, examTypes });
@@ -107,7 +109,6 @@ export const getCourseById = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // ===== POST /courses =====
 export const createCourse = async (req, res, next) => {
@@ -126,7 +127,6 @@ export const createCourse = async (req, res, next) => {
         .replace(/\s+/g, "-")
         .replace(/[^a-z0-9-]/g, "");
 
-    // Ensure code is unique
     let uniqueCode = code;
     let suffix = 1;
     while (await prisma.course.findUnique({ where: { code: uniqueCode } })) {
@@ -138,7 +138,6 @@ export const createCourse = async (req, res, next) => {
     if (await prisma.course.findUnique({ where: { name } }))
       return res.status(400).json({ error: "Course name already exists" });
 
-    // Create the course
     const course = await prisma.course.create({
       data: {
         name: name.trim(),
@@ -147,12 +146,12 @@ export const createCourse = async (req, res, next) => {
         tags: parseTags(tags),
         createdById: userId,
       },
-      include: {
-        createdBy: { select: { id: true, name: true, email: true } },
-      },
+      include: { createdBy: { select: { id: true, name: true, email: true } } },
     });
 
-    // ===== Return 5 default exam types in the response =====
+    // ===== Invalidate courses cache =====
+    await invalidateCache("courses:*"); // wildcard pattern or implement a smarter way if needed
+
     const defaultExamTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
 
     res.status(201).json({ success: true, course, examTypes: defaultExamTypes });
@@ -160,7 +159,6 @@ export const createCourse = async (req, res, next) => {
     next(err);
   }
 };
-
 
 // ===== PATCH /courses/:id =====
 export const updateCourse = async (req, res, next) => {
@@ -184,6 +182,10 @@ export const updateCourse = async (req, res, next) => {
       },
     });
 
+    // ===== Invalidate caches =====
+    await invalidateCache("courses:*"); // all courses list
+    await invalidateCache(`course:${id}`); // specific course
+
     res.json({ success: true, course: updated });
   } catch (err) {
     next(err);
@@ -203,6 +205,11 @@ export const deleteCourse = async (req, res, next) => {
     if (!existing) return res.status(404).json({ error: "Course not found" });
 
     await prisma.course.delete({ where: { id } });
+
+    // ===== Invalidate caches =====
+    await invalidateCache("courses:*");
+    await invalidateCache(`course:${id}`);
+
     res.json({ success: true, message: "Course deleted successfully" });
   } catch (err) {
     next(err);
@@ -212,11 +219,15 @@ export const deleteCourse = async (req, res, next) => {
 // ===== GET /courses/tags =====
 export const getCourseTags = async (req, res, next) => {
   try {
-    const courses = await prisma.course.findMany({ select: { tags: true } });
-    const tagsSet = new Set();
-    courses.forEach((course) => course.tags?.forEach((tag) => tagsSet.add(tag)));
+    const cacheKey = "courses:tags";
+    const tags = await cachedQuery(cacheKey, async () => {
+      const courses = await prisma.course.findMany({ select: { tags: true } });
+      const tagsSet = new Set();
+      courses.forEach((course) => course.tags?.forEach((tag) => tagsSet.add(tag)));
+      return [...tagsSet].sort();
+    });
 
-    res.json({ success: true, tags: [...tagsSet].sort() });
+    res.json({ success: true, tags });
   } catch (err) {
     next(err);
   }

@@ -1,0 +1,189 @@
+# Unit Test Scenarios for StudyLabz Project
+
+This file describes unit test scenarios in plain text, outlining the component being tested, the scenario, input, and expected output.
+
+---
+
+## Backend Unit Tests
+
+### 1. File: `backend/utils/sanitize.js`
+   - **Function:** `stripEmbeddedAnswers(text)`
+
+   - **Scenario 1:** Should remove a standard answer from the end of a string.
+     - **Input:** `What is the capital of France? (Answer: Paris)`
+     - **Action:** Call `stripEmbeddedAnswers` with the input string.
+     - **Expected Output:** The string `What is the capital of France?`.
+
+   - **Scenario 2:** Should remove an answer in brackets with different casing.
+     - **Input:** `Question text [ans: solution]`
+     - **Action:** Call `stripEmbeddedAnswers` with the input string.
+     - **Expected Output:** The string `Question text`.
+
+   - **Scenario 3:** Should not change a string that does not contain an answer.
+     - **Input:** `This is a simple sentence.`
+     - **Action:** Call `stripEmbeddedAnswers` with the input string.
+     - **Expected Output:** The string `This is a simple sentence.`.
+
+   - **Scenario 4:** Should handle an empty string without errors.
+     - **Input:** `''` (empty string)
+     - **Action:** Call `stripEmbeddedAnswers` with the input string.
+     - **Expected Output:** `''` (empty string).
+
+### 2. File: `backend/controllers/questionController.js`
+   - **Function:** `createQuestion(req, res, next)`
+
+   - **Scenario 1:** Successful creation of a new MCQ question.
+     - **Input:**
+       - A request from an authenticated user (user ID is present).
+       - Request body contains valid `text`, `type: 'MCQ'`, `options` (as an HTML string), `marks`, `courseId`, and `examType`.
+     - **Action:** Call the `createQuestion` function. The database lookup for the course should succeed.
+     - **Expected Output:**
+       - An HTTP status code of `201 Created`.
+       - A JSON response with `{ success: true, message: 'Question created successfully', ... }`.
+       - The new question object is saved to the database.
+
+   - **Scenario 2:** Attempt to create a question with empty text.
+     - **Input:** Request body with `text` as an empty string.
+     - **Action:** Call the `createQuestion` function.
+     - **Expected Output:**
+       - An HTTP status code of `400 Bad Request`.
+       - A JSON response with `{ success: false, error: 'Question text is required' }`.
+
+   - **Scenario 3:** Attempt to create an MCQ question with empty options.
+     - **Input:** Request body with `type: 'MCQ'` and `options` as an empty string.
+     - **Action:** Call the `createQuestion` function.
+     - **Expected Output:**
+       - An HTTP status code of `400 Bad Request`.
+       - A JSON response with `{ success: false, error: 'MCQ options cannot be empty.' }`.
+
+   - **Scenario 4:** Attempt to create a question for a course that does not exist.
+     - **Input:** Request body with a `courseId` that is not in the database.
+     - **Action:** Call the `createQuestion` function. The database lookup for the course should return `null`.
+     - **Expected Output:**
+       - An HTTP status code of `404 Not Found`.
+       - A JSON response with `{ success: false, error: 'Course not found' }`.
+
+   - **Scenario 5:** A database error occurs.
+     - **Input:** A valid request body.
+     - **Action:** Call the `createQuestion` function. The database call throws an error.
+     - **Expected Output:** The `next` function is called with the database error object, passing it to the error-handling middleware.
+
+---
+
+## Frontend Unit Tests
+
+### 1. File: `frontend/src/store/authStore.js`
+
+   - **Scenario 1:** The store has the correct initial state.
+     - **Input:** The application is loaded for the first time.
+     - **Action:** Check the initial state of `useStore`.
+     - **Expected Output:** The `user` and `authToken` properties in the store are both `null`.
+
+   - **Scenario 2:** Logging in a user updates the store and localStorage.
+     - **Input:** A user object `{ id: 1, name: 'Test User' }` and a token `'fake-jwt-token'`.
+     - **Action:** Call the `login` action from the store with the user and token.
+     - **Expected Output:**
+       - The `user` property in the store is set to the user object.
+       - The `authToken` property in the store is set to the token.
+       - The user object is saved to the browser's localStorage.
+       - The auth token is saved to the browser's localStorage.
+
+   - **Scenario 3:** Logging out a user clears the store and localStorage.
+     - **Input:** The store has an authenticated user and token.
+     - **Action:** Call the `logout` action from the store.
+     - **Expected Output:**
+       - The `user` and `authToken` properties in the store are set to `null`.
+       - The user and auth token are removed from the browser's localStorage.
+
+### 2. File: `frontend/src/components/ProtectedRoute.jsx`
+
+   - **Scenario 1:** An authenticated user can access a protected page.
+     - **Input:** The `authStore` has a valid `authToken`.
+     - **Action:** The user navigates to a URL wrapped by the `ProtectedRoute` component (e.g., `/dashboard`).
+     - **Expected Output:** The content of the protected page is rendered and displayed to the user.
+
+   - **Scenario 2:** A non-authenticated user is redirected to the login page.
+     - **Input:** The `authStore` has `authToken` as `null`.
+     - **Action:** The user navigates to a URL wrapped by the `ProtectedRoute` component (e.g., `/dashboard`).
+     - **Expected Output:**
+       - The content of the protected page is NOT rendered.
+       - The user is automatically redirected to the `/login` page.
+
+### 3. File: `frontend/src/components/QuestionCard.jsx`
+
+   - **Scenario 1:** Renders basic question information correctly.
+     - **Input:** A `question` prop with `creatorName`, `createdAt`, `examType`, `marks`, and `text`.
+     - **Action:** Render the `QuestionCard` component with the question prop.
+     - **Expected Output:**
+       - The creator's name, creation date, exam type, and marks are all visible on the card.
+       - The question text is correctly rendered, including any HTML formatting.
+
+   - **Scenario 2:** Renders MCQ options correctly.
+     - **Input:** A `question` prop where `options` is an HTML string (e.g., `<ol><li>Option A</li><li>Option B</li></ol>`).
+     - **Action:** Render the `QuestionCard` component.
+     - **Expected Output:** The options are displayed as a formatted list, not as plain text. The HTML from the `options` string is rendered.
+
+   - **Scenario 3:** Does not render the options section if no options are provided.
+     - **Input:** A `question` prop where `options` is `null` or an empty string.
+     - **Action:** Render the `QuestionCard` component.
+     - **Expected Output:** The `div` for options is not present in the rendered output.
+
+   - **Scenario 4:** Renders an image when an image URL is provided.
+     - **Input:** A `question` prop with a valid `image` URL string.
+     - **Action:** Render the `QuestionCard` component.
+     - **Expected Output:** An `<img>` tag is rendered with the `src` attribute set to the `image` URL.
+
+   - **Scenario 5:** Clicking the 'Like' button calls the onToggleLike function.
+     - **Input:** A mock function passed as the `onToggleLike` prop.
+     - **Action:** Simulate a user click on the 'Like' button.
+     - **Expected Output:** The mock `onToggleLike` function is called exactly once.
+
+   - **Scenario 6:** Clicking the 'Comments' button toggles the visibility of the comments section.
+     - **Input:** The component is rendered.
+     - **Action:**
+       1. Simulate a user click on the 'Comments' button.
+       2. Simulate another user click on the 'Comments' button.
+     - **Expected Output:**
+       1. The `CommentsSection` component becomes visible.
+       2. The `CommentsSection` component is no longer visible.
+
+### 4. File: `frontend/src/pages/DashboardPages/CreateQuestionsPage.jsx`
+
+   - **Scenario 1:** Form submission is blocked if the question text is empty.
+     - **Input:** User has not entered any text for the question.
+     - **Action:** Simulate a click on the "Save Question" button.
+     - **Expected Output:**
+       - A toast notification appears with an error message like "Question text cannot be empty".
+       - No network request is made to the backend.
+
+   - **Scenario 2:** Form submission is blocked if marks are not a positive number.
+     - **Input:** User enters '0' or '-5' or 'abc' in the marks field.
+     - **Action:** Simulate a click on the "Save Question" button.
+     - **Expected Output:**
+       - A toast notification appears with an error message like "Marks must be a positive number".
+       - No network request is made to the backend.
+
+   - **Scenario 3:** A successful form submission sends the correct data to the backend.
+     - **Input:** All form fields are filled out correctly.
+     - **Action:** Simulate a click on the "Save Question" button.
+     - **Expected Output:**
+       - A `POST` request is made to the `/questions` API endpoint.
+       - The payload of the request contains the correct data from the form's state (`text`, `type`, `marks`, `courseId`, `examType`, `options`).
+       - After a successful response, a success toast is shown and the form fields are reset.
+
+### 5. File: `frontend/lib/axios.js`
+
+   - **Scenario 1:** The Authorization header is added to requests when a token is available.
+     - **Input:** The `authStore` contains an `authToken`.
+     - **Action:** Make any API request using the configured Axios instance.
+     - **Expected Output:** The outgoing request includes an `Authorization` header with the value `Bearer <authToken>`.
+
+   - **Scenario 2:** The Authorization header is NOT added if no token is available.
+     - **Input:** The `authStore`'s `authToken` is `null`.
+     - **Action:** Make any API request using the configured Axios instance.
+     - **Expected Output:** The outgoing request does NOT include an `Authorization` header.
+
+   - **Scenario 3:** A global 'auth-expired' event is dispatched on a 401 Unauthorized error.
+     - **Input:** An API request is made that results in a `401 Unauthorized` response from the server.
+     - **Action:** The Axios error interceptor processes the error.
+     - **Expected Output:** A custom browser event named `auth-expired` is dispatched on the `window` object.
