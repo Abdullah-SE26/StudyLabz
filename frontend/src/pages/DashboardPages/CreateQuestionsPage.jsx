@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import toast from "react-hot-toast";
 import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
-import UploadDropzone from "../../components/UploadDropzone";
 import { genUploader } from "uploadthing/client";
-import RichTextEditor from "../../components/RichTextEditor";
 import axios from "axios";
+
+// Lazy-load heavy components
+const RichTextEditor = lazy(() => import("../../components/RichTextEditor"));
+const UploadDropzone = lazy(() => import("../../components/UploadDropzone"));
 
 const uploader = genUploader({
   url: `${import.meta.env.VITE_API_URL}/uploadthing`,
@@ -13,7 +15,9 @@ const uploader = genUploader({
 const uploadFiles = uploader.uploadFiles;
 
 export default function CreateQuestionPage() {
+  // Pull everything directly from AuthStore
   const token = useStore((state) => state.authToken);
+  const courses = useStore((state) => state.courses || []);
   const setShouldRefetchDashboard = useStore(
     (state) => state.setShouldRefetchDashboard
   );
@@ -21,59 +25,25 @@ export default function CreateQuestionPage() {
   const [text, setText] = useState("");
   const [marks, setMarks] = useState("");
   const [type, setType] = useState("MCQ");
-  const [mcqOptions, setMcqOptions] = useState(""); // single string
+  const [mcqOptions, setMcqOptions] = useState("");
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [courses, setCourses] = useState([]);
-  const [examTypes, setExamTypes] = useState([]);
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
+  const [examTypes, setExamTypes] = useState([]);
 
-  const safeFetchJSON = useCallback(
-    async (url) => {
-      try {
-        const { data } = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return data;
-      } catch (err) {
-        toast.error(err.response?.data?.error || err.message || "Fetch failed", {
-          duration: 4000,
-        });
-        return null;
-      }
-    },
-    [token]
-  );
-
-  useEffect(() => {
-    if (!token) return;
-    (async () => {
-      const data = await safeFetchJSON(
-        `${import.meta.env.VITE_API_URL}/courses?limit=all`
-      );
-      if (!data) return;
-      const normalized = Array.isArray(data) ? data : data.courses || [];
-      setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
-    })();
-  }, [token, safeFetchJSON]);
-
+  // Update exam types when course changes
   useEffect(() => {
     if (!courseId) {
       setExamTypes([]);
       setExamId("");
       return;
     }
-    (async () => {
-      const data = await safeFetchJSON(
-        `${import.meta.env.VITE_API_URL}/courses/${courseId}`
-      );
-      if (!data) return;
-      const types = data.examTypes || [];
-      setExamTypes(types);
-      setExamId(types[0] || "");
-    })();
-  }, [courseId, safeFetchJSON]);
+    const selectedCourse = courses.find((c) => c.id === courseId);
+    const types = selectedCourse?.examTypes || [];
+    setExamTypes(types);
+    setExamId(types[0] || "");
+  }, [courseId, courses]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,9 +56,7 @@ export default function CreateQuestionPage() {
 
     if (type === "MCQ") {
       const optionsText = mcqOptions.replace(/<[^>]*>/g, "").trim();
-      if (!optionsText) {
-        return toast.error("MCQ options cannot be empty.");
-      }
+      if (!optionsText) return toast.error("MCQ options cannot be empty.");
     }
 
     setLoading(true);
@@ -205,31 +173,34 @@ export default function CreateQuestionPage() {
           </div>
 
           {/* Question Text */}
-          <RichTextEditor value={text} onChange={setText} />
+          <Suspense fallback={<div>Loading editor...</div>}>
+            <RichTextEditor value={text} onChange={setText} />
+          </Suspense>
 
-          {/* MCQ Options — Single Editor */}
+          {/* MCQ Options */}
           {type === "MCQ" && (
-            <div>
-              <span className="label-text mb-1 block">
-                MCQ Options (Enter 4 options, one per line)
-              </span>
-              <RichTextEditor
-                value={mcqOptions}
-                onChange={setMcqOptions}
-                placeholder={`Option 1
-Option 2
-Option 3
-Option 4`}
-              />
-            </div>
+            <Suspense fallback={<div>Loading editor...</div>}>
+              <div>
+                <span className="label-text mb-1 block">
+                  MCQ Options (Enter 4 options, one per line)
+                </span>
+                <RichTextEditor
+                  value={mcqOptions}
+                  onChange={setMcqOptions}
+                  placeholder={`Option 1\nOption 2\nOption 3\nOption 4`}
+                />
+              </div>
+            </Suspense>
           )}
 
           {/* Attachment */}
-          <UploadDropzone
-            file={attachmentFile}
-            onFileSelect={setAttachmentFile}
-            maxFiles={1}
-          />
+          <Suspense fallback={<div>Loading uploader...</div>}>
+            <UploadDropzone
+              file={attachmentFile}
+              onFileSelect={setAttachmentFile}
+              maxFiles={1}
+            />
+          </Suspense>
 
           {/* Submit */}
           <button

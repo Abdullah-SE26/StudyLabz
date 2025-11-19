@@ -1,4 +1,3 @@
-// src/store/authStore.js
 import { create } from "zustand";
 
 const savedUser = localStorage.getItem("user");
@@ -9,6 +8,15 @@ export const useStore = create((set) => ({
   user: savedUser ? JSON.parse(savedUser) : null,
   menuOpen: false,
   shouldRefetchDashboard: false,
+
+  // Courses & Exams
+  courses: [],                       
+  examTypesByCourse: {},              
+  setCourses: (courses) => set({ courses }),
+  setExamTypesForCourse: (courseId, types) =>
+    set((state) => ({
+      examTypesByCourse: { ...state.examTypesByCourse, [courseId]: types },
+    })),
 
   toggleMenu: () => set((state) => ({ menuOpen: !state.menuOpen })),
 
