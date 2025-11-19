@@ -261,24 +261,20 @@ export const createQuestion = async (req, res, next) => {
         .json({ success: false, error: "Course not found" });
 
     const cleanText = sanitize(text);
-let parsedOptions = null;
+    let parsedOptions = null;
 
-if (type === "MCQ") {
-  if (!options || !Array.isArray(options) || options.length !== 4) {
-    return res.status(400).json({
-      success: false,
-      error: "MCQ must have exactly 4 options",
-    });
-  }
-  parsedOptions = options.map(opt => sanitize(opt.trim())).filter(Boolean);
-  if (parsedOptions.length !== 4) {
-    return res.status(400).json({
-      success: false,
-      error: "All 4 MCQ options must be non-empty",
-    });
-  }
-}
-
+    if (type === "MCQ") {
+      // The 'options' field is now a single HTML string from the rich text editor.
+      // We just need to ensure it's not empty and sanitize it.
+      if (!options || typeof options !== "string" || options.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          error: "MCQ options cannot be empty.",
+        });
+      }
+      // The sanitize function will strip any embedded answers but leave HTML tags.
+      parsedOptions = sanitize(options);
+    }
 
     const question = await prisma.question.create({
       data: {

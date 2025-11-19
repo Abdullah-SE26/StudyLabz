@@ -304,12 +304,13 @@ At the end, please solve the following problem:
           />
         )}
 
-        {question.options?.length > 0 && (
-          <ul className="list-disc list-inside text-gray-600 text-sm sm:text-base space-y-1">
-            {question.options.map((opt, i) => (
-              <li key={i}>{opt}</li>
-            ))}
-          </ul>
+        {question.options && (
+          <div
+            className="text-gray-900 font-medium text-sm sm:text-base leading-relaxed wrap-break-word jodit-wysiwyg"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(question.options),
+            }}
+          />
         )}
 
         <div className="border-t border-gray-200 my-3" />

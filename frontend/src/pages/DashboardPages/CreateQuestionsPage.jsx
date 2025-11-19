@@ -5,7 +5,6 @@ import { Upload, Loader2 } from "lucide-react";
 import UploadDropzone from "../../components/UploadDropzone";
 import { genUploader } from "uploadthing/client";
 import RichTextEditor from "../../components/RichTextEditor";
-import OptionEditor from "../../components/OptionEditor";
 import axios from "axios";
 
 const uploader = genUploader({
@@ -15,12 +14,14 @@ const uploadFiles = uploader.uploadFiles;
 
 export default function CreateQuestionPage() {
   const token = useStore((state) => state.authToken);
-  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
+  const setShouldRefetchDashboard = useStore(
+    (state) => state.setShouldRefetchDashboard
+  );
 
   const [text, setText] = useState("");
   const [marks, setMarks] = useState("");
   const [type, setType] = useState("MCQ");
-  const [mcqOptions, setMcqOptions] = useState(["", "", "", ""]);
+  const [mcqOptions, setMcqOptions] = useState(""); // single string
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -28,21 +29,17 @@ export default function CreateQuestionPage() {
   const [courseId, setCourseId] = useState("");
   const [examId, setExamId] = useState("");
 
-  const handleOptionChange = useCallback((index, value) => {
-    setMcqOptions(prev => {
-        const newOptions = [...prev];
-        newOptions[index] = value;
-        return newOptions;
-    });
-  }, []);
-
   const safeFetchJSON = useCallback(
     async (url) => {
       try {
-        const { data } = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+        const { data } = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         return data;
       } catch (err) {
-        toast.error(err.response?.data?.error || err.message || "Fetch failed", { duration: 4000 });
+        toast.error(err.response?.data?.error || err.message || "Fetch failed", {
+          duration: 4000,
+        });
         return null;
       }
     },
@@ -52,7 +49,9 @@ export default function CreateQuestionPage() {
   useEffect(() => {
     if (!token) return;
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses?limit=all`);
+      const data = await safeFetchJSON(
+        `${import.meta.env.VITE_API_URL}/courses?limit=all`
+      );
       if (!data) return;
       const normalized = Array.isArray(data) ? data : data.courses || [];
       setCourses(normalized.map((c) => ({ id: String(c.id), name: c.name })));
@@ -66,7 +65,9 @@ export default function CreateQuestionPage() {
       return;
     }
     (async () => {
-      const data = await safeFetchJSON(`${import.meta.env.VITE_API_URL}/courses/${courseId}`);
+      const data = await safeFetchJSON(
+        `${import.meta.env.VITE_API_URL}/courses/${courseId}`
+      );
       if (!data) return;
       const types = data.examTypes || [];
       setExamTypes(types);
@@ -74,9 +75,9 @@ export default function CreateQuestionPage() {
     })();
   }, [courseId, safeFetchJSON]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const strippedText = text.replace(/<[^>]*>/g, "").trim();
     if (!courseId || !examId) return toast.error("Select course and exam");
     if (!strippedText) return toast.error("Question text cannot be empty");
@@ -84,8 +85,9 @@ export default function CreateQuestionPage() {
       return toast.error("Marks must be a positive number");
 
     if (type === "MCQ") {
-      if (mcqOptions.some(opt => !opt.replace(/<[^>]*>/g, "").trim())) {
-        return toast.error("All four MCQ options are required");
+      const optionsText = mcqOptions.replace(/<[^>]*>/g, "").trim();
+      if (!optionsText) {
+        return toast.error("MCQ options cannot be empty.");
       }
     }
 
@@ -94,7 +96,9 @@ export default function CreateQuestionPage() {
 
     try {
       if (attachmentFile) {
-        const uploaded = await uploadFiles("imageUploader", { files: [attachmentFile] });
+        const uploaded = await uploadFiles("imageUploader", {
+          files: [attachmentFile],
+        });
         uploadedFileUrl = uploaded[0]?.ufsUrl || null;
       }
 
@@ -114,15 +118,19 @@ export default function CreateQuestionPage() {
 
       toast.success("Question created successfully!");
       setShouldRefetchDashboard(true);
+
+      // Reset form
       setText("");
       setMarks("");
       setAttachmentFile(null);
       setCourseId("");
       setExamId("");
       setType("MCQ");
-      setMcqOptions(["", "", "", ""]);
+      setMcqOptions("");
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message || "Failed to create question");
+      toast.error(
+        err.response?.data?.error || err.message || "Failed to create question"
+      );
     } finally {
       setLoading(false);
     }
@@ -132,7 +140,7 @@ export default function CreateQuestionPage() {
     <div className="min-h-screen flex justify-center pt-6 pb-10 bg-base-100">
       <div className="w-full max-w-3xl p-6 rounded-2xl shadow-xl bg-white">
         <div className="alert alert-warning mb-6 shadow-md text-sm">
-          ⚠️ Do NOT provide answers in the question text. Violating this may lead to a ban.
+          ⚠️ Do NOT provide answers in the question text.
         </div>
 
         <h1 className="text-2xl font-semibold mb-5 flex items-center gap-2">
@@ -197,28 +205,31 @@ export default function CreateQuestionPage() {
           </div>
 
           {/* Question Text */}
-          <RichTextEditor value={text} onChange={setText}/>
+          <RichTextEditor value={text} onChange={setText} />
 
-          {/* MCQ Options */}
+          {/* MCQ Options — Single Editor */}
           {type === "MCQ" && (
-            <div className="space-y-3 p-4 border rounded-lg bg-base-50">
-                <label className="text-sm font-medium text-gray-700">MCQ Options</label>
-                <p className="text-xs text-gray-500 mb-2">Please provide exactly four options for the multiple-choice question.</p>
-                <div className="grid grid-cols-1 gap-4">
-                    {mcqOptions.map((option, index) => (
-                        <OptionEditor
-                            key={index}
-                            index={index}
-                            value={option}
-                            onChange={handleOptionChange}
-                        />
-                    ))}
-                </div>
+            <div>
+              <span className="label-text mb-1 block">
+                MCQ Options (Enter 4 options, one per line)
+              </span>
+              <RichTextEditor
+                value={mcqOptions}
+                onChange={setMcqOptions}
+                placeholder={`Option 1
+Option 2
+Option 3
+Option 4`}
+              />
             </div>
           )}
 
           {/* Attachment */}
-          <UploadDropzone file={attachmentFile} onFileSelect={setAttachmentFile} maxFiles={1} />
+          <UploadDropzone
+            file={attachmentFile}
+            onFileSelect={setAttachmentFile}
+            maxFiles={1}
+          />
 
           {/* Submit */}
           <button
