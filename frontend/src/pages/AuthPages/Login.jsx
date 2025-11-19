@@ -42,7 +42,7 @@ export default function Login() {
       {/* Background Image with rounded bottom */}
       <div
         className="absolute inset-0 bg-no-repeat bg-center bg-cover rounded-b-[6rem]"
-        style={{ backgroundImage: "url('/LoginImage.png')" }}
+        style={{ backgroundImage: "url('https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239296/LoginImage_qj1j28.png')" }}
       ></div>
 
       {/* Overlay + Login Form */}
