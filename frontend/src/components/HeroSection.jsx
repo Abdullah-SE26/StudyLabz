@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import ResponsiveOptimizedImage from '../components/ResponsiveOptimizedImage';
 
 export default function HeroSection() {
   return (
@@ -14,7 +15,8 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-sf-text text-lg sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 mb-10 leading-relaxed">
-            Create questions, explore answers, and get exam-ready with your peers -{" "}
+            Create questions, explore answers, and get exam-ready with your
+            peers -{" "}
             <span className="text-sf-green font-semibold">StudyLabz</span> makes
             learning social and smarter.
           </p>
@@ -37,8 +39,8 @@ export default function HeroSection() {
 
         {/* Right Image */}
         <div className="flex-1 flex justify-center lg:justify-end">
-          <img
-            src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239296/heroimage_umpcog.png"
+          <ResponsiveOptimizedImage
+            publicId="heroimage_umpcog"
             alt="StudyLabz Hero Illustration"
             className="w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto rounded-3xl drop-shadow-md hover:scale-[1.03] transition-transform duration-300"
           />

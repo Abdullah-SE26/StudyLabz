@@ -59,14 +59,9 @@ export default function Contact() {
       <Toaster />
       <div className="relative shadow-2xl rounded-3xl w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
         {/* Left Side - Contact Info */}
-        <div className="relative bg-[url('https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239289/contact-bg_dtkzcw.jpg')] bg-cover bg-center text-white p-8 flex flex-col justify-between rounded-l-3xl">
+        <div className="relative bg-[url('https://res.cloudinary.com/dhqyjs4tk/image/upload/f_auto,q_auto/v1763239289/contact-bg_dtkzcw.jpg')] bg-cover bg-center text-white p-8 flex flex-col justify-between rounded-l-3xl">
           <div className="absolute inset-0 bg-black/50 rounded-l-3xl"></div>
           <div className="relative z-10 flex flex-col items-center text-center">
-            <img
-              src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239292/StudyLabzOwl_qjfnqg.png"
-              alt="StudyLabz Logo"
-              className="w-24 h-24 sm:w-28 sm:h-28 mb-4 shadow-lg rounded-full"
-            />
             <h2 className="text-2xl sm:text-3xl font-bold mb-2">Contact Us</h2>
             <p className="mb-6 text-blue-100 text-sm sm:text-base">
               Have questions, feedback, or course requests? Reach out and we’ll

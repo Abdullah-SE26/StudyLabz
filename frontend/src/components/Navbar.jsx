@@ -1,9 +1,9 @@
-"use client";
-import React, { useState, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 import UserMenu from "../components/UserMenu.jsx";
 import { useStore } from "../store/authStore.js";
+import ResponsiveOptimizedImage from '../components/ResponsiveOptimizedImage';
 
 export default function Navbar() {
   const menuOpen = useStore((state) => state.menuOpen);
@@ -45,8 +45,8 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <div className="w-40 h-16 rounded-md flex items-center justify-center overflow-hidden">
-            <img
-              src="https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239291/StudyLabzLogo-nobg_taqs85.png"
+            <ResponsiveOptimizedImage
+              publicId="StudyLabzLogo-nobg_taqs85"
               alt="logo"
               className="object-contain max-h-full max-w-full"
             />
@@ -79,12 +79,21 @@ export default function Navbar() {
 
         {/* Right side: Login/UserMenu */}
         <div className="hidden lg:block">
-          {user ? <UserMenu user={user} /> : <NavLink to="/login" className={loginClasses}>Login</NavLink>}
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <NavLink to="/login" className={loginClasses}>
+              Login
+            </NavLink>
+          )}
         </div>
 
         {/* Mobile Toggle */}
         <div className="lg:hidden flex items-center gap-4">
-          <button onClick={toggleMenu} className="text-sf-text focus:outline-none">
+          <button
+            onClick={toggleMenu}
+            className="text-sf-text focus:outline-none"
+          >
             {menuOpen ? <IconX size={28} /> : <IconMenu2 size={28} />}
           </button>
         </div>
@@ -99,17 +108,29 @@ export default function Navbar() {
             </NavLink>
           </li>
           <li>
-            <NavLink to="/courses" onClick={toggleMenu} className={navLinkClasses}>
+            <NavLink
+              to="/courses"
+              onClick={toggleMenu}
+              className={navLinkClasses}
+            >
               Courses
             </NavLink>
           </li>
           <li>
-            <NavLink to="/about" onClick={toggleMenu} className={navLinkClasses}>
+            <NavLink
+              to="/about"
+              onClick={toggleMenu}
+              className={navLinkClasses}
+            >
               About
             </NavLink>
           </li>
           <li>
-            <NavLink to="/Contact" onClick={toggleMenu} className={navLinkClasses}>
+            <NavLink
+              to="/Contact"
+              onClick={toggleMenu}
+              className={navLinkClasses}
+            >
               Contact
             </NavLink>
           </li>
@@ -119,7 +140,11 @@ export default function Navbar() {
             </li>
           ) : (
             <li>
-              <Link to="/login" onClick={toggleMenu} className={loginClasses(false)}>
+              <Link
+                to="/login"
+                onClick={toggleMenu}
+                className={loginClasses(false)}
+              >
                 Login
               </Link>
             </li>

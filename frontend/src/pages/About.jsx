@@ -4,34 +4,34 @@ import { IconBrandGithub, IconMail } from "@tabler/icons-react";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import "tippy.js/animations/scale-extreme.css";
-
+import ResponsiveOptimizedImage from "../components/ResponsiveOptimizedImage"; 
 
 const teamMembers = [
   {
     id: 1,
     name: "MUHAMMAD ABDULLAH",
-    image: "https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239290/Abdullah_kas8ys.jpg",
+    image: "Abdullah_kas8ys",
     email: "202120030@aau.ac.ae",
     github: "https://github.com/Abdullah-SE26",
   },
   {
     id: 2,
     name: "YASSIN BROMEO",
-    image: "https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239293/Yassin_jkmycj.jpg",
+    image: "Yassin_jkmycj",
     email: "202120043@aau.ac.ae",
     github: "https://github.com/Yassin-101",
   },
   {
     id: 3,
     name: "SAIF ALKAABI",
-    image: "https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239298/Saif_h7ss3g.jpg",
+    image: "Saif_h7ss3g",
     email: "202211659@aau.ac.ae",
     github: "https://github.com/saifAlkaabi1",
   },
   {
     id: 4,
     name: "MOHAMMAD QASAYMEH",
-    image: "https://res.cloudinary.com/dhqyjs4tk/image/upload/v1763239291/Qasaymeh_thhat4.jpg",
+    image: "Qasaymeh_thhat4",
     email: "202110427@aau.ac.ae",
     github: "https://github.com/mohammadqasaymeh03",
   },
@@ -53,7 +53,7 @@ export default function AboutPage() {
         </p>
       </div>
 
-      {/* Features Section (uses your existing component + theme) */}
+      {/* Features Section */}
       <FeaturesSection />
 
       {/* Team Section */}
@@ -71,8 +71,9 @@ export default function AboutPage() {
                   { id: member.id, name: member.name, image: member.image },
                 ]}
               >
-                <img
-                  src={member.image}
+                {/* Replace img with ResponsiveOptimizedImage */}
+                <ResponsiveOptimizedImage
+                  publicId={member.image}
                   alt={member.name}
                   className="w-28 h-28 sm:w-32 sm:h-32 rounded-full mb-3 object-cover border-4 border-card-border shadow-md transition-transform hover:scale-105"
                 />

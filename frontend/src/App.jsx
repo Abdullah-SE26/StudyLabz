@@ -4,6 +4,7 @@ import { Toaster } from "react-hot-toast";
 import { useEffect, useCallback, lazy, Suspense } from "react";
 import { useStore } from "./store/authStore";
 import PageWrapper from "./components/PageWrapper";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy-loaded Public Pages
 const Home = lazy(() => import("./pages/Home"));
@@ -87,11 +88,32 @@ function App() {
 
             {/* Courses */}
             <Route path="/courses" element={<Courses isAdminMode={isAdminMode} />} />
-            <Route path="/courses/:courseId/questions" element={<CourseQuestions />} />
-            <Route path="/questions/:questionId" element={<QuestionPage />} />
+            <Route
+              path="/courses/:courseId/questions"
+              element={
+                <ProtectedRoute>
+                  <CourseQuestions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/questions/:questionId"
+              element={
+                <ProtectedRoute>
+                  <QuestionPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Dashboard */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<DashboardHome />} />
               <Route path="create-course" element={<CreateCoursesPage />} />
               <Route path="questions" element={<CourseQuestions />} />
