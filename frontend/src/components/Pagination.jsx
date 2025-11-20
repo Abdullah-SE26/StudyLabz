@@ -36,8 +36,8 @@ const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => 
                   onClick={() => handlePageChange(pageNumber)}
                   className={`w-10 h-10 rounded-full font-semibold transition-all duration-200 border cursor-pointer ${
                     isActive
-                      ? "bg-blue-500 text-white border-blue-500 shadow-md"
-                      : "border-transparent text-gray-700 hover:bg-blue-500 hover:text-white"
+                      ? "bg-sf-green text-white border-sf-border shadow-md"
+                      : "border-transparent text-sf-text hover:bg-sf-green hover:text-white"
                   }`}
                 >
                   {pageNumber}
@@ -50,7 +50,7 @@ const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => 
               return (
                 <span
                   key={pageNumber}
-                  className="px-2 text-gray-400 select-none"
+                  className="px-2 text-sf-text select-none"
                 >
                   ...
                 </span>
@@ -64,8 +64,8 @@ const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => 
         <button
           className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
             currentPage === totalPages
-              ? "text-gray-400 cursor-not-allowed"
-              : "text-gray-700 hover:bg-blue-500 hover:text-white cursor-pointer"
+              ? "text-sf-text cursor-not-allowed"
+              : "text-sf-text hover:bg-sf-green-hover hover:text-white cursor-pointer"
           }`}
           onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}

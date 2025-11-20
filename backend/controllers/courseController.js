@@ -210,7 +210,7 @@ export const deleteCourse = async (req, res, next) => {
     await invalidateCache("courses:*");
     await invalidateCache(`course:${id}`);
 
-    res.json({ success: true, message: "Course deleted successfully" });
+    res.json({ success: true, message: `Course ${existing.name} deleted successfully` });
   } catch (err) {
     next(err);
   }

@@ -215,6 +215,7 @@ const Courses = () => {
           title="Delete Course"
           message={`Are you sure you want to delete "${selectedCourse.title || selectedCourse.name}"? This action cannot be undone.`}
           loading={deleteLoading}
+          courseName={selectedCourse.title || selectedCourse.name}
         />
       )}
     </div>

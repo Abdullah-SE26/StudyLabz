@@ -1,4 +1,3 @@
-import React from "react";
 import toast from "react-hot-toast";
 
 export default function DeleteCourseModal({
@@ -8,7 +7,7 @@ export default function DeleteCourseModal({
   title,
   message,
   loading,
-  courseName, // added prop for course name
+  courseName, 
 }) {
   if (!show) return null;
 
