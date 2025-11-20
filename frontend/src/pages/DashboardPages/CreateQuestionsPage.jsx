@@ -4,7 +4,8 @@ import { useStore } from "../../store/authStore";
 import { Upload, Loader2 } from "lucide-react";
 import { genUploader } from "uploadthing/client";
 import axios from "axios";
-import RichTextEditorWrapper from "../../components/RichTextEditorWrapper"
+import RichTextEditorWrapper from "../../components/RichTextEditorWrapper";
+
 // Lazy-load heavy components
 const UploadDropzone = lazy(() => import("../../components/UploadDropzone"));
 
@@ -14,7 +15,6 @@ const uploader = genUploader({
 const uploadFiles = uploader.uploadFiles;
 
 export default function CreateQuestionPage() {
-  // Pull everything directly from AuthStore
   const token = useStore((state) => state.authToken);
   const courses = useStore((state) => state.courses || []);
   const setShouldRefetchDashboard = useStore(
@@ -31,15 +31,16 @@ export default function CreateQuestionPage() {
   const [examId, setExamId] = useState("");
   const [examTypes, setExamTypes] = useState([]);
 
-  // Update exam types when course changes
+  // Load exam types when course changes
   useEffect(() => {
     if (!courseId) {
       setExamTypes([]);
       setExamId("");
       return;
     }
-    const selectedCourse = courses.find((c) => c.id === courseId);
-    const types = selectedCourse?.examTypes || [];
+
+    const selectedCourse = courses.find((c) => c.id === Number(courseId));
+    const types = selectedCourse?.examTypes || ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
     setExamTypes(types);
     setExamId(types[0] || "");
   }, [courseId, courses]);
@@ -106,8 +107,8 @@ export default function CreateQuestionPage() {
   return (
     <div className="min-h-screen flex justify-center pt-6 pb-10 bg-base-100">
       <div className="w-full max-w-3xl p-6 rounded-2xl shadow-xl bg-white">
-        <div className="alert alert-error mb-6 shadow-md text-sm font-extrabold justify-center ">
-           Do NOT provide answers in the question text.
+        <div className="alert alert-error mb-6 shadow-md text-sm font-extrabold justify-center">
+          Do NOT provide answers in the question text.
         </div>
 
         <h1 className="text-2xl font-semibold mb-5 flex items-center gap-2">

@@ -9,14 +9,9 @@ export const useStore = create((set) => ({
   menuOpen: false,
   shouldRefetchDashboard: false,
 
-  // Courses & Exams
-  courses: [],                       
-  examTypesByCourse: {},              
+  // Courses
+  courses: [],
   setCourses: (courses) => set({ courses }),
-  setExamTypesForCourse: (courseId, types) =>
-    set((state) => ({
-      examTypesByCourse: { ...state.examTypesByCourse, [courseId]: types },
-    })),
 
   toggleMenu: () => set((state) => ({ menuOpen: !state.menuOpen })),
 

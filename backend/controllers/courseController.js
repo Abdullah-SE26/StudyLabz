@@ -56,8 +56,13 @@ export const getCourses = async (req, res, next) => {
       offset = (page - 1) * limit;
     }
 
-    // ===== Use Prisma Cache =====
-    const cacheKey = `courses:${JSON.stringify({ search, tags, sort, limit, page })}`;
+    const cacheKey = `courses:${JSON.stringify({
+      search,
+      tags,
+      sort,
+      limit,
+      page,
+    })}`;
     const { totalCount, courses } = await cachedQuery(cacheKey, async () => {
       const [count, data] = await Promise.all([
         prisma.course.count({ where }),
@@ -73,9 +78,22 @@ export const getCourses = async (req, res, next) => {
       return { totalCount: count, courses: data };
     });
 
+    // Hardcode exam types here
+    const defaultExamTypes = [
+      "Quiz 1",
+      "Quiz 2",
+      "Midterm",
+      "Additional Quiz",
+      "Final",
+    ];
+    const coursesWithExamTypes = courses.map((course) => ({
+      ...course,
+      examTypes: defaultExamTypes,
+    }));
+
     res.json({
       success: true,
-      courses,
+      courses: coursesWithExamTypes,
       totalCount,
       page,
       totalPages: limit ? Math.ceil(totalCount / limit) : 1,
@@ -96,13 +114,21 @@ export const getCourseById = async (req, res, next) => {
     const course = await cachedQuery(cacheKey, async () => {
       return prisma.course.findUnique({
         where: { id },
-        include: { createdBy: { select: { id: true, name: true, email: true } } },
+        include: {
+          createdBy: { select: { id: true, name: true, email: true } },
+        },
       });
     });
 
     if (!course) return res.status(404).json({ error: "Course not found" });
 
-    const examTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
+    const examTypes = [
+      "Quiz 1",
+      "Quiz 2",
+      "Midterm",
+      "Additional Quiz",
+      "Final",
+    ];
 
     res.json({ success: true, course, examTypes });
   } catch (err) {
@@ -116,8 +142,10 @@ export const createCourse = async (req, res, next) => {
     const { name, code: frontendCode, description, tags } = req.body;
     const { id: userId, role } = req.user;
 
-    if (role !== "admin") return res.status(403).json({ error: "Only admins can create courses" });
-    if (!name || !name.trim()) return res.status(400).json({ error: "Name is required" });
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can create courses" });
+    if (!name || !name.trim())
+      return res.status(400).json({ error: "Name is required" });
 
     let code =
       frontendCode ||
@@ -152,9 +180,17 @@ export const createCourse = async (req, res, next) => {
     // ===== Invalidate courses cache =====
     await invalidateCache("courses:*"); // wildcard pattern or implement a smarter way if needed
 
-    const defaultExamTypes = ["Quiz 1", "Quiz 2", "Midterm", "Additional Quiz", "Final"];
+    const defaultExamTypes = [
+      "Quiz 1",
+      "Quiz 2",
+      "Midterm",
+      "Additional Quiz",
+      "Final",
+    ];
 
-    res.status(201).json({ success: true, course, examTypes: defaultExamTypes });
+    res
+      .status(201)
+      .json({ success: true, course, examTypes: defaultExamTypes });
   } catch (err) {
     next(err);
   }
@@ -167,7 +203,8 @@ export const updateCourse = async (req, res, next) => {
     const { role } = req.user;
     const { name, description, tags } = req.body;
 
-    if (role !== "admin") return res.status(403).json({ error: "Only admins can update courses" });
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can update courses" });
     if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
     const existing = await prisma.course.findUnique({ where: { id } });
@@ -198,7 +235,8 @@ export const deleteCourse = async (req, res, next) => {
     const id = Number(req.params.id);
     const { role } = req.user;
 
-    if (role !== "admin") return res.status(403).json({ error: "Only admins can delete courses" });
+    if (role !== "admin")
+      return res.status(403).json({ error: "Only admins can delete courses" });
     if (isNaN(id)) return res.status(400).json({ error: "Invalid course ID" });
 
     const existing = await prisma.course.findUnique({ where: { id } });
@@ -210,7 +248,10 @@ export const deleteCourse = async (req, res, next) => {
     await invalidateCache("courses:*");
     await invalidateCache(`course:${id}`);
 
-    res.json({ success: true, message: `Course ${existing.name} deleted successfully` });
+    res.json({
+      success: true,
+      message: `Course ${existing.name} deleted successfully`,
+    });
   } catch (err) {
     next(err);
   }
@@ -223,7 +264,9 @@ export const getCourseTags = async (req, res, next) => {
     const tags = await cachedQuery(cacheKey, async () => {
       const courses = await prisma.course.findMany({ select: { tags: true } });
       const tagsSet = new Set();
-      courses.forEach((course) => course.tags?.forEach((tag) => tagsSet.add(tag)));
+      courses.forEach((course) =>
+        course.tags?.forEach((tag) => tagsSet.add(tag))
+      );
       return [...tagsSet].sort();
     });
 
