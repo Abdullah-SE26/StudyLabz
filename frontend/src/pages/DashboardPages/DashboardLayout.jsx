@@ -19,6 +19,7 @@ import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import { useStore } from "../../store/authStore";
 import { shallow } from "zustand/shallow";
+import axios from "../../../lib/axios"; // Import axios
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -26,6 +27,8 @@ export default function DashboardLayout() {
   const location = useLocation();
   const user = useStore((state) => state.user, shallow);
   const clearAuth = useStore((state) => state.clearAuth);
+  const authToken = useStore((state) => state.authToken); // Get authToken from store
+  const setCourses = useStore((state) => state.setCourses); // Get setCourses from store
 
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
   const toggleAdminMenu = () => setAdminOpen((prev) => !prev);
@@ -38,6 +41,24 @@ export default function DashboardLayout() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Fetch courses on component mount
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await axios.get("/courses", {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        setCourses(res.data.courses || []);
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+        setCourses([]); // Ensure courses are reset on error
+      }
+    };
+    if (authToken) { // Only fetch if authenticated
+      fetchCourses();
+    }
+  }, [authToken, setCourses]); // Rerun if authToken or setCourses changes
 
   const baseLinks = [
     { to: "/dashboard", label: "Home", icon: <Home className="w-5 h-5" /> },

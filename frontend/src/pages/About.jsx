@@ -1,11 +1,13 @@
-import { AnimatedTooltip } from "../components/ui/animated-tooltip";
-import FeaturesSection from "../components/FeaturesSection";
+import React, { Suspense } from "react";
 import { IconBrandGithub, IconMail } from "@tabler/icons-react";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
-import "tippy.js/animations/scale-extreme.css";
-import ResponsiveOptimizedImage from "../components/ResponsiveOptimizedImage"; 
+import ResponsiveOptimizedImage from "../components/ResponsiveOptimizedImage";
 
+// Lazy-load FeaturesSection
+const FeaturesSection = React.lazy(() => import("../components/FeaturesSection"));
+
+// Team members
 const teamMembers = [
   {
     id: 1,
@@ -54,7 +56,9 @@ export default function AboutPage() {
       </div>
 
       {/* Features Section */}
-      <FeaturesSection />
+      <Suspense fallback={<div className="text-center py-10">Loading features...</div>}>
+        <FeaturesSection />
+      </Suspense>
 
       {/* Team Section */}
       <div className="max-w-7xl mx-auto px-6 sm:px-8 py-12">
@@ -64,28 +68,23 @@ export default function AboutPage() {
             <div
               key={member.id}
               className="flex flex-col items-center p-6 w-44 sm:w-52 rounded-2xl bg-card-background shadow-md
-              hover:shadow-xl hover:-translate-y-2 transition-all cursor-pointer"
+                hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer will-change-transform"
             >
-              <AnimatedTooltip
-                items={[
-                  { id: member.id, name: member.name, image: member.image },
-                ]}
-              >
-                {/* Replace img with ResponsiveOptimizedImage */}
-                <ResponsiveOptimizedImage
-                  publicId={member.image}
-                  alt={member.name}
-                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full mb-3 object-cover border-4 border-card-border shadow-md transition-transform hover:scale-105"
-                />
-              </AnimatedTooltip>
+              {/* Tooltip on top of image */}
+              <Tippy content={member.name} placement="top" animation="fade" delay={[100, 0]}>
+                <div>
+                  <ResponsiveOptimizedImage
+                    publicId={member.image}
+                    alt={member.name}
+                    className="w-28 h-28 sm:w-32 sm:h-32 rounded-full mb-3 object-cover border-4 border-card-border shadow-md transition-transform hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+              </Tippy>
 
+              {/* Contact Icons */}
               <div className="flex mt-3 space-x-5">
-                <Tippy
-                  content="Send Email"
-                  placement="bottom"
-                  arrow
-                  animation="scale-extreme"
-                >
+                <Tippy content="Send Email" placement="top" animation="fade">
                   <a
                     href={`https://mail.google.com/mail/?view=cm&to=${member.email}`}
                     target="_blank"
@@ -95,12 +94,7 @@ export default function AboutPage() {
                     <IconMail size={22} />
                   </a>
                 </Tippy>
-                <Tippy
-                  content="GitHub Profile"
-                  placement="bottom"
-                  arrow
-                  animation="scale-extreme"
-                >
+                <Tippy content="GitHub Profile" placement="bottom" animation="fade">
                   <a
                     href={member.github}
                     target="_blank"
