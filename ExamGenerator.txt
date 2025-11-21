@@ -1,167 +1,138 @@
-Full Implementation Plan: AI-Powered Exam Generator (PERN Stack)
-1. Frontend (React)
-1.1 User Interface
+1. FRONTEND UI (Student View)
 
-A button: Generate Exam with AI
+You only need four inputs:
 
-Opens a modal with the following inputs:
+1. Course (dropdown)
 
-Exam title (text input)
+Comes directly from your database
 
-Total marks (number input)
+Filters examTypes automatically
 
-Question sources (checkboxes: quiz, midterm, final, additional quizzes)
+2. Exam Types (multi-select dropdown)
 
-Optional: number of versions (default = 1)
+Examples:
 
-Buttons inside modal:
+Quiz 1
 
-Preview Exam – shows AI-formatted exam text in a scrollable container
+Quiz 2
 
-Download PDF – triggers backend to generate and return PDF
+Midterm
 
-1.2 Preview
+Final
 
-Clicking Preview sends a request to the backend.
+Practice Set
 
-Backend responds with AI-formatted text (professional layout, sections, instructions).
+Allow selecting multiple:
 
-Display the formatted exam in a modal for user review.
+Quiz 1 + Quiz 2
 
-1.3 Download PDF
+Midterm + Final
 
-Clicking Download PDF sends a request to backend.
+Quiz 2 + Final
+etc.
 
-Backend generates PDF from AI-formatted text and returns it as a binary blob.
+3. Total Marks (simple number input)
 
-Frontend triggers download with proper filename (e.g., ExamTitle.pdf).
+Student enters:
 
-2. Backend (Express + Node.js)
-2.1 API Endpoints
+5 marks
 
-POST /generate-exam/preview
+10 marks
 
-Receives: exam title, total marks, selected question sources, version count (optional)
+20 marks
+Anything.
 
-Returns: AI-formatted exam text (plain text)
+4. Question Type (optional)
 
-POST /generate-exam/pdf
+MCQ
 
-Receives same data as preview
+Essay
 
-Returns: PDF buffer of AI-formatted exam (with headers, footers, page breaks)
+Mixed
+Default = Mixed
 
-2.2 Question Selection
+5. Button: “Generate Exam”
 
-Use Prisma to query questions from database based on selected sources.
+Opens the AI sidebar and sends the request.
 
-Random selection logic to match exact total marks:
+2. BACKEND LOGIC
 
-Sum marks of selected questions until total = requested total marks
+When the frontend hits /api/generate-exam, you do:
 
-Arrange questions by type:
+Step 1: Fetch the course
+const course = await Course.findById(courseId)
 
-MCQs first
+Step 2: Extract major from tags
+const major = course.tags[0] // e.g. “Software Engineering”
 
-Then short answers
+Step 3: Get all questions from DB
+const questions = await Question.find({
+  courseId,
+  examType: { $in: selectedExamTypes }
+})
 
-Then long answers
+Step 4: Prepare a super tight TOON payload
 
-For multiple versions:
+This reduces your token bill and stabilizes output.
 
-Repeat random selection to create different question combinations for each version
+#TOON
+(task:generate_exam;
+major:Software_Engineering;
+course:Calculus_I;
+examTypes:[Quiz_1,Quiz_2];
+totalMarks:7;
+preferredTypes:[MCQ,Essay])
 
-Keep exact total marks
+Step 5: Append compressed question bank
 
-2.3 AI Integration (Gemini)
+Example:
 
-All calls happen on backend (keeps API key safe)
+#QUESTION_BANK
+1. (type:MCQ;marks:1;question:"What is...")
+2. (type:Essay;marks:5;question:"Explain...")
+3. (type:MCQ;marks:2;question:"Find the derivative...")
 
-AI task:
+Step 6: Tell Gemini what you want
+#INSTRUCTIONS
+Select questions from QUESTION_BANK.
+Total marks must equal 7.
+Mix MCQ and Essay unless restricted.
+Output cleanly formatted exam only.
 
-Format questions into professional exam layout
+Step 7: Gemini returns a perfect exam
 
-Add cover page with exam title, course, total marks, and optional instructions
+Numbered
 
-Add section headings automatically (MCQs, Short Answer, Long Answer)
+Clean
 
-Keep original marks from DB (do not change)
+Balanced marks
 
-Sample prompt:
+Mixed types
 
-Format the following questions into a professional exam paper:
-Title: [Exam Title]
-Total Marks: [Total Marks]
-Sections: MCQs first, then Short Answer
-Instructions: Please answer all questions.
-Questions:
-1. [question text] (marks)
-2. [question text] (marks)
-Output should be plain text suitable for PDF generation.
+Ready to download as PDF or copy
 
-2.4 PDF Generation
+3. AI SIDEBAR EXPERIENCE (Cursor-style)
 
-Use jsPDF or pdf-lib (Node.js compatible)
+When the student presses Generate Exam:
 
-Features:
+Sidebar opens
 
-Cover page with title, course, date, total marks
+Shows “Generating your exam…”
 
-Header/footer with page numbers
+Once done, AI outputs:
 
-Section headings (MCQs, Short Answer, Long Answer)
+Exam with headings
 
-Automatic page breaks
+Marks per question
 
-Polished formatting: font sizes, bold headings, spacing
+Total marks = required sum
 
-Convert AI-formatted text to PDF and send to frontend for download
+Then student can refine:
 
-2.5 Backend Workflow
+“Regenerate with easier questions”
 
-Receive request from frontend (preview or PDF)
+“Replace Q3”
 
-Fetch questions from DB based on sources
+“Give only MCQs”
 
-Randomly select questions to meet exact total marks
-
-Organize questions by type (MCQs first, etc.)
-
-Send question list + exam info to Gemini AI for formatting
-
-Receive AI-formatted text
-
-If preview → return plain text
-If PDF → generate PDF and return binary buffer
-
-3. Multiple Versions
-
-If user requests multiple exam versions:
-
-Generate separate random question sets for each version
-
-Call AI separately for each version (or reuse formatting logic)
-
-Return either multiple preview texts or multiple PDFs
-
-Ensures variation between versions while keeping exact marks
-
-4. Additional Features
-
-Preview before PDF download
-
-Random selection ensures different question combinations for practice exams
-
-Cover page and polished layout give professional appearance
-
-All AI calls on backend to keep API key secure and maintain full control
-
-5. Flow Summary
-
-User clicks Generate Exam with AI
-
-Modal opens → user fills title, total marks, sources, version count
-
-Click Preview → backend returns AI-formatted exam text → show in modal
-
-Click Download PDF → backend generates PDF with AI-formatted text → frontend downloads
+“Make it 12 marks instead of 7”
