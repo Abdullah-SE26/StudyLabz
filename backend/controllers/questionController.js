@@ -70,7 +70,7 @@ export const getQuestions = async (req, res, next) => {
         prisma.question.count({ where }),
       ]);
       return { questions: data, total: count };
-    });
+    }, 120, "questions");
 
     const formatted = questions.map((q) => ({
       ...q,
@@ -119,7 +119,7 @@ export const getQuestionById = async (req, res, next) => {
           _count: { select: { likedBy: true, reports: true, comments: true } },
         },
       });
-    });
+    }, 120, "question");
 
     if (!question)
       return res
@@ -213,7 +213,7 @@ export const getQuestionsByCourse = async (req, res, next) => {
         prisma.question.count({ where }),
       ]);
       return { questions: data, total: count };
-    });
+    }, 120, "courseQuestions");
 
     const formatted = questions.map((q) => ({
       ...q,
@@ -383,7 +383,7 @@ export const getUserBookmarks = async (req, res, next) => {
         }),
       ]);
       return { questions: data, total: count };
-    });
+    }, 120, "userBookmarks");
 
     const formatted = questions.map((q) => ({
       ...q,
@@ -447,9 +447,12 @@ export const toggleLikeQuestion = async (req, res, next) => {
       },
     });
 
+    // Invalidate caches to update like/bookmark counts (same pattern as comment controller)
     await invalidateCache("questions:*");
     await invalidateCache(`question:${questionId}`);
-    await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    if (question.courseId) {
+      await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    }
     await invalidateCache(`userBookmarks:*`);
 
     res.status(200).json({
@@ -504,10 +507,12 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
       },
     });
 
-    // Invalidate caches
+    // Invalidate caches to update bookmark counts (same pattern as comment controller)
     await invalidateCache("questions:*");
     await invalidateCache(`question:${questionId}`);
-    await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    if (question.courseId) {
+      await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    }
     await invalidateCache(`userBookmarks:${userId}:*`);
 
     res.status(200).json({

@@ -1,4 +1,5 @@
 import prisma from "../prismaClient.js";
+import { invalidateCache } from "../utils/prismaCache.js";
 
 // -----------------------------
 // Helper: format comment for frontend
@@ -32,12 +33,12 @@ export const createComment = async (req, res, next) => {
     if (!questionId || !text?.trim())
       return res.status(400).json({ success: false, error: "Question and text are required" });
 
-    // Verify question exists
-    const questionExists = await prisma.question.findUnique({
+    // Verify question exists and get courseId for cache invalidation
+    const question = await prisma.question.findUnique({
       where: { id: Number(questionId) },
-      select: { id: true },
+      select: { id: true, courseId: true },
     });
-    if (!questionExists)
+    if (!question)
       return res.status(404).json({ success: false, error: "Question not found" });
 
     const comment = await prisma.comment.create({
@@ -53,6 +54,14 @@ export const createComment = async (req, res, next) => {
         _count: { select: { replies: true, reports: true, likedBy: true } },
       },
     });
+
+    // Invalidate caches to update comment counts
+    await invalidateCache("questions:*");
+    await invalidateCache(`question:${questionId}`);
+    if (question.courseId) {
+      await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    }
+    await invalidateCache(`userBookmarks:*`);
 
     res.status(201).json({ success: true, data: formatComment(comment, userId) });
   } catch (err) {
@@ -223,6 +232,12 @@ export const deleteComment = async (req, res, next) => {
     if (comment.userId !== userId && role !== "admin")
       return res.status(403).json({ success: false, error: "Unauthorized" });
 
+    // Get question info before deleting for cache invalidation
+    const commentToDelete = await prisma.comment.findUnique({
+      where: { id: commentId },
+      select: { questionId: true, question: { select: { courseId: true } } },
+    });
+
     // Recursive delete using CTE
     await prisma.$executeRaw`
       WITH RECURSIVE comment_tree AS (
@@ -232,6 +247,16 @@ export const deleteComment = async (req, res, next) => {
       )
       DELETE FROM "Comment" WHERE id IN (SELECT id FROM comment_tree);
     `;
+
+    // Invalidate caches to update comment counts
+    if (commentToDelete) {
+      await invalidateCache("questions:*");
+      await invalidateCache(`question:${commentToDelete.questionId}`);
+      if (commentToDelete.question?.courseId) {
+        await invalidateCache(`courseQuestions:${commentToDelete.question.courseId}:*`);
+      }
+      await invalidateCache(`userBookmarks:*`);
+    }
 
     res.status(200).json({ success: true, message: "Comment and all its replies deleted successfully" });
   } catch (err) {
