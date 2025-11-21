@@ -1,7 +1,7 @@
 // controllers/questionController.js
 import prisma from "../prismaClient.js";
 import { sanitize } from "../utils/sanitize.js";
-import { cachedQuery, invalidateCache } from "../utils/prismaCache.js"; // caching utils
+import { cachedQuery, invalidateCache } from "../utils/prismaCache.js";
 
 // -----------------------------
 // GET /questions?page=1&limit=10&search=&sort=&tags=tag1,tag2
@@ -39,7 +39,15 @@ export const getQuestions = async (req, res, next) => {
         ? { marks: "desc" }
         : { createdAt: "desc" };
 
-    const cacheKey = `questions:${JSON.stringify({ userId, search, tags, examType, sort, page, limit })}`;
+    const cacheKey = `questions:${JSON.stringify({
+      userId,
+      search,
+      tags,
+      examType,
+      sort,
+      page,
+      limit,
+    })}`;
     const { questions, total } = await cachedQuery(cacheKey, async () => {
       const [data, count] = await Promise.all([
         prisma.question.findMany({
@@ -51,7 +59,9 @@ export const getQuestions = async (req, res, next) => {
             course: { select: { id: true, name: true, tags: true } },
             likedBy: { select: { id: true } },
             bookmarkedBy: { select: { id: true } },
-            _count: { select: { likedBy: true, reports: true, comments: true } },
+            _count: {
+              select: { likedBy: true, reports: true, comments: true },
+            },
           },
           orderBy,
           skip,
@@ -174,7 +184,13 @@ export const getQuestionsByCourse = async (req, res, next) => {
         ? { marks: "desc" }
         : { createdAt: "desc" };
 
-    const cacheKey = `courseQuestions:${courseId}:${JSON.stringify({ examType, tags, sort, page, limit })}`;
+    const cacheKey = `courseQuestions:${courseId}:${JSON.stringify({
+      examType,
+      tags,
+      sort,
+      page,
+      limit,
+    })}`;
     const { questions, total } = await cachedQuery(cacheKey, async () => {
       const [data, count] = await Promise.all([
         prisma.question.findMany({
@@ -186,7 +202,9 @@ export const getQuestionsByCourse = async (req, res, next) => {
             course: { select: { id: true, name: true, tags: true } },
             likedBy: { select: { id: true } },
             bookmarkedBy: { select: { id: true } },
-            _count: { select: { likedBy: true, reports: true, comments: true } },
+            _count: {
+              select: { likedBy: true, reports: true, comments: true },
+            },
           },
           orderBy,
           skip,
@@ -352,7 +370,9 @@ export const getUserBookmarks = async (req, res, next) => {
             course: { select: { id: true, name: true, tags: true } },
             likedBy: { select: { id: true } },
             bookmarkedBy: { select: { id: true } },
-            _count: { select: { likedBy: true, reports: true, comments: true } },
+            _count: {
+              select: { likedBy: true, reports: true, comments: true },
+            },
           },
           orderBy: { createdAt: "desc" },
           skip,
@@ -401,14 +421,16 @@ export const toggleLikeQuestion = async (req, res, next) => {
 
     const question = await prisma.question.findUnique({
       where: { id: questionId },
-      include: { likedBy: true, course: true },
+      include: { likedBy: true, bookmarkedBy: true },
     });
+
     if (!question)
       return res
         .status(404)
         .json({ success: false, error: "Question not found" });
 
     const hasLiked = question.likedBy.some((u) => u.id === userId);
+
     await prisma.question.update({
       where: { id: questionId },
       data: hasLiked
@@ -416,40 +438,30 @@ export const toggleLikeQuestion = async (req, res, next) => {
         : { likedBy: { connect: { id: userId } } },
     });
 
-    // invalidate caches
-    await invalidateCache("questions:*");
-    await invalidateCache(`question:${questionId}`);
-    await invalidateCache(`courseQuestions:${question.courseId}:*`);
-    await invalidateCache(`userBookmarks:*`);
-
     const updated = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
-        createdBy: {
-          select: { id: true, studentId: true, name: true, email: true },
-        },
-        course: { select: { id: true, name: true, tags: true } },
         _count: { select: { likedBy: true, reports: true, comments: true } },
       },
     });
+
+    await invalidateCache("questions:*");
+    await invalidateCache(`question:${questionId}`);
+    await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    await invalidateCache(`userBookmarks:*`);
 
     res.status(200).json({
       success: true,
       message: hasLiked ? "Like removed" : "Question liked",
       data: {
-        ...updated,
+        questionId,
+        hasLiked: !hasLiked,
         likesCount: updated._count.likedBy,
-        reportsCount: updated._count.reports,
         commentsCount: updated._count.comments,
+        reportsCount: updated._count.reports,
         bookmarksCount: updated.bookmarkedBy.length,
-        creatorName:
-          updated.createdBy?.studentId ||
-          updated.createdBy?.name ||
-          updated.createdBy?.email ||
-          "Unknown",
-        tags: updated.course?.tags || [],
       },
     });
   } catch (err) {
@@ -464,14 +476,17 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
 
     const question = await prisma.question.findUnique({
       where: { id: questionId },
-      include: { bookmarkedBy: true, course: true },
+      include: { bookmarkedBy: true, likedBy: true, course: true },
     });
+
     if (!question)
       return res
         .status(404)
         .json({ success: false, error: "Question not found" });
 
     const hasBookmarked = question.bookmarkedBy.some((u) => u.id === userId);
+
+    // Toggle bookmark
     await prisma.question.update({
       where: { id: questionId },
       data: hasBookmarked
@@ -479,40 +494,32 @@ export const toggleBookmarkQuestion = async (req, res, next) => {
         : { bookmarkedBy: { connect: { id: userId } } },
     });
 
-    // invalidate caches
-    await invalidateCache("questions:*");
-    await invalidateCache(`question:${questionId}`);
-    await invalidateCache(`courseQuestions:${question.courseId}:*`);
-    await invalidateCache(`userBookmarks:*`);
-
+    // Immediately get the updated counts
     const updated = await prisma.question.findUnique({
       where: { id: questionId },
       include: {
         likedBy: { select: { id: true } },
         bookmarkedBy: { select: { id: true } },
-        createdBy: {
-          select: { id: true, studentId: true, name: true, email: true },
-        },
-        course: { select: { id: true, name: true, tags: true } },
-        _count: { select: { likedBy: true, reports: true, comments: true } }, // ✅ updated
+        _count: { select: { likedBy: true, reports: true, comments: true } },
       },
     });
+
+    // Invalidate caches
+    await invalidateCache("questions:*");
+    await invalidateCache(`question:${questionId}`);
+    await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    await invalidateCache(`userBookmarks:${userId}:*`);
 
     res.status(200).json({
       success: true,
       message: hasBookmarked ? "Bookmark removed" : "Question bookmarked",
       data: {
-        ...updated,
+        questionId,
+        hasBookmarked: !hasBookmarked,
         likesCount: updated._count.likedBy,
-        reportsCount: updated._count.reports,
         commentsCount: updated._count.comments,
+        reportsCount: updated._count.reports,
         bookmarksCount: updated.bookmarkedBy.length,
-        creatorName:
-          updated.createdBy?.studentId ||
-          updated.createdBy?.name ||
-          updated.createdBy?.email ||
-          "Unknown",
-        tags: updated.course?.tags || [],
       },
     });
   } catch (err) {
@@ -534,19 +541,11 @@ export const reportQuestion = async (req, res, next) => {
       data: { userId, questionId, reason },
     });
 
-    // invalidate caches
-    await invalidateCache("questions:*");
-    await invalidateCache(`question:${questionId}`);
-    await invalidateCache(`courseQuestions:*`);
-    await invalidateCache(`userBookmarks:*`);
-
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Question reported successfully",
-        data: report,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Question reported successfully",
+      data: report,
+    });
   } catch (err) {
     next(err);
   }
@@ -567,19 +566,18 @@ export const deleteQuestion = async (req, res, next) => {
         .json({ success: false, error: "Question not found" });
 
     if (userRole !== "admin" && question.createdById !== userId)
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Unauthorized to delete this question",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Unauthorized to delete this question",
+      });
 
     await prisma.question.delete({ where: { id: questionId } });
 
     // invalidate caches
     await invalidateCache("questions:*");
     await invalidateCache(`question:${questionId}`);
-    if (question.courseId) await invalidateCache(`courseQuestions:${question.courseId}:*`);
+    if (question.courseId)
+      await invalidateCache(`courseQuestions:${question.courseId}:*`);
     await invalidateCache(`userBookmarks:*`);
 
     res

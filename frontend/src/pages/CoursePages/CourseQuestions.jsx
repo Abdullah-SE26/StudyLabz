@@ -26,7 +26,9 @@ const CourseQuestions = () => {
   const location = useLocation();
   const authToken = useStore((state) => state.authToken);
   const user = useStore((state) => state.user);
-  const setShouldRefetchDashboard = useStore((state) => state.setShouldRefetchDashboard);
+  const setShouldRefetchDashboard = useStore(
+    (state) => state.setShouldRefetchDashboard
+  );
 
   const [courseName, setCourseName] = useState(
     location.state?.courseName || "Loading..."
@@ -107,9 +109,7 @@ const CourseQuestions = () => {
     setQuestions(updatedQs);
     try {
       const { data } = await axios.post(`/questions/${qId}/like`);
-      setQuestions((qs) =>
-        qs.map((q) => (q.id === qId ? data.data : q))
-      );
+      setQuestions((qs) => qs.map((q) => (q.id === qId ? data.data : q)));
     } catch {
       setQuestions(prev);
       toast.error("Failed to sync like with server.");
@@ -129,7 +129,7 @@ const CourseQuestions = () => {
       (u) => u.id === user.id
     );
 
-    // Optimistic UI update
+    // Optimistic UI
     const updatedQs = questions.map((q) =>
       q.id === qId
         ? {
@@ -142,21 +142,16 @@ const CourseQuestions = () => {
     );
     setQuestions(updatedQs);
 
-    // Instant toast notification
     toast.success(
-      !isBookmarked ? "Question added to bookmarks." : "Question removed from bookmarks."
+      !isBookmarked
+        ? "Question added to bookmarks."
+        : "Question removed from bookmarks."
     );
     setShouldRefetchDashboard(true);
 
     try {
-      // Sync with server
-      const { data } = await axios.post(`/questions/${qId}/bookmark`);
-      // Verify server response and correct state if needed
-      setQuestions((qs) =>
-        qs.map((q) => (q.id === qId ? data.data : q))
-      );
+      await axios.post(`/questions/${qId}/bookmark`);
     } catch {
-      // Revert on error
       setQuestions(prev);
       toast.error("Failed to sync bookmark with server.");
     }

@@ -1,4 +1,5 @@
 import { getCache, setCache, delCache } from "./redisClient.js";
+import redis from "./redisClient.js"; // 🔹 import the actual Redis client
 
 /**
  * Generic function to cache Prisma queries
@@ -7,23 +8,27 @@ import { getCache, setCache, delCache } from "./redisClient.js";
  * @param {number} ttlSeconds - TTL in seconds (default 2 minutes)
  */
 export async function cachedQuery(key, queryFn, ttlSeconds = 120) {
-  // 1️⃣ Try Redis first
   const cached = await getCache(key);
   if (cached) return cached;
 
-  // 2️⃣ Execute the query
   const result = await queryFn();
-
-  // 3️⃣ Save to Redis
   await setCache(key, result, ttlSeconds);
 
   return result;
 }
 
 /**
- * Invalidate cache for a specific key
- * @param {string} key
+ * Invalidate cache for a specific key or key pattern
+ * @param {string} keyPattern
  */
-export async function invalidateCache(key) {
-  await delCache(key);
+export async function invalidateCache(keyPattern) {
+  if (keyPattern.includes("*")) {
+    // get all keys matching the pattern
+    const keys = await redis.keys(keyPattern);
+    if (keys.length > 0) {
+      await redis.del(...keys);
+    }
+  } else {
+    await redis.del(keyPattern);
+  }
 }
