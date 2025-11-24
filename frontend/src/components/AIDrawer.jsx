@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { memo, useEffect, useState, useCallback, useRef } from "react";
 import axios from "../../lib/axios";
 import toast from "react-hot-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export default function AIDrawer({ open, onClose, question }) {
+function AIDrawerComponent({ open, onClose, question }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -223,3 +223,13 @@ export default function AIDrawer({ open, onClose, question }) {
     </div>
   );
 }
+
+const aiDrawerPropsAreEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.open === nextProps.open &&
+    prevProps.onClose === nextProps.onClose &&
+    prevProps.question === nextProps.question
+  );
+};
+
+export default memo(AIDrawerComponent, aiDrawerPropsAreEqual);
