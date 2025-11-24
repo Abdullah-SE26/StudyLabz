@@ -9,7 +9,7 @@ const ai = new GoogleGenAI({
 });
 
 // Model name - change this if you want to use a different model
-const MODEL_NAME = "gemini-2.5-flash"; 
+const MODEL_NAME = "gemini-2.5-flash";
 
 // // -----------------------------
 // // LIST AVAILABLE MODELS
@@ -67,10 +67,35 @@ router.post("/solve", async (req, res) => {
   try {
     const { question } = req.body;
 
-    const prompt = `You are a clear and concise tutor. Solve the following question step-by-step and explain your reasoning simply. Use clear formatting with numbered steps, bullet points, or code blocks where relevant.
+    const prompt = `You are an expert problem solver. Your task is to SOLVE the problem below completely.
 
-Question:
-${question}`;
+CRITICAL: You are NOT explaining general concepts. You MUST SOLVE THIS SPECIFIC PROBLEM.
+
+WHAT "SOLVING" MEANS:
+- If it asks for a calculation: Do the math and give the number
+- If it asks for code: Write working code that solves it
+- If it asks which option is correct: Pick one and explain why with work
+- If it asks for an answer: Provide the exact answer
+- Show ALL your work/calculations/reasoning
+
+YOUR RESPONSE MUST INCLUDE:
+1. Brief understanding (1 sentence): "This question is asking me to..."
+2. Solution approach (1-2 sentences): "I will solve this by..."
+3. Detailed solution steps with actual work (use code blocks for code/formulas)
+4. Final Answer: **Answer goes here in bold**
+
+SPECIAL HANDLING:
+- MCQ questions: Analyze each option and state "The correct answer is [X] because..."
+- Programming: Provide complete, executable code
+- Math problems: Show all steps and give the numerical answer
+- Theory questions: Answer all parts directly with structured content
+
+Format: Use markdown (code blocks for code, **bold** for final answer, numbered lists for steps).
+
+PROBLEM TO SOLVE:
+${question}
+
+Now solve this problem step-by-step and provide the final answer.`;
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -102,20 +127,34 @@ router.post("/followup", async (req, res) => {
       });
     }
 
-    const chatPrompt = `
-You are a helpful tutor assisting with a problem.
+    // Convert conversation context to TOON format for token efficiency
+    const contextToon = context
+      .map(
+        (m, i) =>
+          `${i + 1}.${
+            m.role === "user" ? "user" : "assistant"
+          }:${m.text.replace(/\n/g, "\\n")}`
+      )
+      .join("\n");
 
-Original Question:
+    const chatPrompt = `You are an expert tutor helping a student solve a specific problem. Always work through the actual problem, not just explain concepts.
+
+Original Question to Solve:
 ${originalQuestion}
 
-Conversation so far:
-${context.map((m) => m.role + ": " + m.text).join("\n")}
+Previous conversation (TOON format):
+${contextToon}
 
-User now asks:
+Student's current question:
 ${message}
 
-Respond clearly and directly.
-    `;
+INSTRUCTIONS:
+- If they're asking about the solution, show the actual work/answer
+- If they're asking for clarification, address their specific question while working through the problem
+- Always reference the original question and provide concrete solutions
+- Use markdown formatting (code blocks, lists, **bold** for answers)
+
+Respond by solving or addressing their question directly.`;
 
     const response = await ai.models.generateContent({
       model: MODEL_NAME,

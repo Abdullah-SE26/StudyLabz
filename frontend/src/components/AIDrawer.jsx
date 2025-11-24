@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import axios from "../../lib/axios";
 import toast from "react-hot-toast";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function AIDrawer({ open, onClose, question }) {
   const [messages, setMessages] = useState([]);
@@ -41,10 +43,11 @@ export default function AIDrawer({ open, onClose, question }) {
     scrollToBottom();
   }, [messages, loading]);
 
-  // when opening drawer, fetch first solution
+  // when opening drawer or question changes, fetch first solution
   useEffect(() => {
     if (open && question) {
       setMessages([]);
+      setInput("");
       fetchInitialAnswer();
     } else if (!open) {
       setMessages([]);
@@ -154,8 +157,10 @@ export default function AIDrawer({ open, onClose, question }) {
                     : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 }`}
               >
-                <div className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                  {m.text}
+                <div className="text-sm break-words leading-relaxed [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mt-2 [&_h1]:mb-1 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-1 [&_h3]:mb-0.5 [&_p]:my-1.5 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1 [&_li]:my-0.5 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:bg-purple-100 [&_code]:dark:bg-purple-900/30 [&_code]:text-purple-700 [&_code]:dark:text-purple-300 [&_code]:text-xs [&_code]:font-mono [&_pre]:bg-gray-800 [&_pre]:dark:bg-gray-900 [&_pre]:text-gray-100 [&_pre]:p-3 [&_pre]:rounded [&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:text-inherit [&_pre_code]:p-0 [&_strong]:font-semibold [&_em]:italic">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {m.text}
+                  </ReactMarkdown>
                 </div>
               </div>
             </div>
