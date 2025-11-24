@@ -11,6 +11,30 @@ const ai = new GoogleGenAI({
 // Model name - change this if you want to use a different model
 const MODEL_NAME = "gemini-2.5-flash";
 
+// Helper function to extract image URL from question text
+function extractImageUrl(questionText) {
+  const imageMatch = questionText.match(/\[Image:\s*(https?:\/\/[^\]]+)\]/);
+  return imageMatch ? imageMatch[1] : null;
+}
+
+// Helper function to fetch image and convert to base64
+async function fetchImageAsBase64(imageUrl) {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString("base64");
+    const mimeType = response.headers.get("content-type") || "image/jpeg";
+    return { base64, mimeType };
+  } catch (error) {
+    console.error("Error fetching image:", error);
+    return null;
+  }
+}
+
 // // -----------------------------
 // // LIST AVAILABLE MODELS
 // // -----------------------------
@@ -67,40 +91,66 @@ router.post("/solve", async (req, res) => {
   try {
     const { question } = req.body;
 
-    const prompt = `You are an expert problem solver. Your task is to SOLVE the problem below completely.
+    // Extract image URL if present
+    const imageUrl = extractImageUrl(question);
+    let imageData = null;
+    
+    // Fetch and process image if URL exists
+    if (imageUrl) {
+      console.log("Found image URL:", imageUrl);
+      imageData = await fetchImageAsBase64(imageUrl);
+    }
 
-CRITICAL: You are NOT explaining general concepts. You MUST SOLVE THIS SPECIFIC PROBLEM.
+    // Remove image placeholder from question text
+    const questionText = question.replace(/\[Image:\s*https?:\/\/[^\]]+\]/g, "").trim();
 
-WHAT "SOLVING" MEANS:
-- If it asks for a calculation: Do the math and give the number
-- If it asks for code: Write working code that solves it
-- If it asks which option is correct: Pick one and explain why with work
-- If it asks for an answer: Provide the exact answer
-- Show ALL your work/calculations/reasoning
+    const prompt = imageData 
+      ? `Look at the image provided and solve the problem shown in it. The image contains code, diagrams, or question details that you need to analyze.
 
-YOUR RESPONSE MUST INCLUDE:
-1. Brief understanding (1 sentence): "This question is asking me to..."
-2. Solution approach (1-2 sentences): "I will solve this by..."
-3. Detailed solution steps with actual work (use code blocks for code/formulas)
-4. Final Answer: **Answer goes here in bold**
+For code trace problems: Execute/trace the code step-by-step and show the EXACT output as it would print (e.g., "output 1: 0", "output 2: 5", etc.).
+For calculations: Show work briefly, then give the result.
+For MCQ: Give the correct option.
 
-SPECIAL HANDLING:
-- MCQ questions: Analyze each option and state "The correct answer is [X] because..."
-- Programming: Provide complete, executable code
-- Math problems: Show all steps and give the numerical answer
-- Theory questions: Answer all parts directly with structured content
+Question text (if any):
+${questionText}
 
-Format: Use markdown (code blocks for code, **bold** for final answer, numbered lists for steps).
+Analyze the image carefully and solve the problem. Provide the solution/answer directly.`
+      : `Solve this problem. Provide only the solution and answer - skip explanations.
 
-PROBLEM TO SOLVE:
-${question}
+For code trace problems: Show the EXACT output line by line as it would print (e.g., "output 1: 0", "output 2: 5", etc.).
+For calculations: Show work briefly, then give the result.
+For MCQ: Give the correct option.
 
-Now solve this problem step-by-step and provide the final answer.`;
+PROBLEM:
+${questionText}
 
-    const response = await ai.models.generateContent({
-      model: MODEL_NAME,
-      contents: prompt,
-    });
+Provide the solution/answer directly.`;
+
+    let response;
+    
+    // If image exists, use vision API
+    if (imageData) {
+      console.log("Using vision API with image");
+      // Use vision-capable API with image
+      response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: [
+          { text: prompt },
+          {
+            inlineData: {
+              data: imageData.base64,
+              mimeType: imageData.mimeType,
+            },
+          },
+        ],
+      });
+    } else {
+      // Regular text-only generation
+      response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+      });
+    }
 
     const answer = response?.text || "No answer generated";
     res.json({ answer });
