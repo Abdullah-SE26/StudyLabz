@@ -7,6 +7,7 @@ import {
   Send,
   Flag,
   Link2,
+  Sparkles,
 } from "lucide-react";
 import { IconBrandOpenai } from "@tabler/icons-react";
 import Tippy from "@tippyjs/react";
@@ -17,11 +18,7 @@ import { useStore } from "../store/authStore";
 
 import ReportModal from "./ReportModal"; // Import the ReportModal
 
-const QuestionCard = ({
-  question,
-  onToggleLike,
-  onToggleBookmark,
-}) => {
+const QuestionCard = ({ question, onToggleLike, onToggleBookmark, onSolveWithAI }) => {
   const user = useStore((state) => state.user);
   const [showComments, setShowComments] = useState(false);
   const [commentsCount, setCommentsCount] = useState(
@@ -131,8 +128,8 @@ const QuestionCard = ({
     return result.trim() || tmpDiv.innerText?.trim() || "";
   };
 
-  // Solve with ChatGPT button
-  const handleSolveWithChatGPT = () => {
+  // Format question text for AI
+  const formatQuestionForAI = () => {
     // Capture current question data immediately
     const currentQuestionText = question?.text;
     const currentQuestionImage = question?.image;
@@ -140,7 +137,7 @@ const QuestionCard = ({
 
     if (!currentQuestionText) {
       toast.error("Question data not available");
-      return;
+      return "";
     }
 
     // Convert HTML to formatted text preserving structure
@@ -158,15 +155,38 @@ const QuestionCard = ({
     let formattedQuestion = questionText;
 
     // Add options if they exist
-    if (
-      currentQuestionOptions &&
-      Array.isArray(currentQuestionOptions) &&
-      currentQuestionOptions.length > 0
-    ) {
-      const optionsText = currentQuestionOptions
-        .map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`)
-        .join("\n");
-      formattedQuestion += `\n\nOptions:\n${optionsText}`;
+    if (currentQuestionOptions) {
+      let optionsText = "";
+
+      // Handle array format (legacy support)
+      if (
+        Array.isArray(currentQuestionOptions) &&
+        currentQuestionOptions.length > 0
+      ) {
+        optionsText = currentQuestionOptions
+          .map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`)
+          .join("\n");
+      }
+      // Handle HTML format (current format)
+      else if (
+        typeof currentQuestionOptions === "string" &&
+        currentQuestionOptions.trim()
+      ) {
+        const parsedOptions = htmlToFormattedText(currentQuestionOptions);
+        if (parsedOptions) {
+          optionsText = parsedOptions;
+        } else {
+          // Fallback: simple text extraction
+          const tmpDiv = document.createElement("div");
+          tmpDiv.innerHTML = currentQuestionOptions;
+          optionsText =
+            tmpDiv.innerText?.trim() || tmpDiv.textContent?.trim() || "";
+        }
+      }
+
+      if (optionsText) {
+        formattedQuestion += `\n\nOptions:\n${optionsText}`;
+      }
     }
 
     // Add image URL if present
@@ -174,7 +194,22 @@ const QuestionCard = ({
       formattedQuestion += `\n\n[Image: ${currentQuestionImage}]`;
     }
 
-    // Build the complete prompt with question included
+    return formattedQuestion;
+  };
+
+  // Handle opening AI drawer
+  const handleSolveWithAI = () => {
+    const formattedQuestion = formatQuestionForAI();
+    if (formattedQuestion && onSolveWithAI) {
+      onSolveWithAI(formattedQuestion);
+    }
+  };
+
+  // Launch ChatGPT flow using legacy prompt format
+  const handleOpenAIChat = () => {
+    const formattedQuestion = formatQuestionForAI();
+    if (!formattedQuestion) return;
+
     const fullPrompt = `Act as an expert instructor in the subject area.
 
 Explain concepts clearly and provide a **step-by-step solution** to the problem. Break down each step so a student can follow along easily. Include reasoning, formulas, and examples where necessary. Avoid assuming prior knowledge beyond basic prerequisites.
@@ -185,15 +220,13 @@ At the end, please solve the following problem:
 
 : ${formattedQuestion}`;
 
-    // Copy the complete prompt (with question) to clipboard
     navigator.clipboard
       .writeText(fullPrompt)
       .then(() => {
-        toast.success("Ready to paste! Opening ChatGPT...", {
+        toast.success("Ready to paste! Just Ctrl+V in Chatgpt. Opening ChatGPT...", {
           duration: 3000,
         });
 
-        // Open ChatGPT
         setTimeout(() => {
           const timestamp = Date.now();
           window.open(
@@ -201,7 +234,7 @@ At the end, please solve the following problem:
             "_blank",
             "noopener,noreferrer"
           );
-        }, 300);
+        }, 1500);
       })
       .catch(() => {
         toast.error("Failed to copy. Please try again.", {
@@ -363,13 +396,34 @@ At the end, please solve the following problem:
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <Tippy content="Solve with ChatGPT" placement="bottom">
+            <Tippy
+              content={
+                <div className="flex flex-col text-xs">
+                  <span>Opens ChatGPT in a new tab.</span>
+                  <span className="font-semibold text-[#10a37f]">
+                    Press Ctrl + V to paste the prompt.
+                  </span>
+                </div>
+              }
+              placement="bottom"
+            >
               <button
-                onClick={handleSolveWithChatGPT}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
+                onClick={handleOpenAIChat}
+                className="relative flex items-center justify-center w-11 h-11 cursor-pointer text-[#10a37f] bg-white border border-[#10a37f]/50 rounded-full hover:bg-[#10a37f] hover:text-white transition shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-[#10a37f]/40 focus:ring-offset-1"
               >
                 <IconBrandOpenai size={20} />
-                Solve with ChatGPT
+                
+                
+              </button>
+            </Tippy>
+
+            <Tippy content="Solve with AI" placement="bottom">
+              <button
+                onClick={handleSolveWithAI}
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
+              >
+                <Sparkles size={20} />
+                Solve with AI
               </button>
             </Tippy>
 
@@ -409,6 +463,7 @@ At the end, please solve the following problem:
         onReportSuccess={handleReportSuccess}
         questionId={question.id}
       />
+
     </div>
   );
 };

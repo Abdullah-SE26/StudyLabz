@@ -8,7 +8,8 @@ import courseRoutes from "./routes/courses.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import usersRoutes from "./routes/users.js";
 import reportRoutes from "./routes/reports.js";
-import { startKeepAwake, trafficHit } from './keepAwake.js';  // ✅ import trafficHit
+import { startKeepAwake, trafficHit } from "./keepAwake.js"; 
+import aiRoutes from "./routes/ai.js";
 
 import { createRouteHandler } from "uploadthing/express";
 import { uploadRouter } from "./routes/uploadthing.js";
@@ -60,7 +61,8 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/comments", commentRoutes);
-app.use("/api/reports", reportRoutes); 
+app.use("/api/reports", reportRoutes);
+app.use("/api/ai", aiRoutes);  
 
 // UploadThing route
 app.use(

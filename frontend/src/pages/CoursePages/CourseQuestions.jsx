@@ -4,6 +4,7 @@ import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 import QuestionCard from "../../components/QuestionCard";
 import Pagination from "../../components/Pagination";
+import AIDrawer from "../../components/AIDrawer";
 import axios from "../../../lib/axios.js";
 
 import QuestionCardSkeleton from "../../components/QuestionCardSkeleton";
@@ -40,6 +41,8 @@ const CourseQuestions = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -169,6 +172,12 @@ const CourseQuestions = () => {
     setPage(1);
   };
 
+  // Handle AI drawer opening - replaces current question if drawer is already open
+  const handleSolveWithAI = (formattedQuestion) => {
+    setCurrentQuestion(formattedQuestion);
+    setAiDrawerOpen(true);
+  };
+
   const filteredQuestions =
     questions && selectedTypes.length > 0
       ? questions.filter((q) => selectedTypes.includes(q.examType))
@@ -253,6 +262,7 @@ const CourseQuestions = () => {
                   question={q}
                   onToggleLike={() => toggleLike(q.id)}
                   onToggleBookmark={() => toggleBookmark(q.id)}
+                  onSolveWithAI={handleSolveWithAI}
                 />
               ))
             ) : (
@@ -273,6 +283,14 @@ const CourseQuestions = () => {
           />
         </div>
       )}
+
+      {/* Single Shared AI Drawer */}
+      <AIDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        question={currentQuestion}
+        key={currentQuestion} // Force reset when question changes
+      />
     </div>
   );
 };
