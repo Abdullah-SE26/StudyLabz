@@ -1,12 +1,36 @@
 import express from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
 const router = express.Router();
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Initialize client with API key
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
-/* ---------- SOFT GUARD CHECK ---------- */
+// Model name - change this if you want to use a different model
+const MODEL_NAME = "gemini-2.5-flash"; 
+
+// // -----------------------------
+// // LIST AVAILABLE MODELS
+// // -----------------------------
+// async function listModels() {
+//   try {
+//     const models = await ai.models.list();
+//     console.log("Available models:", models);
+//     return models;
+//   } catch (err) {
+//     console.error("Error fetching model list:", err);
+//     return [];
+//   }
+// }
+
+// // Call it on server start for debugging
+// listModels();
+
+// -----------------------------
+// SOFT GUARD CHECK FUNCTION
+// -----------------------------
 async function isMessageRelevant(originalQuestion, userMessage) {
   const classifierPrompt = `
 You are a relevance classifier.
@@ -19,45 +43,55 @@ User Follow-up:
 "${userMessage}"
 
 Reply with ONLY "yes" or "no".
-If the follow-up is about math steps, explaining steps, alternative solutions, or clarifications → "yes".
-If it asks about unrelated things like weather, jokes, news, personal topics, or anything unrelated → "no".
+If related → "yes", otherwise → "no".
 `;
 
-  const result = await model.generateContent(classifierPrompt);
-  const text = result.response.text().trim().toLowerCase();
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: classifierPrompt,
+    });
 
-  return text.startsWith("y"); // yes/no
+    const text = response?.text?.trim().toLowerCase();
+    return text?.startsWith("y");
+  } catch (err) {
+    console.error("Error in relevance check:", err);
+    return false; // default to false if model call fails
+  }
 }
 
-/* ---------- INITIAL SOLVE ---------- */
+// -----------------------------
+// INITIAL SOLVE
+// -----------------------------
 router.post("/solve", async (req, res) => {
   try {
     const { question } = req.body;
 
-    const prompt = `
-You are a clear and concise tutor.
-Solve the following question step-by-step and explain your reasoning simply.
+    const prompt = `You are a clear and concise tutor. Solve the following question step-by-step and explain your reasoning simply. Use clear formatting with numbered steps, bullet points, or code blocks where relevant.
 
 Question:
-${question}
-    `;
+${question}`;
 
-    const result = await model.generateContent(prompt);
-    const answer = result.response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: prompt,
+    });
 
+    const answer = response?.text || "No answer generated";
     res.json({ answer });
   } catch (err) {
-    console.error(err);
+    console.error("AI solve error:", err);
     res.status(500).json({ error: "AI solve failed" });
   }
 });
 
-/* ---------- FOLLOW-UP CHAT ---------- */
+// -----------------------------
+// FOLLOW-UP CHAT
+// -----------------------------
 router.post("/followup", async (req, res) => {
   try {
     const { originalQuestion, message, context } = req.body;
 
-    // 1. Soft guard check
     const relevant = await isMessageRelevant(originalQuestion, message);
 
     if (!relevant) {
@@ -68,7 +102,6 @@ router.post("/followup", async (req, res) => {
       });
     }
 
-    // 2. Build conversation thread
     const chatPrompt = `
 You are a helpful tutor assisting with a problem.
 
@@ -84,12 +117,15 @@ ${message}
 Respond clearly and directly.
     `;
 
-    const result = await model.generateContent(chatPrompt);
-    const answer = result.response.text();
+    const response = await ai.models.generateContent({
+      model: MODEL_NAME,
+      contents: chatPrompt,
+    });
 
+    const answer = response?.text || "No answer generated";
     res.json({ blocked: false, answer });
   } catch (err) {
-    console.error(err);
+    console.error("AI follow-up error:", err);
     res.status(500).json({ error: "AI follow-up failed" });
   }
 });
