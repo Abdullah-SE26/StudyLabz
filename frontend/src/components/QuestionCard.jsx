@@ -9,6 +9,7 @@ import {
   Link2,
   Sparkles,
 } from "lucide-react";
+import { IconBrandOpenai } from "@tabler/icons-react";
 import Tippy from "@tippyjs/react";
 import "tippy.js/dist/tippy.css";
 import toast from "react-hot-toast";
@@ -204,6 +205,44 @@ const QuestionCard = ({ question, onToggleLike, onToggleBookmark, onSolveWithAI 
     }
   };
 
+  // Launch ChatGPT flow using legacy prompt format
+  const handleOpenAIChat = () => {
+    const formattedQuestion = formatQuestionForAI();
+    if (!formattedQuestion) return;
+
+    const fullPrompt = `Act as an expert instructor in the subject area.
+
+Explain concepts clearly and provide a **step-by-step solution** to the problem. Break down each step so a student can follow along easily. Include reasoning, formulas, and examples where necessary. Avoid assuming prior knowledge beyond basic prerequisites.
+
+Use clear formatting with numbered steps, bullet points, or code blocks where relevant. Highlight important notes or tips that help understanding.
+
+At the end, please solve the following problem:
+
+: ${formattedQuestion}`;
+
+    navigator.clipboard
+      .writeText(fullPrompt)
+      .then(() => {
+        toast.success("Ready to paste! Just Ctrl+V in Chatgpt. Opening ChatGPT...", {
+          duration: 3000,
+        });
+
+        setTimeout(() => {
+          const timestamp = Date.now();
+          window.open(
+            `https://chatgpt.com/?t=${timestamp}`,
+            "_blank",
+            "noopener,noreferrer"
+          );
+        }, 1500);
+      })
+      .catch(() => {
+        toast.error("Failed to copy. Please try again.", {
+          duration: 3000,
+        });
+      });
+  };
+
   // ✅ FIXED Share & Copy Link handlers
   const handleShare = async () => {
     const url = `${window.location.origin}/questions/${question.id}`;
@@ -357,10 +396,31 @@ const QuestionCard = ({ question, onToggleLike, onToggleBookmark, onSolveWithAI 
           </div>
 
           <div className="flex items-center justify-end gap-3">
+            <Tippy
+              content={
+                <div className="flex flex-col text-xs">
+                  <span>Opens ChatGPT in a new tab.</span>
+                  <span className="font-semibold text-[#10a37f]">
+                    Press Ctrl + V to paste the prompt.
+                  </span>
+                </div>
+              }
+              placement="bottom"
+            >
+              <button
+                onClick={handleOpenAIChat}
+                className="relative flex items-center justify-center w-11 h-11 cursor-pointer text-[#10a37f] bg-white border border-[#10a37f]/50 rounded-full hover:bg-[#10a37f] hover:text-white transition shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-[#10a37f]/40 focus:ring-offset-1"
+              >
+                <IconBrandOpenai size={20} />
+                
+                
+              </button>
+            </Tippy>
+
             <Tippy content="Solve with AI" placement="bottom">
               <button
                 onClick={handleSolveWithAI}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-gradient-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
+                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm font-medium text-white bg-linear-to-r from-purple-500 to-pink-500 rounded-md hover:from-purple-600 hover:to-pink-600 transition shadow-md focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-1"
               >
                 <Sparkles size={20} />
                 Solve with AI
