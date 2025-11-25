@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useStore } from "../../store/authStore";
 import toast from "react-hot-toast";
@@ -19,7 +19,7 @@ const ASSESSMENT_TYPES = [
   "Final",
   "Quiz 1",
   "Quiz 2",
-  "Additional Quizzes",
+  "Additional Quiz",
 ];
 
 const CourseQuestions = () => {
@@ -43,12 +43,38 @@ const CourseQuestions = () => {
   const [error, setError] = useState("");
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState("");
+  const activeRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchCourse = async () => {
+      try {
+        if (!authToken) return;
+        const { data } = await axios.get(`/courses/${courseId}`, {
+          signal: controller.signal,
+        });
+        setCourseName(data?.course?.name || "Course");
+      } catch (err) {
+        if (err.name !== "CanceledError") {
+          setError(
+            err.message ||
+              err?.response?.data?.error ||
+              "Failed to load course information."
+          );
+        }
+      }
+    };
+
+    fetchCourse();
+    return () => controller.abort();
+  }, [authToken, courseId]);
 
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
+    const requestId = ++activeRequestIdRef.current;
 
-    const fetchData = async () => {
+    const fetchQuestions = async () => {
       try {
         setLoading(true);
         if (!authToken) {
@@ -56,42 +82,42 @@ const CourseQuestions = () => {
         }
 
         setError("");
-
-        const coursePromise = axios.get(`/courses/${courseId}`, { signal });
-        const query = new URLSearchParams({
+        const queryParams = {
           page,
           limit: 10,
           sort: sortOrder,
-        }).toString();
-        const questionsPromise = axios.get(
+        };
+        if (selectedTypes.length) {
+          queryParams.examType = selectedTypes.join(",");
+        }
+        const query = new URLSearchParams(queryParams).toString();
+        const { data } = await axios.get(
           `/questions/courses/${courseId}/questions?${query}`,
           { signal }
         );
 
-        const [courseResponse, questionsResponse] = await Promise.all([
-          coursePromise,
-          questionsPromise,
-        ]);
-
-        setCourseName(courseResponse.data?.course?.name || "Course");
-        setQuestions(questionsResponse.data?.data || []);
-        setTotalPages(questionsResponse.data?.totalPages || 1);
+        if (requestId === activeRequestIdRef.current) {
+          setQuestions(data?.data || []);
+          setTotalPages(data?.totalPages || 1);
+        }
       } catch (err) {
-        if (err.name !== "CanceledError") {
+        if (err.name !== "CanceledError" && requestId === activeRequestIdRef.current) {
           setError(
             err.message ||
               err?.response?.data?.error ||
-              "Failed to load course data."
+              "Failed to load course questions."
           );
         }
       } finally {
-        setLoading(false);
+        if (requestId === activeRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchData();
+    fetchQuestions();
     return () => controller.abort();
-  }, [authToken, courseId, page, sortOrder]);
+  }, [authToken, courseId, page, sortOrder, selectedTypes]);
 
   // Like / Bookmark Handlers
   const toggleLike = async (qId) => {
@@ -203,7 +229,7 @@ const CourseQuestions = () => {
             <button
               key={type}
               onClick={() => handleTypeToggle(type)}
-              className={`px-3 py-1.5 rounded-lg border text-sm transition-all duration-200 ${
+              className={`px-3 py-1.5 rounded-lg border text-sm transition-all duration-200 cursor-pointer ${
                 selectedTypes.includes(type)
                   ? "bg-[#D2B48C] text-white border-[#D2B48C]"
                   : "bg-[#FFF8E0] text-[#5C4A3D] border border-[#E0CFA6]"
@@ -215,7 +241,7 @@ const CourseQuestions = () => {
           {selectedTypes.length > 0 && (
             <button
               onClick={clearFilters}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E0CFA6] bg-white text-[#5C4A3D] hover:bg-[#F8EFD4] transition text-sm"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#E0CFA6] bg-white text-[#5C4A3D] hover:bg-[#F8EFD4] transition text-sm cursor-pointer"
             >
               ✕ Clear
             </button>

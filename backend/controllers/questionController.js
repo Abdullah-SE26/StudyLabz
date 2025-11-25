@@ -21,12 +21,23 @@ export const getQuestions = async (req, res, next) => {
           .map((t) => t.trim())
           .filter(Boolean)
       : [];
-    const examType = req.query.examType?.trim() || "";
+    const examTypeParam = req.query.examType;
+    const examTypes = Array.isArray(examTypeParam)
+      ? examTypeParam
+          .flatMap((type) => type.split(","))
+          .map((type) => type.trim())
+          .filter(Boolean)
+      : typeof examTypeParam === "string"
+      ? examTypeParam
+          .split(",")
+          .map((type) => type.trim())
+          .filter(Boolean)
+      : [];
 
     const where = {
       ...(search && { text: { contains: search, mode: "insensitive" } }),
       ...(tags.length && { course: { tags: { hasSome: tags } } }),
-      ...(examType && { examType }),
+      ...(examTypes.length && { examType: { in: examTypes } }),
       ...(userId && !isAdmin && { createdById: userId }),
     };
 
@@ -43,7 +54,7 @@ export const getQuestions = async (req, res, next) => {
       userId,
       search,
       tags,
-      examType,
+      examTypes,
       sort,
       page,
       limit,
@@ -151,7 +162,6 @@ export const getQuestionById = async (req, res, next) => {
 export const getQuestionsByCourse = async (req, res, next) => {
   try {
     const courseId = Number(req.params.courseId);
-    const examType = req.query.examType?.trim() || "";
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -169,9 +179,22 @@ export const getQuestionsByCourse = async (req, res, next) => {
         .status(404)
         .json({ success: false, error: "Course not found" });
 
+    const examTypeParam = req.query.examType;
+    const examTypes = Array.isArray(examTypeParam)
+      ? examTypeParam
+          .flatMap((type) => type.split(","))
+          .map((type) => type.trim())
+          .filter(Boolean)
+      : typeof examTypeParam === "string"
+      ? examTypeParam
+          .split(",")
+          .map((type) => type.trim())
+          .filter(Boolean)
+      : [];
+
     const where = {
       courseId,
-      ...(examType && { examType }),
+      ...(examTypes.length && { examType: { in: examTypes } }),
       ...(tags.length && { course: { tags: { hasSome: tags } } }),
     };
 
@@ -185,7 +208,7 @@ export const getQuestionsByCourse = async (req, res, next) => {
         : { createdAt: "desc" };
 
     const cacheKey = `courseQuestions:${courseId}:${JSON.stringify({
-      examType,
+      examTypes,
       tags,
       sort,
       page,

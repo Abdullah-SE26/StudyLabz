@@ -1,17 +1,26 @@
 import React from "react";
 
-const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => {} }) => {
+const Pagination = ({
+  totalPages = 1,
+  currentPage = 1,
+  handlePageChange = () => {},
+}) => {
   if (!totalPages || totalPages <= 1) return null;
 
+  const navBtnBase =
+    "px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#034F46]/40";
+  const pageBtnBase =
+    "w-10 h-10 rounded-full font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#034F46]/40";
+
   return (
-    <div className="flex justify-center mt-12">
-      <div className="flex items-center gap-3 bg-white shadow-lg rounded-full px-5 py-3 border border-gray-200">
+    <div className="flex justify-center mt-10">
+      <div className="flex items-center gap-3 bg-sf-cream shadow-md rounded-full px-5 py-3 border border-sf-border">
         {/* Previous Button */}
         <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+          className={`${navBtnBase} ${
             currentPage === 1
-              ? "text-gray-400 cursor-not-allowed"
-              : "text-gray-700 hover:bg-blue-500 hover:text-white cursor-pointer"
+              ? "text-gray-300 cursor-not-allowed"
+              : "text-sf-green bg-white border border-transparent hover:bg-[#04695d] hover:text-white cursor-pointer"
           }`}
           onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
           disabled={currentPage === 1}
@@ -34,11 +43,12 @@ const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => 
                 <button
                   key={pageNumber}
                   onClick={() => handlePageChange(pageNumber)}
-                  className={`w-10 h-10 rounded-full font-semibold transition-all duration-200 border cursor-pointer ${
+                  className={`${pageBtnBase} border ${
                     isActive
-                      ? "bg-sf-green text-white border-sf-border shadow-md"
-                      : "border-transparent text-sf-text hover:bg-sf-green hover:text-white"
+                      ? "bg-sf-green text-white border-sf-green shadow-sm cursor-default"
+                      : "bg-white border-sf-border text-sf-text hover:bg-[#F5EAD3] hover:text-sf-green cursor-pointer"
                   }`}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   {pageNumber}
                 </button>
@@ -62,10 +72,10 @@ const Pagination = ({ totalPages = 1, currentPage = 1, handlePageChange = () => 
 
         {/* Next Button */}
         <button
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+          className={`${navBtnBase} ${
             currentPage === totalPages
-              ? "text-sf-text cursor-not-allowed"
-              : "text-sf-text hover:bg-sf-green-hover hover:text-white cursor-pointer"
+              ? "text-gray-300 cursor-not-allowed"
+              : "text-sf-green bg-white border border-transparent hover:bg-[#04695d] hover:text-white cursor-pointer"
           }`}
           onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
           disabled={currentPage === totalPages}
